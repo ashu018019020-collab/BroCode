@@ -1,0 +1,717 @@
+{
+  "section": "s11",
+  "topic": "Sets",
+  "authored": true,
+  "intro": "Set unique items ka unordered collection hai. Iska asli kamaal membership test aur set algebra hai: union, intersection, difference — teenon O(len) me. Duplicate hatane aur \"kaun se items dono me hain\" wale sawaalon ka ye sabse seedha jawab hai.",
+  "theory": [
+    "Set duplicate values store nahi karta; same value dobara add karne se size nahi badhta.",
+    "Set unordered hai, isliye indexing nahi hoti aur print order par bharosa nahi karna chahiye. Deterministic output ke liye sorted() use karo.",
+    "Membership test average O(1) hai (hash table), jabki list me O(n). Bade collections me `in` checks ke liye set better hai.",
+    "Set operations: `|` union, `&` intersection, `-` difference, `^` symmetric difference. In-place versions `|=`, `&=`, `-=`, `^=` available hain.",
+    "Set ke items hashable hone chahiye — list nahi, tuple haan. frozenset immutable aur hashable hota hai, isliye wo dict key ban sakta hai."
+  ],
+  "syntax": [
+    "tags = {'python', 'sql', 'ml'}\nempty = set()          # {} dict hai, set nahi\nunique = set([1, 2, 2, 3])\nfrom_keys = set('banana')",
+    "a | b      # union\na & b      # intersection\na - b      # difference\na ^ b      # symmetric difference\na <= b     # subset",
+    "tags.add('ai')\ntags.discard('sql')   # missing par error nahi\ntags.remove('ml')     # missing par KeyError\nfrozen = frozenset(tags)"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "a = {1, 2, 3}\nb = {2}\nprint(sorted(a - b))",
+      "output": "",
+      "explain": [
+        "Difference left set ke wo items deta hai jo right me nahi hain.",
+        "Output ko print se verify karo.",
+        "Ye Sets ka basic building block hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "a = {1, 2}\nb = {2, 3}\nprint(sorted(a ^ b))",
+      "output": "",
+      "explain": [
+        "Symmetric difference sirf ek side me maujood items deta hai.",
+        "Ek step aur jodne se behaviour kaise badalta hai, dekho.",
+        "Input badal kar edge case test karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "required = {'python', 'sql', 'docker'}\nalice = {'python', 'sql'}\nbob = {'python', 'docker'}\n\nfor name, skills in [('alice', alice), ('bob', bob)]:\n    missing = required - skills\n    print(f'{name}: ready={not missing} missing={sorted(missing)}')\n\nboth = alice & bob\nprint('shared:', sorted(both))",
+      "output": "",
+      "explain": [
+        "Set difference se missing requirements aur intersection se shared skills nikalte hain.",
+        "Ye snippet end-to-end flow dikhata hai.",
+        "Output ko project/interview me evidence ki tarah use karo."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Duplicate users/emails hatane ke liye `set(emails)` sabse sasta step hai, par order kho jata hai — report me sorted() lagao.",
+    "Permissions aur feature flags set me rakhe jate hain: do roles ka common permission intersection se milta hai.",
+    "Data reconciliation me \"left me hai par right me nahi\" difference se nikalta hai, aur ye list comparison se bahut fast hai."
+  ],
+  "interview": [
+    {
+      "q": "Set ka membership test list se fast kyun hai?",
+      "a": "Set hash table hai: lookup average O(1). List linear scan karti hai, isliye O(n). Bade collections me repeated `in` checks set me badal dena chahiye."
+    },
+    {
+      "q": "Empty set kaise banate hain?",
+      "a": "`set()`. `{}` empty dict banata hai, isliye empty set ke liye constructor zaroori hai."
+    },
+    {
+      "q": "Set me list kyun nahi daal sakte?",
+      "a": "Set ke items hashable hone chahiye, aur list unhashable/mutable hai. Tuple ya frozenset use karo."
+    },
+    {
+      "q": "Duplicates hata kar original order kaise bachaye?",
+      "a": "`dict.fromkeys(items)` se: dict insertion order preserve karta hai, phir `list(dict.fromkeys(items))`. Set order guarantee nahi karta."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Beginner drill 1: what does add_discard do in a Sets workflow?",
+        "a": "add naya item daalta hai, discard missing item par bhi error nahi deta.",
+        "explain": "add naya item daalta hai, discard missing item par bhi error nahi deta. Snippet chala kar output se confirm karo.",
+        "code": "tags = {'sql', 'ml'}\ntags.add('python')\ntags.discard('java')\nprint(sorted(tags))",
+        "output": "",
+        "tip": "Sets me add_discard ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 2: what does union do in a Sets workflow?",
+        "a": "Union dono sets ke saare unique items deta hai.",
+        "explain": "Union dono sets ke saare unique items deta hai. Snippet chala kar output se confirm karo.",
+        "code": "a = {1, 2}\nb = {2, 3}\nprint(sorted(a | b))",
+        "output": "",
+        "tip": "Sets me union ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 3: what does intersection do in a Sets workflow?",
+        "a": "Intersection sirf common items deta hai.",
+        "explain": "Intersection sirf common items deta hai. Snippet chala kar output se confirm karo.",
+        "code": "a = {1, 2, 3}\nb = {2, 3, 4}\nprint(sorted(a & b))",
+        "output": "",
+        "tip": "Sets me intersection ka behaviour edge cases par test karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Intermediate drill 1: what does difference do in a Sets workflow?",
+        "a": "Difference left set ke wo items deta hai jo right me nahi hain.",
+        "explain": "Difference left set ke wo items deta hai jo right me nahi hain. Snippet chala kar output se confirm karo.",
+        "code": "a = {1, 2, 3}\nb = {2}\nprint(sorted(a - b))",
+        "output": "",
+        "tip": "Sets me difference ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 2: what does symmetric do in a Sets workflow?",
+        "a": "Symmetric difference sirf ek side me maujood items deta hai.",
+        "explain": "Symmetric difference sirf ek side me maujood items deta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Sets me symmetric ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 3: what does subset do in a Sets workflow?",
+        "a": "Subset operators batate hain ki poora left set right ke andar hai ya nahi.",
+        "explain": "Subset operators batate hain ki poora left set right ke andar hai ya nahi. Snippet chala kar output se confirm karo.",
+        "tip": "Sets me subset ka behaviour edge cases par test karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced drill 1: what does create do in a Sets workflow?",
+        "a": "Set literal duplicate values ko automatically hata deta hai.",
+        "explain": "Set literal duplicate values ko automatically hata deta hai. Snippet chala kar output se confirm karo.",
+        "code": "tags = {'python', 'sql', 'ml'}\nprint(sorted(tags), len(tags))",
+        "output": "",
+        "tip": "Sets me create ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 2: what does dedupe do in a Sets workflow?",
+        "a": "List ko set me badalne se duplicates hat jate hain.",
+        "explain": "List ko set me badalne se duplicates hat jate hain. Snippet chala kar output se confirm karo.",
+        "tip": "Sets me dedupe ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 3: what does add_discard do in a Sets workflow?",
+        "a": "add naya item daalta hai, discard missing item par bhi error nahi deta.",
+        "explain": "add naya item daalta hai, discard missing item par bhi error nahi deta. Snippet chala kar output se confirm karo.",
+        "tip": "Sets me add_discard ka behaviour edge cases par test karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview drill 1: what does union do in a Sets workflow?",
+        "a": "Union dono sets ke saare unique items deta hai.",
+        "explain": "Union dono sets ke saare unique items deta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Sets me union ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 2: what does intersection do in a Sets workflow?",
+        "a": "Intersection sirf common items deta hai.",
+        "explain": "Intersection sirf common items deta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Sets me intersection ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 3: what does difference do in a Sets workflow?",
+        "a": "Difference left set ke wo items deta hai jo right me nahi hain.",
+        "explain": "Difference left set ke wo items deta hai jo right me nahi hain. Snippet chala kar output se confirm karo.",
+        "tip": "Sets me difference ka behaviour edge cases par test karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Realworld drill 1: what does symmetric do in a Sets workflow?",
+        "a": "Symmetric difference sirf ek side me maujood items deta hai.",
+        "explain": "Symmetric difference sirf ek side me maujood items deta hai. Snippet chala kar output se confirm karo.",
+        "code": "a = {1, 2}\nb = {2, 3}\nprint(sorted(a ^ b))",
+        "output": "",
+        "tip": "Sets me symmetric ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 2: what does subset do in a Sets workflow?",
+        "a": "Subset operators batate hain ki poora left set right ke andar hai ya nahi.",
+        "explain": "Subset operators batate hain ki poora left set right ke andar hai ya nahi. Snippet chala kar output se confirm karo.",
+        "tip": "Sets me subset ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 3: what does create do in a Sets workflow?",
+        "a": "Set literal duplicate values ko automatically hata deta hai.",
+        "explain": "Set literal duplicate values ko automatically hata deta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Sets me create ka behaviour edge cases par test karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 1: implement create and print the result.",
+      "build": "Set literal duplicate values ko automatically hata deta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "create ke liye sample data snippet me diya hai",
+      "expected": "Printed output create ka result dikhata hai",
+      "hint": "Solution ka core create hai; output ko readable rakho.",
+      "concept": "Sets · create",
+      "solution": "tags = {'python', 'sql', 'ml'}\nprint(sorted(tags), len(tags))",
+      "output": "",
+      "explanation": "Set literal duplicate values ko automatically hata deta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to create ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 2: implement dedupe and print the result.",
+      "build": "List ko set me badalne se duplicates hat jate hain. Ek chhota runnable example likho jo output print kare.",
+      "input": "dedupe ke liye sample data snippet me diya hai",
+      "expected": "Printed output dedupe ka result dikhata hai",
+      "hint": "Solution ka core dedupe hai; output ko readable rakho.",
+      "concept": "Sets · dedupe",
+      "solution": "values = [1, 2, 2, 3, 3, 3]\nprint(sorted(set(values)))",
+      "output": "",
+      "explanation": "List ko set me badalne se duplicates hat jate hain. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to dedupe ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 3: implement add_discard and print the result.",
+      "build": "add naya item daalta hai, discard missing item par bhi error nahi deta. Ek chhota runnable example likho jo output print kare.",
+      "input": "add_discard ke liye sample data snippet me diya hai",
+      "expected": "Printed output add_discard ka result dikhata hai",
+      "hint": "Solution ka core add_discard hai; output ko readable rakho.",
+      "concept": "Sets · add_discard",
+      "solution": "tags = {'sql', 'ml'}\ntags.add('python')\ntags.discard('java')\nprint(sorted(tags))",
+      "output": "",
+      "explanation": "add naya item daalta hai, discard missing item par bhi error nahi deta. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to add_discard ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 4: implement union and print the result.",
+      "build": "Union dono sets ke saare unique items deta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "union ke liye sample data snippet me diya hai",
+      "expected": "Printed output union ka result dikhata hai",
+      "hint": "Solution ka core union hai; output ko readable rakho.",
+      "concept": "Sets · union",
+      "solution": "a = {1, 2}\nb = {2, 3}\nprint(sorted(a | b))",
+      "output": "",
+      "explanation": "Union dono sets ke saare unique items deta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to union ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 5: implement intersection and print the result.",
+      "build": "Intersection sirf common items deta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "intersection ke liye sample data snippet me diya hai",
+      "expected": "Printed output intersection ka result dikhata hai",
+      "hint": "Solution ka core intersection hai; output ko readable rakho.",
+      "concept": "Sets · intersection",
+      "solution": "a = {1, 2, 3}\nb = {2, 3, 4}\nprint(sorted(a & b))",
+      "output": "",
+      "explanation": "Intersection sirf common items deta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to intersection ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 6: implement difference and print the result.",
+      "build": "Difference left set ke wo items deta hai jo right me nahi hain. Ek chhota runnable example likho jo output print kare.",
+      "input": "difference ke liye sample data snippet me diya hai",
+      "expected": "Printed output difference ka result dikhata hai",
+      "hint": "Solution ka core difference hai; output ko readable rakho.",
+      "concept": "Sets · difference",
+      "solution": "a = {1, 2, 3}\nb = {2}\nprint(sorted(a - b))",
+      "output": "",
+      "explanation": "Difference left set ke wo items deta hai jo right me nahi hain. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to difference ka approach kaise badlega?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "profile = {'name': 'Asha'}\nprint(profile['score'])",
+      "error": "KeyError: 'score'",
+      "why": "Dict me score key exist nahi karti; [] missing key par KeyError deta hai. Ye Sets ke workflow me bhi wahi galti hai.",
+      "fix": "get() se default do ya key ki presence check karo.",
+      "correct": "profile = {'name': 'Asha'}\nprint(profile.get('score', 'not recorded'))",
+      "output": "",
+      "lesson": "KeyError expected-missing field ka case hai — get/default se handle karo."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "raise",
+      "broken": "raw = '12.5'\nprint(int(raw))",
+      "error": "ValueError: invalid literal for int() with base 10: '12.5'",
+      "why": "int() sirf poore number ka string parse karta hai. Ye Sets ke workflow me bhi wahi galti hai.",
+      "fix": "Pehle float() phir int() karo, ya Decimal use karo.",
+      "correct": "raw = '12.5'\nprint(int(float(raw)))",
+      "output": "",
+      "lesson": "ValueError format ka issue hai, type ka nahi."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "raise",
+      "broken": "text = 'hello'\nprint(text.append('!'))",
+      "error": "AttributeError: 'str' object has no attribute 'append'",
+      "why": "String immutable hai; append list ka method hai. Ye Sets ke workflow me bhi wahi galti hai.",
+      "fix": "String concatenation ya join use karo.",
+      "correct": "text = 'hello'\nprint(text + '!')",
+      "output": "",
+      "lesson": "AttributeError galat type par method call ka signal hai."
+    },
+    {
+      "difficulty": "expert",
+      "mode": "raise",
+      "broken": "total = 10\nprint(totl + 1)",
+      "error": "NameError: name 'totl' is not defined",
+      "why": "Naam ki spelling galat hai; Python namespace me wo naam nahi milta. Ye Sets ke workflow me bhi wahi galti hai.",
+      "fix": "Variable ka naam theek karo.",
+      "correct": "total = 10\nprint(total + 1)",
+      "output": "",
+      "lesson": "NameError typo ya missing assignment batata hai."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Quick drill: create ka ek minimal example likho aur output predict karo.",
+      "hint": "Sets ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Coding round: dedupe aur add_discard ko ek function me combine karo.",
+      "hint": "Sets ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Advanced: Sets ka chhota pipeline banao jisme union, intersection aur validation ho.",
+      "hint": "Sets ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview: Sets ke 3 trade-offs whiteboard par likho aur difference se example do.",
+      "hint": "Sets ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Build: Sets ka mini project banao — input, processing, output aur README.",
+      "hint": "Sets ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Sets Starter Lab",
+      "problem": "Sets ke basics ko ek chhote runnable program me jodna.",
+      "objective": "create aur dedupe ka demo jo output print kare.",
+      "code": "tags = {'python', 'sql', 'ml'}\nprint(sorted(tags), len(tags))\nvalues = [1, 2, 2, 3, 3, 3]\nprint(sorted(set(values)))",
+      "explanation": "Set literal duplicate values ko automatically hata deta hai. List ko set me badalne se duplicates hat jate hain. Dono snippets ek hi file me chalte hain.",
+      "testing": "create ke empty aur normal input par output check karo.",
+      "errors": "Galat type ya missing value par Python exception dega — Version 2 me validation add hoti hai.",
+      "realWorld": "Sets ke production code me yahi chhote steps repeated hote hain.",
+      "resume": "Sets starter lab: create aur dedupe ka runnable demo.",
+      "features": [
+        "create ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Sets",
+        "create"
+      ],
+      "structure": "s11_project_1/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "create ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "difference ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Sets Starter Lab interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Sets Starter Lab interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Sets Starter Lab interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Sets Starter Lab ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Sets Data Pipeline",
+      "problem": "Raw input ko validate karke Sets ke useful output me badalna.",
+      "objective": "add_discard, union aur intersection se chhota pipeline banao.",
+      "code": "tags = {'sql', 'ml'}\ntags.add('python')\ntags.discard('java')\nprint(sorted(tags))\na = {1, 2}\nb = {2, 3}\nprint(sorted(a | b))\na = {1, 2, 3}\nb = {2, 3, 4}\nprint(sorted(a & b))",
+      "explanation": "add naya item daalta hai, discard missing item par bhi error nahi deta. Union dono sets ke saare unique items deta hai. Intersection sirf common items deta hai. Pipeline ke steps alag-alag testable hain.",
+      "testing": "Ek valid aur ek invalid input se pipeline chalao; dono ka behaviour note karo.",
+      "errors": "Invalid input par crash ke bajaye clear error/message do — Version 3 me error shape add hota hai.",
+      "realWorld": "Yahi load → transform → report pattern Sets ke dashboards aur services me hota hai.",
+      "resume": "Sets pipeline: validation aur add_discard/union ke saath end-to-end demo.",
+      "features": [
+        "dedupe ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Sets",
+        "dedupe"
+      ],
+      "structure": "s11_project_2/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "dedupe ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "symmetric ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Sets Data Pipeline interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Sets Data Pipeline interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Sets Data Pipeline interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Sets Data Pipeline ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "Sets Capstone",
+      "problem": "Ek believable Sets use case jo end-to-end chale aur explain ho sake.",
+      "objective": "Set difference se missing requirements aur intersection se shared skills nikalte hain. Isse project interview me trade-offs ke saath present karo.",
+      "code": "required = {'python', 'sql', 'docker'}\nalice = {'python', 'sql'}\nbob = {'python', 'docker'}\n\nfor name, skills in [('alice', alice), ('bob', bob)]:\n    missing = required - skills\n    print(f'{name}: ready={not missing} missing={sorted(missing)}')\n\nboth = alice & bob\nprint('shared:', sorted(both))",
+      "explanation": "Set difference se missing requirements aur intersection se shared skills nikalte hain.",
+      "testing": "Expected output ko haath se verify karo, phir edge case (empty/missing) add karo.",
+      "errors": "Failure modes document karo: missing data, bad type aur duplicate records.",
+      "realWorld": "Ye capstone resume aur interview dono me ek concrete Sets story deta hai.",
+      "resume": "Sets capstone: Set difference se missing requirements aur intersection se shared skills nikalte hain.",
+      "features": [
+        "add_discard ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Sets",
+        "add_discard"
+      ],
+      "structure": "s11_project_3/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "add_discard ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "subset ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Sets Capstone interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Sets Capstone interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Sets Capstone interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Sets Capstone ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      {
+        "q": "Understanding 1.1: why does Sets Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.2: why does Sets Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.3: why does Sets Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.1: why does Sets Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.2: why does Sets Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.3: why does Sets Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.1: why does Sets Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.2: why does Sets Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.3: why does Sets Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      }
+    ],
+    "coding": [
+      {
+        "q": "Coding 1.1: extend Sets Starter Lab with one more create step.",
+        "a": "Set literal duplicate values ko automatically hata deta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.2: extend Sets Starter Lab with one more dedupe step.",
+        "a": "List ko set me badalne se duplicates hat jate hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.3: extend Sets Starter Lab with one more add_discard step.",
+        "a": "add naya item daalta hai, discard missing item par bhi error nahi deta. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.1: extend Sets Data Pipeline with one more create step.",
+        "a": "Set literal duplicate values ko automatically hata deta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.2: extend Sets Data Pipeline with one more dedupe step.",
+        "a": "List ko set me badalne se duplicates hat jate hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.3: extend Sets Data Pipeline with one more add_discard step.",
+        "a": "add naya item daalta hai, discard missing item par bhi error nahi deta. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.1: extend Sets Capstone with one more create step.",
+        "a": "Set literal duplicate values ko automatically hata deta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.2: extend Sets Capstone with one more dedupe step.",
+        "a": "List ko set me badalne se duplicates hat jate hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.3: extend Sets Capstone with one more add_discard step.",
+        "a": "add naya item daalta hai, discard missing item par bhi error nahi deta. Naya step add karke output compare karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced 1.1: how would Sets Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.2: how would Sets Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.3: how would Sets Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.1: how would Sets Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.2: how would Sets Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.3: how would Sets Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.1: how would Sets Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.2: how would Sets Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.3: how would Sets Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview 1.1: defend one trade-off in Sets Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.2: defend one trade-off in Sets Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.3: defend one trade-off in Sets Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.1: defend one trade-off in Sets Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.2: defend one trade-off in Sets Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.3: defend one trade-off in Sets Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.1: defend one trade-off in Sets Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.2: defend one trade-off in Sets Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.3: defend one trade-off in Sets Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      }
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Practical 1: validate Sets data in 15 minutes.",
+      "a": "Steps likho: input, create, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 2: transform Sets data in 15 minutes.",
+      "a": "Steps likho: input, dedupe, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 3: aggregate Sets data in 15 minutes.",
+      "a": "Steps likho: input, add_discard, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 4: present Sets data in 15 minutes.",
+      "a": "Steps likho: input, union, expected output; phir code chala kar dikhao."
+    }
+  ],
+  "revision": [
+    "Sets: revise create — Set literal duplicate values ko automatically hata deta hai.",
+    "Sets: revise dedupe — List ko set me badalne se duplicates hat jate hain.",
+    "Sets: revise add_discard — add naya item daalta hai, discard missing item par bhi error nahi deta.",
+    "Sets: revise union — Union dono sets ke saare unique items deta hai.",
+    "Sets: revise intersection — Intersection sirf common items deta hai."
+  ]
+}

@@ -62,7 +62,7 @@ test('the starter output matches a fresh Python run', (t) => {
   }
   const result = spawnSync('python3', ['-c', artifact.capstone.starter.code], { encoding: 'utf8' });
   assert.equal(result.status, 0, `starter failed: ${result.stderr.trim()}`);
-  assert.equal(result.stdout.trim(), artifact.capstone.starter.output);
+  assert.equal(result.stdout.replace(/\r\n?/g, '\n').trim(), artifact.capstone.starter.output);
 });
 
 test('ML certificate needs both all section records and the capstone pass mark', () => {

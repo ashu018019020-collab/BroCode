@@ -8,6 +8,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -107,7 +108,13 @@ test('every module ships true/false and fill-in-the-blank checkpoints', () => {
 test('both new checkpoint formats execute to their published answer', (t) => {
   const probe = spawnSync('python3', ['-c', 'import numpy'], { encoding: 'utf8' });
   if (probe.status !== 0) return t.skip('python3 with numpy is not installed on this machine');
-  const cases = artifact.modules.flatMap((m) => m.sections.checkpoint.filter((e) => e.format === 'truefalse' || e.format === 'blank'));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'numpy-bank-'));
+  t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  // The authored file-I/O checkpoints use /tmp, which does not exist on Windows; run them in a
+  // per-test scratch directory instead of skipping the only real execution check.
+  const portable = (text) => typeof text === 'string' ? text.replaceAll('/tmp/', `${tmp.replace(/\\/g, '/')}/`) : text;
+  const cases = artifact.modules.flatMap((m) => m.sections.checkpoint.filter((e) => e.format === 'truefalse' || e.format === 'blank'))
+    .map((c) => ({ ...c, solution: portable(c.solution), code: portable(c.code) }));
   const script = `
 import contextlib, io, json, sys
 cases = json.loads(sys.stdin.read())
@@ -125,7 +132,7 @@ for c in cases:
         bad.append({'id': c['id'], 'why': 'output changed', 'expected': c['expected'], 'actual': printed})
 print(json.dumps(bad))
 `;
-  const run = spawnSync('python3', ['-c', script], { input: JSON.stringify(cases), encoding: 'utf8' });
+  const run = spawnSync('python3', ['-c', script], { input: JSON.stringify(cases), encoding: 'utf8', cwd: tmp });
   assert.equal(run.status, 0, run.stderr);
   const bad = JSON.parse(run.stdout.trim() || '[]');
   assert.deepEqual(bad, [], `checkpoint failures: ${JSON.stringify(bad.slice(0, 3))}`);

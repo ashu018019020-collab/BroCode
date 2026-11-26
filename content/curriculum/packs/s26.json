@@ -1,0 +1,717 @@
+{
+  "section": "s26",
+  "topic": "MLOps + Docker + Git + AWS",
+  "authored": true,
+  "intro": "Model banane ke baad usse reliably ship karna MLOps hai: versioning, artifacts, config, health checks aur rollback. Is section me ye concepts pure Python me implement hote hain, taaki Docker/Git/AWS ke commands ka logic clear ho.",
+  "theory": [
+    "Har model artifact ke saath metadata hona chahiye: version, training data hash, metrics aur code commit. Sirf .pkl file bhejna reproducibility todta hai.",
+    "Config environment se aata hai, code se nahi. Same image dev/staging/prod me chalti hai; farq sirf env vars ka hota hai.",
+    "Health check do level ke hote hain: liveness (process zinda) aur readiness (dependencies ready). Deploy ke baad readiness fail ho to traffic nahi bhejna chahiye.",
+    "Rollback plan pehle se hona chahiye: previous artifact version aur config ka reference rakho, aur deploy ko reversible rakho.",
+    "Retries idempotent operations par karo; har retry ka limit aur backoff ho, warna outage double load ban jata hai."
+  ],
+  "syntax": [
+    "FROM python:3.12-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\nCMD [\"python\", \"serve.py\"]",
+    "docker build -t churn-api:1.4.0 .\ndocker run -e MODEL_VERSION=1.4.0 -p 8000:8000 churn-api:1.4.0\naws ecs update-service --cluster prod --service churn --force-new-deployment",
+    "git tag -a v1.4.0 -m \"churn model 1.4.0\"\ngit push origin v1.4.0"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "def health(model_loaded, db_ready):\n    return {'live': True, 'ready': model_loaded and db_ready}\n\nprint(health(True, False))",
+      "output": "",
+      "explain": [
+        "Liveness aur readiness alag signals hain — readiness dependencies par depend karti hai.",
+        "Output ko print se verify karo.",
+        "Ye MLOps + Docker + Git + AWS ka basic building block hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "versions = [('1.3.0', 0.89), ('1.4.0', 0.91)]\nbad = '1.4.0'\nprevious = [v for v, _ in versions if v != bad][-1]\nprint(previous)",
+      "output": "",
+      "explain": [
+        "Rollback ke liye previous known-good version ka reference pehle se rakho.",
+        "Ek step aur jodne se behaviour kaise badalta hai, dekho.",
+        "Input badal kar edge case test karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "import hashlib\nimport json\n\nartifact = b'weights-v2'\nmanifest = {\n    'version': '1.4.0',\n    'sha256': hashlib.sha256(artifact).hexdigest(),\n    'metrics': {'auc': 0.91, 'latency_ms': 42},\n}\n\nGATES = {'auc': 0.90, 'latency_ms': 50}\nblocked = [name for name, limit in GATES.items()\n           if (manifest['metrics'][name] < limit if name == 'auc' else manifest['metrics'][name] > limit)]\n\nprint(json.dumps(manifest, sort_keys=True))\nprint('release allowed:', not blocked, 'blocked by:', blocked)",
+      "output": "",
+      "explain": [
+        "Artifact hash + metric gates se release decision reproducible aur auditable banta hai.",
+        "Ye snippet end-to-end flow dikhata hai.",
+        "Output ko project/interview me evidence ki tarah use karo."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Model registry me har version ke metrics aur artifact hash hote hain; production me kaunsa version hai ye ek query se pata chalta hai.",
+    "Blue/green ya canary deploy se naya model thode traffic par test hota hai, phir promote ya rollback.",
+    "CI me tests + build + image scan chalte hain; CD sirf tagged commit par deploy karta hai."
+  ],
+  "interview": [
+    {
+      "q": "Model artifact ke saath kya version karna chahiye?",
+      "a": "Weights, preprocessing pipeline, config schema, training data snapshot/hash, metrics aur code commit. Inke bina rollback aur reproducibility dono adhoore hain."
+    },
+    {
+      "q": "Liveness aur readiness probe me fark batao.",
+      "a": "Liveness batata hai process zinda hai; fail ho to restart. Readiness batata hai traffic le sakta hai (DB/model loaded); fail ho to load balancer hata deta hai."
+    },
+    {
+      "q": "Docker image me secrets kyun nahi daalne chahiye?",
+      "a": "Image layers me secret permanently reh jata hai aur registry se leak ho sakta hai. Secrets runtime env/secret manager se do."
+    },
+    {
+      "q": "Canary deploy kaise kaam karta hai?",
+      "a": "Naya version thode percentage traffic par bhejte hain, metrics compare karte hain, phir promote ya rollback. Isse blast radius chhota rehta hai."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Beginner drill 1: what does env_config do in a MLOps + Docker + Git + AWS workflow?",
+        "a": "Config env se padho aur safe default rakho; code same rehta hai.",
+        "explain": "Config env se padho aur safe default rakho; code same rehta hai. Snippet chala kar output se confirm karo.",
+        "code": "import os\n\nconfig = {'model_version': os.environ.get('MODEL_VERSION', 'dev'), 'port': int(os.environ.get('PORT', '8000'))}\nprint(config)",
+        "output": "",
+        "tip": "MLOps + Docker + Git + AWS me env_config ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 2: what does artifact_hash do in a MLOps + Docker + Git + AWS workflow?",
+        "a": "Artifact hash se pata chalta hai ki deployed file expected hai ya nahi.",
+        "explain": "Artifact hash se pata chalta hai ki deployed file expected hai ya nahi. Snippet chala kar output se confirm karo.",
+        "code": "import hashlib\n\npayload = b'model-weights-v1'\nprint(hashlib.sha256(payload).hexdigest()[:12])",
+        "output": "",
+        "tip": "MLOps + Docker + Git + AWS me artifact_hash ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 3: what does manifest do in a MLOps + Docker + Git + AWS workflow?",
+        "a": "Manifest version, metrics aur commit ko ek saath record karta hai.",
+        "explain": "Manifest version, metrics aur commit ko ek saath record karta hai. Snippet chala kar output se confirm karo.",
+        "code": "import json\n\nmanifest = {'version': '1.4.0', 'metrics': {'auc': 0.91}, 'commit': 'abc123'}\nprint(json.dumps(manifest, sort_keys=True))",
+        "output": "",
+        "tip": "MLOps + Docker + Git + AWS me manifest ka behaviour edge cases par test karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Intermediate drill 1: what does semver_compare do in a MLOps + Docker + Git + AWS workflow?",
+        "a": "Semver ko integers me parse karo, string comparison 1.10 ko 1.4 se chhota bana deti hai.",
+        "explain": "Semver ko integers me parse karo, string comparison 1.10 ko 1.4 se chhota bana deti hai. Snippet chala kar output se confirm karo.",
+        "code": "def parse(version):\n    return tuple(int(part) for part in version.split('.'))\n\nprint(parse('1.4.0') < parse('1.10.0'))",
+        "output": "",
+        "tip": "MLOps + Docker + Git + AWS me semver_compare ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 2: what does retry do in a MLOps + Docker + Git + AWS workflow?",
+        "a": "Bounded retry loop transient failures ke liye; har attempt count hota hai.",
+        "explain": "Bounded retry loop transient failures ke liye; har attempt count hota hai. Snippet chala kar output se confirm karo.",
+        "tip": "MLOps + Docker + Git + AWS me retry ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 3: what does healthcheck do in a MLOps + Docker + Git + AWS workflow?",
+        "a": "Liveness aur readiness alag signals hain — readiness dependencies par depend karti hai.",
+        "explain": "Liveness aur readiness alag signals hain — readiness dependencies par depend karti hai. Snippet chala kar output se confirm karo.",
+        "tip": "MLOps + Docker + Git + AWS me healthcheck ka behaviour edge cases par test karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced drill 1: what does rollback_choice do in a MLOps + Docker + Git + AWS workflow?",
+        "a": "Rollback ke liye previous known-good version ka reference pehle se rakho.",
+        "explain": "Rollback ke liye previous known-good version ka reference pehle se rakho. Snippet chala kar output se confirm karo.",
+        "code": "versions = [('1.3.0', 0.89), ('1.4.0', 0.91)]\nbad = '1.4.0'\nprevious = [v for v, _ in versions if v != bad][-1]\nprint(previous)",
+        "output": "",
+        "tip": "MLOps + Docker + Git + AWS me rollback_choice ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 2: what does log_line do in a MLOps + Docker + Git + AWS workflow?",
+        "a": "Structured JSON logs machines se parse hote hain aur debugging fast karte hain.",
+        "explain": "Structured JSON logs machines se parse hote hain aur debugging fast karte hain. Snippet chala kar output se confirm karo.",
+        "tip": "MLOps + Docker + Git + AWS me log_line ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 3: what does env_config do in a MLOps + Docker + Git + AWS workflow?",
+        "a": "Config env se padho aur safe default rakho; code same rehta hai.",
+        "explain": "Config env se padho aur safe default rakho; code same rehta hai. Snippet chala kar output se confirm karo.",
+        "tip": "MLOps + Docker + Git + AWS me env_config ka behaviour edge cases par test karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview drill 1: what does artifact_hash do in a MLOps + Docker + Git + AWS workflow?",
+        "a": "Artifact hash se pata chalta hai ki deployed file expected hai ya nahi.",
+        "explain": "Artifact hash se pata chalta hai ki deployed file expected hai ya nahi. Snippet chala kar output se confirm karo.",
+        "tip": "MLOps + Docker + Git + AWS me artifact_hash ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 2: what does manifest do in a MLOps + Docker + Git + AWS workflow?",
+        "a": "Manifest version, metrics aur commit ko ek saath record karta hai.",
+        "explain": "Manifest version, metrics aur commit ko ek saath record karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "MLOps + Docker + Git + AWS me manifest ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 3: what does semver_compare do in a MLOps + Docker + Git + AWS workflow?",
+        "a": "Semver ko integers me parse karo, string comparison 1.10 ko 1.4 se chhota bana deti hai.",
+        "explain": "Semver ko integers me parse karo, string comparison 1.10 ko 1.4 se chhota bana deti hai. Snippet chala kar output se confirm karo.",
+        "tip": "MLOps + Docker + Git + AWS me semver_compare ka behaviour edge cases par test karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Realworld drill 1: what does retry do in a MLOps + Docker + Git + AWS workflow?",
+        "a": "Bounded retry loop transient failures ke liye; har attempt count hota hai.",
+        "explain": "Bounded retry loop transient failures ke liye; har attempt count hota hai. Snippet chala kar output se confirm karo.",
+        "code": "attempts = 0\nwhile attempts < 3:\n    attempts += 1\n    print('attempt', attempts)\nprint('done')",
+        "output": "",
+        "tip": "MLOps + Docker + Git + AWS me retry ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 2: what does healthcheck do in a MLOps + Docker + Git + AWS workflow?",
+        "a": "Liveness aur readiness alag signals hain — readiness dependencies par depend karti hai.",
+        "explain": "Liveness aur readiness alag signals hain — readiness dependencies par depend karti hai. Snippet chala kar output se confirm karo.",
+        "tip": "MLOps + Docker + Git + AWS me healthcheck ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 3: what does rollback_choice do in a MLOps + Docker + Git + AWS workflow?",
+        "a": "Rollback ke liye previous known-good version ka reference pehle se rakho.",
+        "explain": "Rollback ke liye previous known-good version ka reference pehle se rakho. Snippet chala kar output se confirm karo.",
+        "tip": "MLOps + Docker + Git + AWS me rollback_choice ka behaviour edge cases par test karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 1: implement env_config and print the result.",
+      "build": "Config env se padho aur safe default rakho; code same rehta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "env_config ke liye sample data snippet me diya hai",
+      "expected": "Printed output env_config ka result dikhata hai",
+      "hint": "Solution ka core env_config hai; output ko readable rakho.",
+      "concept": "MLOps + Docker + Git + AWS · env_config",
+      "solution": "import os\n\nconfig = {'model_version': os.environ.get('MODEL_VERSION', 'dev'), 'port': int(os.environ.get('PORT', '8000'))}\nprint(config)",
+      "output": "",
+      "explanation": "Config env se padho aur safe default rakho; code same rehta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to env_config ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 2: implement artifact_hash and print the result.",
+      "build": "Artifact hash se pata chalta hai ki deployed file expected hai ya nahi. Ek chhota runnable example likho jo output print kare.",
+      "input": "artifact_hash ke liye sample data snippet me diya hai",
+      "expected": "Printed output artifact_hash ka result dikhata hai",
+      "hint": "Solution ka core artifact_hash hai; output ko readable rakho.",
+      "concept": "MLOps + Docker + Git + AWS · artifact_hash",
+      "solution": "import hashlib\n\npayload = b'model-weights-v1'\nprint(hashlib.sha256(payload).hexdigest()[:12])",
+      "output": "",
+      "explanation": "Artifact hash se pata chalta hai ki deployed file expected hai ya nahi. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to artifact_hash ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 3: implement manifest and print the result.",
+      "build": "Manifest version, metrics aur commit ko ek saath record karta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "manifest ke liye sample data snippet me diya hai",
+      "expected": "Printed output manifest ka result dikhata hai",
+      "hint": "Solution ka core manifest hai; output ko readable rakho.",
+      "concept": "MLOps + Docker + Git + AWS · manifest",
+      "solution": "import json\n\nmanifest = {'version': '1.4.0', 'metrics': {'auc': 0.91}, 'commit': 'abc123'}\nprint(json.dumps(manifest, sort_keys=True))",
+      "output": "",
+      "explanation": "Manifest version, metrics aur commit ko ek saath record karta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to manifest ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 4: implement semver_compare and print the result.",
+      "build": "Semver ko integers me parse karo, string comparison 1.10 ko 1.4 se chhota bana deti hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "semver_compare ke liye sample data snippet me diya hai",
+      "expected": "Printed output semver_compare ka result dikhata hai",
+      "hint": "Solution ka core semver_compare hai; output ko readable rakho.",
+      "concept": "MLOps + Docker + Git + AWS · semver_compare",
+      "solution": "def parse(version):\n    return tuple(int(part) for part in version.split('.'))\n\nprint(parse('1.4.0') < parse('1.10.0'))",
+      "output": "",
+      "explanation": "Semver ko integers me parse karo, string comparison 1.10 ko 1.4 se chhota bana deti hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to semver_compare ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 5: implement retry and print the result.",
+      "build": "Bounded retry loop transient failures ke liye; har attempt count hota hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "retry ke liye sample data snippet me diya hai",
+      "expected": "Printed output retry ka result dikhata hai",
+      "hint": "Solution ka core retry hai; output ko readable rakho.",
+      "concept": "MLOps + Docker + Git + AWS · retry",
+      "solution": "attempts = 0\nwhile attempts < 3:\n    attempts += 1\n    print('attempt', attempts)\nprint('done')",
+      "output": "",
+      "explanation": "Bounded retry loop transient failures ke liye; har attempt count hota hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to retry ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 6: implement healthcheck and print the result.",
+      "build": "Liveness aur readiness alag signals hain — readiness dependencies par depend karti hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "healthcheck ke liye sample data snippet me diya hai",
+      "expected": "Printed output healthcheck ka result dikhata hai",
+      "hint": "Solution ka core healthcheck hai; output ko readable rakho.",
+      "concept": "MLOps + Docker + Git + AWS · healthcheck",
+      "solution": "def health(model_loaded, db_ready):\n    return {'live': True, 'ready': model_loaded and db_ready}\n\nprint(health(True, False))",
+      "output": "",
+      "explanation": "Liveness aur readiness alag signals hain — readiness dependencies par depend karti hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to healthcheck ka approach kaise badlega?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "logic",
+      "broken": "prices = [100, 200]\ntotal = 0\nfor p in prices:\n    total = p\nprint(total)",
+      "error": "Logic error — total 200 aata hai, sum 300 hona chahiye",
+      "why": "Assignment purani value replace karta hai; accumulator chahiye. Ye MLOps + Docker + Git + AWS ke workflow me bhi wahi galti hai.",
+      "fix": "total += p use karo ya sum(prices).",
+      "correct": "prices = [100, 200]\ntotal = 0\nfor p in prices:\n    total += p\nprint(total)",
+      "output": "",
+      "lesson": "Logic bugs exception nahi dete — chhote sample par expected value likho."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "items = [1, 2, 3]\nprint(items[0:1])",
+      "error": "Logic error — pehla do items chahiye the, sirf pehla aaya",
+      "why": "Slice ka end exclusive hota hai; 0:1 sirf index 0 deta hai. Ye MLOps + Docker + Git + AWS ke workflow me bhi wahi galti hai.",
+      "fix": "End index ko +1 karo: 0:2.",
+      "correct": "items = [1, 2, 3]\nprint(items[0:2])",
+      "output": "",
+      "lesson": "Slice boundaries exclusive hoti hain — range jaisa hi rule."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "raise",
+      "broken": "name = 'Asha'\nprint('Hello ' + 2024)",
+      "error": "TypeError: can only concatenate str (not \"int\") to str",
+      "why": "String concatenation ko dono taraf str chahiye; Python implicit conversion nahi karta. Ye MLOps + Docker + Git + AWS ke workflow me bhi wahi galti hai.",
+      "fix": "f-string ya str() se explicit conversion karo.",
+      "correct": "name = 'Asha'\nprint(f'Hello {2024}')",
+      "output": "",
+      "lesson": "TypeError type mismatch batata hai — conversion explicit karo."
+    },
+    {
+      "difficulty": "expert",
+      "mode": "raise",
+      "broken": "scores = [10, 20]\nprint(scores[5])",
+      "error": "IndexError: list index out of range",
+      "why": "List me sirf 0 aur 1 index hain; 5 par kuch nahi. Ye MLOps + Docker + Git + AWS ke workflow me bhi wahi galti hai.",
+      "fix": "Index se pehle length check karo ya safe getter use karo.",
+      "correct": "scores = [10, 20]\nprint(scores[1] if len(scores) > 1 else None)",
+      "output": "",
+      "lesson": "IndexError off-by-one aur empty collection ka signal hai."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Quick drill: env_config ka ek minimal example likho aur output predict karo.",
+      "hint": "MLOps + Docker + Git + AWS ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Coding round: artifact_hash aur manifest ko ek function me combine karo.",
+      "hint": "MLOps + Docker + Git + AWS ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Advanced: MLOps + Docker + Git + AWS ka chhota pipeline banao jisme semver_compare, retry aur validation ho.",
+      "hint": "MLOps + Docker + Git + AWS ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview: MLOps + Docker + Git + AWS ke 3 trade-offs whiteboard par likho aur healthcheck se example do.",
+      "hint": "MLOps + Docker + Git + AWS ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Build: MLOps + Docker + Git + AWS ka mini project banao — input, processing, output aur README.",
+      "hint": "MLOps + Docker + Git + AWS ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "MLOps + Docker + Git + AWS Starter Lab",
+      "problem": "MLOps + Docker + Git + AWS ke basics ko ek chhote runnable program me jodna.",
+      "objective": "env_config aur artifact_hash ka demo jo output print kare.",
+      "code": "import os\n\nconfig = {'model_version': os.environ.get('MODEL_VERSION', 'dev'), 'port': int(os.environ.get('PORT', '8000'))}\nprint(config)\nimport hashlib\n\npayload = b'model-weights-v1'\nprint(hashlib.sha256(payload).hexdigest()[:12])",
+      "explanation": "Config env se padho aur safe default rakho; code same rehta hai. Artifact hash se pata chalta hai ki deployed file expected hai ya nahi. Dono snippets ek hi file me chalte hain.",
+      "testing": "env_config ke empty aur normal input par output check karo.",
+      "errors": "Galat type ya missing value par Python exception dega — Version 2 me validation add hoti hai.",
+      "realWorld": "MLOps + Docker + Git + AWS ke production code me yahi chhote steps repeated hote hain.",
+      "resume": "MLOps + Docker + Git + AWS starter lab: env_config aur artifact_hash ka runnable demo.",
+      "features": [
+        "env_config ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "MLOps + Docker + Git + AWS",
+        "env_config"
+      ],
+      "structure": "s26_project_1/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "env_config ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "healthcheck ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "MLOps + Docker + Git + AWS Starter Lab interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "MLOps + Docker + Git + AWS Starter Lab interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "MLOps + Docker + Git + AWS Starter Lab interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "MLOps + Docker + Git + AWS Starter Lab ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "MLOps + Docker + Git + AWS Data Pipeline",
+      "problem": "Raw input ko validate karke MLOps + Docker + Git + AWS ke useful output me badalna.",
+      "objective": "manifest, semver_compare aur retry se chhota pipeline banao.",
+      "code": "import json\n\nmanifest = {'version': '1.4.0', 'metrics': {'auc': 0.91}, 'commit': 'abc123'}\nprint(json.dumps(manifest, sort_keys=True))\ndef parse(version):\n    return tuple(int(part) for part in version.split('.'))\n\nprint(parse('1.4.0') < parse('1.10.0'))\nattempts = 0\nwhile attempts < 3:\n    attempts += 1\n    print('attempt', attempts)\nprint('done')",
+      "explanation": "Manifest version, metrics aur commit ko ek saath record karta hai. Semver ko integers me parse karo, string comparison 1.10 ko 1.4 se chhota bana deti hai. Bounded retry loop transient failures ke liye; har attempt count hota hai. Pipeline ke steps alag-alag testable hain.",
+      "testing": "Ek valid aur ek invalid input se pipeline chalao; dono ka behaviour note karo.",
+      "errors": "Invalid input par crash ke bajaye clear error/message do — Version 3 me error shape add hota hai.",
+      "realWorld": "Yahi load → transform → report pattern MLOps + Docker + Git + AWS ke dashboards aur services me hota hai.",
+      "resume": "MLOps + Docker + Git + AWS pipeline: validation aur manifest/semver_compare ke saath end-to-end demo.",
+      "features": [
+        "artifact_hash ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "MLOps + Docker + Git + AWS",
+        "artifact_hash"
+      ],
+      "structure": "s26_project_2/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "artifact_hash ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "rollback_choice ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "MLOps + Docker + Git + AWS Data Pipeline interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "MLOps + Docker + Git + AWS Data Pipeline interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "MLOps + Docker + Git + AWS Data Pipeline interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "MLOps + Docker + Git + AWS Data Pipeline ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "MLOps + Docker + Git + AWS Capstone",
+      "problem": "Ek believable MLOps + Docker + Git + AWS use case jo end-to-end chale aur explain ho sake.",
+      "objective": "Artifact hash + metric gates se release decision reproducible aur auditable banta hai. Isse project interview me trade-offs ke saath present karo.",
+      "code": "import hashlib\nimport json\n\nartifact = b'weights-v2'\nmanifest = {\n    'version': '1.4.0',\n    'sha256': hashlib.sha256(artifact).hexdigest(),\n    'metrics': {'auc': 0.91, 'latency_ms': 42},\n}\n\nGATES = {'auc': 0.90, 'latency_ms': 50}\nblocked = [name for name, limit in GATES.items()\n           if (manifest['metrics'][name] < limit if name == 'auc' else manifest['metrics'][name] > limit)]\n\nprint(json.dumps(manifest, sort_keys=True))\nprint('release allowed:', not blocked, 'blocked by:', blocked)",
+      "explanation": "Artifact hash + metric gates se release decision reproducible aur auditable banta hai.",
+      "testing": "Expected output ko haath se verify karo, phir edge case (empty/missing) add karo.",
+      "errors": "Failure modes document karo: missing data, bad type aur duplicate records.",
+      "realWorld": "Ye capstone resume aur interview dono me ek concrete MLOps + Docker + Git + AWS story deta hai.",
+      "resume": "MLOps + Docker + Git + AWS capstone: Artifact hash + metric gates se release decision reproducible aur auditable banta hai.",
+      "features": [
+        "manifest ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "MLOps + Docker + Git + AWS",
+        "manifest"
+      ],
+      "structure": "s26_project_3/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "manifest ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "log_line ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "MLOps + Docker + Git + AWS Capstone interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "MLOps + Docker + Git + AWS Capstone interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "MLOps + Docker + Git + AWS Capstone interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "MLOps + Docker + Git + AWS Capstone ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      {
+        "q": "Understanding 1.1: why does MLOps + Docker + Git + AWS Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.2: why does MLOps + Docker + Git + AWS Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.3: why does MLOps + Docker + Git + AWS Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.1: why does MLOps + Docker + Git + AWS Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.2: why does MLOps + Docker + Git + AWS Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.3: why does MLOps + Docker + Git + AWS Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.1: why does MLOps + Docker + Git + AWS Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.2: why does MLOps + Docker + Git + AWS Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.3: why does MLOps + Docker + Git + AWS Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      }
+    ],
+    "coding": [
+      {
+        "q": "Coding 1.1: extend MLOps + Docker + Git + AWS Starter Lab with one more env_config step.",
+        "a": "Config env se padho aur safe default rakho; code same rehta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.2: extend MLOps + Docker + Git + AWS Starter Lab with one more artifact_hash step.",
+        "a": "Artifact hash se pata chalta hai ki deployed file expected hai ya nahi. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.3: extend MLOps + Docker + Git + AWS Starter Lab with one more manifest step.",
+        "a": "Manifest version, metrics aur commit ko ek saath record karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.1: extend MLOps + Docker + Git + AWS Data Pipeline with one more env_config step.",
+        "a": "Config env se padho aur safe default rakho; code same rehta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.2: extend MLOps + Docker + Git + AWS Data Pipeline with one more artifact_hash step.",
+        "a": "Artifact hash se pata chalta hai ki deployed file expected hai ya nahi. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.3: extend MLOps + Docker + Git + AWS Data Pipeline with one more manifest step.",
+        "a": "Manifest version, metrics aur commit ko ek saath record karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.1: extend MLOps + Docker + Git + AWS Capstone with one more env_config step.",
+        "a": "Config env se padho aur safe default rakho; code same rehta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.2: extend MLOps + Docker + Git + AWS Capstone with one more artifact_hash step.",
+        "a": "Artifact hash se pata chalta hai ki deployed file expected hai ya nahi. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.3: extend MLOps + Docker + Git + AWS Capstone with one more manifest step.",
+        "a": "Manifest version, metrics aur commit ko ek saath record karta hai. Naya step add karke output compare karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced 1.1: how would MLOps + Docker + Git + AWS Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.2: how would MLOps + Docker + Git + AWS Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.3: how would MLOps + Docker + Git + AWS Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.1: how would MLOps + Docker + Git + AWS Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.2: how would MLOps + Docker + Git + AWS Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.3: how would MLOps + Docker + Git + AWS Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.1: how would MLOps + Docker + Git + AWS Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.2: how would MLOps + Docker + Git + AWS Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.3: how would MLOps + Docker + Git + AWS Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview 1.1: defend one trade-off in MLOps + Docker + Git + AWS Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.2: defend one trade-off in MLOps + Docker + Git + AWS Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.3: defend one trade-off in MLOps + Docker + Git + AWS Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.1: defend one trade-off in MLOps + Docker + Git + AWS Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.2: defend one trade-off in MLOps + Docker + Git + AWS Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.3: defend one trade-off in MLOps + Docker + Git + AWS Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.1: defend one trade-off in MLOps + Docker + Git + AWS Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.2: defend one trade-off in MLOps + Docker + Git + AWS Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.3: defend one trade-off in MLOps + Docker + Git + AWS Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      }
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Practical 1: validate MLOps + Docker + Git + AWS data in 15 minutes.",
+      "a": "Steps likho: input, env_config, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 2: transform MLOps + Docker + Git + AWS data in 15 minutes.",
+      "a": "Steps likho: input, artifact_hash, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 3: aggregate MLOps + Docker + Git + AWS data in 15 minutes.",
+      "a": "Steps likho: input, manifest, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 4: present MLOps + Docker + Git + AWS data in 15 minutes.",
+      "a": "Steps likho: input, semver_compare, expected output; phir code chala kar dikhao."
+    }
+  ],
+  "revision": [
+    "MLOps + Docker + Git + AWS: revise env_config — Config env se padho aur safe default rakho; code same rehta hai.",
+    "MLOps + Docker + Git + AWS: revise artifact_hash — Artifact hash se pata chalta hai ki deployed file expected hai ya nahi.",
+    "MLOps + Docker + Git + AWS: revise manifest — Manifest version, metrics aur commit ko ek saath record karta hai.",
+    "MLOps + Docker + Git + AWS: revise semver_compare — Semver ko integers me parse karo, string comparison 1.10 ko 1.4 se chhota bana deti hai.",
+    "MLOps + Docker + Git + AWS: revise retry — Bounded retry loop transient failures ke liye; har attempt count hota hai."
+  ]
+}

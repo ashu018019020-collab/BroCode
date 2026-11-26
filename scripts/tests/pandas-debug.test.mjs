@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const {
-  validateDebugChallenges, debugDiff, MIN_TOKEN_SIMILARITY, SUPPORTED_RUNTIMES,
+  inspectDebugChallenges, validateDebugChallenges, debugDiff, MIN_TOKEN_SIMILARITY, SUPPORTED_RUNTIMES,
 } = require('../lib/pandas-debug.cjs');
 
 const broken = `import pandas as pd
@@ -200,4 +200,23 @@ test('pandas debug: reports execution failures instead of silently passing', () 
   );
 
   assert.ok(problems.some((problem) => problem.includes('debug execution failed')));
+});
+
+test('pandas debug: counts one pair once when it reports several problems', () => {
+  const audit = inspectDebugChallenges(
+    [moduleWith('p01', [challenge({ error: 'KeyError' })])],
+    { runSamples: raisingRun({ fix: { state: 'raised', error: 'ValueError: nope' } }) },
+  );
+
+  assert.ok(audit.problems.length > 1, 'the pair should exercise both sides');
+  assert.equal(audit.failed.size, 1);
+});
+
+test('pandas debug: an execution failure marks every pair as unverified', () => {
+  const audit = inspectDebugChallenges(
+    [moduleWith('p01', [challenge()])],
+    { runSamples: () => { throw new Error('python3 is unavailable'); } },
+  );
+
+  assert.equal(audit.failed.size, 1);
 });

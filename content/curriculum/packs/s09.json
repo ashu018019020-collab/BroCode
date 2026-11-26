@@ -1,0 +1,717 @@
+{
+  "section": "s09",
+  "topic": "List Methods",
+  "authored": true,
+  "intro": "List Python ka sabse zyada use hone wala mutable container hai, aur uske methods hi usse useful banate hain. append se ek item jodo, extend se poori list, sort se order badlo — har method ka ek return value aur ek mutation rule hota hai. Ye section wahi methods practice karata hai jo daily code me aate hain.",
+  "theory": [
+    "Mutating methods list ko in-place badalte hain aur zyadatar None return karte hain. Isliye `items = items.append(x)` likhna items ko None bana deta hai — return value par nahi, side effect par bharosa karo.",
+    "append ek item jodta hai, extend ek iterable ke saare items jodta hai, aur insert position par ek item daalta hai. Teenon list ki length badalte hain, par alag tarike se.",
+    "remove value se delete karta hai aur missing value par ValueError deta hai; pop index se delete karta hai aur hataya hua item return karta hai. `del items[i]` return nahi karta.",
+    "sort in-place hai aur original list badal deta hai; sorted() nayi list deta hai. `key=` se comparison rule badalta hai, `reverse=True` se order ulta hota hai.",
+    "copy() shallow copy deta hai: naya list object banta hai par andar ke mutable items share hote hain. Nested data ke liye copy.deepcopy chahiye."
+  ],
+  "syntax": [
+    "items = ['pen', 'book']\nitems.append('bag')        # ek item\nitems.extend(['cap', 'box'])  # poora iterable\nitems.insert(0, 'first')   # position par",
+    "items.sort()              # in-place, return None\nitems.sort(reverse=True)  # descending\nitems = sorted(items, key=len)  # naya list\nlast = items.pop()        # delete + return\nitems.remove('book')      # value se delete",
+    "items.index(value)       # pehla position, warna ValueError\nitems.count(value)       # kitni baar aaya\nitems.reverse()          # in-place ulta\ncopy_of = items.copy()   # shallow copy"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "items = ['a', 'b', 'a']\nprint(items.index('b'), items.count('a'))",
+      "output": "",
+      "explain": [
+        "index pehla position deta hai, count occurrences ginta hai.",
+        "Output ko print se verify karo.",
+        "Ye List Methods ka basic building block hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "items = [3, 1, 2]\nitems.sort()\nprint(items)\nitems.sort(reverse=True)\nprint(items)",
+      "output": "",
+      "explain": [
+        "sort in-place order badalta hai aur None return karta hai.",
+        "Ek step aur jodne se behaviour kaise badalta hai, dekho.",
+        "Input badal kar edge case test karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "rows = [\n    {'name': 'Asha', 'score': 91},\n    {'name': 'Ravi', 'score': 78},\n    {'name': 'Meera', 'score': 85},\n]\nrows.sort(key=lambda row: row['score'], reverse=True)\nprint([row['name'] for row in rows[:2]])\nprint([row['name'] for row in rows])",
+      "output": "",
+      "explain": [
+        "sort key function se dict rows ko score par order karta hai, bina data copy kiye.",
+        "Ye snippet end-to-end flow dikhata hai.",
+        "Output ko project/interview me evidence ki tarah use karo."
+      ]
+    }
+  ],
+  "realWorld": [
+    "ETL jobs me rows ki list par append/extend hota hai; galti se `rows = rows.append(row)` likhne se poora batch None ban jata hai aur next step crash karta hai.",
+    "Top-N reports me `sort(key=..., reverse=True)[:10]` ka pattern aata hai. In-place sort tab khatarnak hai jab wahi list caller ke paas bhi ho.",
+    "Shopping cart ya queue jaisi lists me pop(0) O(n) hota hai; bade queues ke liye collections.deque use karna chahiye."
+  ],
+  "interview": [
+    {
+      "q": "append aur extend me kya fark hai?",
+      "a": "append ek object jodta hai — agar list pass ki to wahi list ek element ban jati hai. extend iterable ko khol kar uske items jodta hai. Length aur nesting dono alag ho jate hain."
+    },
+    {
+      "q": "sort() aur sorted() me kab kya use karoge?",
+      "a": "Jab original list badalni ho aur return value ki zaroorat na ho to list.sort(). Jab original bachani ho ya kisi bhi iterable (tuple, generator) ko sort karna ho to sorted(), jo nayi list deta hai."
+    },
+    {
+      "q": "list.copy() shallow kyun hai?",
+      "a": "Ye sirf naya outer list banata hai; andar ke objects wahi references hain. Nested list/dict badalne par dono copies me change dikhta hai. Deep copy ke liye copy.deepcopy use karo."
+    },
+    {
+      "q": "pop(0) kyun slow hai aur alternative kya hai?",
+      "a": "List array-backed hai, isliye index 0 hatane par baaki sab elements shift hote hain — O(n). Queue ke liye collections.deque ka popleft() O(1) hai."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Beginner drill 1: what does append do in a List Methods workflow?",
+        "a": "append ek item ko list ke end me jodta hai aur None return karta hai.",
+        "explain": "append ek item ko list ke end me jodta hai aur None return karta hai. Snippet chala kar output se confirm karo.",
+        "code": "items = ['pen', 'book']\nitems.append('bag')\nprint(items)",
+        "output": "",
+        "tip": "List Methods me append ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 2: what does extend do in a List Methods workflow?",
+        "a": "extend doosri iterable ke saare items ek-ek karke jodta hai.",
+        "explain": "extend doosri iterable ke saare items ek-ek karke jodta hai. Snippet chala kar output se confirm karo.",
+        "code": "items = [1, 2]\nitems.extend([3, 4])\nprint(items)",
+        "output": "",
+        "tip": "List Methods me extend ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 3: what does insert do in a List Methods workflow?",
+        "a": "insert position par item daalta hai aur baaki items ko aage shift karta hai.",
+        "explain": "insert position par item daalta hai aur baaki items ko aage shift karta hai. Snippet chala kar output se confirm karo.",
+        "code": "items = [1, 3]\nitems.insert(1, 2)\nprint(items)",
+        "output": "",
+        "tip": "List Methods me insert ka behaviour edge cases par test karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Intermediate drill 1: what does remove do in a List Methods workflow?",
+        "a": "remove pehli matching value hatata hai; value na mile to ValueError aata hai.",
+        "explain": "remove pehli matching value hatata hai; value na mile to ValueError aata hai. Snippet chala kar output se confirm karo.",
+        "code": "items = ['x', 'y', 'x']\nitems.remove('x')\nprint(items)",
+        "output": "",
+        "tip": "List Methods me remove ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 2: what does pop do in a List Methods workflow?",
+        "a": "pop index se item hatata hai aur hataya hua item return karta hai.",
+        "explain": "pop index se item hatata hai aur hataya hua item return karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "List Methods me pop ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 3: what does index_count do in a List Methods workflow?",
+        "a": "index pehla position deta hai, count occurrences ginta hai.",
+        "explain": "index pehla position deta hai, count occurrences ginta hai. Snippet chala kar output se confirm karo.",
+        "tip": "List Methods me index_count ka behaviour edge cases par test karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced drill 1: what does sort do in a List Methods workflow?",
+        "a": "sort in-place order badalta hai aur None return karta hai.",
+        "explain": "sort in-place order badalta hai aur None return karta hai. Snippet chala kar output se confirm karo.",
+        "code": "items = [3, 1, 2]\nitems.sort()\nprint(items)\nitems.sort(reverse=True)\nprint(items)",
+        "output": "",
+        "tip": "List Methods me sort ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 2: what does copy do in a List Methods workflow?",
+        "a": "copy naya top-level list deta hai, isliye ek copy me append doosri ko nahi badalta.",
+        "explain": "copy naya top-level list deta hai, isliye ek copy me append doosri ko nahi badalta. Snippet chala kar output se confirm karo.",
+        "tip": "List Methods me copy ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 3: what does append do in a List Methods workflow?",
+        "a": "append ek item ko list ke end me jodta hai aur None return karta hai.",
+        "explain": "append ek item ko list ke end me jodta hai aur None return karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "List Methods me append ka behaviour edge cases par test karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview drill 1: what does extend do in a List Methods workflow?",
+        "a": "extend doosri iterable ke saare items ek-ek karke jodta hai.",
+        "explain": "extend doosri iterable ke saare items ek-ek karke jodta hai. Snippet chala kar output se confirm karo.",
+        "tip": "List Methods me extend ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 2: what does insert do in a List Methods workflow?",
+        "a": "insert position par item daalta hai aur baaki items ko aage shift karta hai.",
+        "explain": "insert position par item daalta hai aur baaki items ko aage shift karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "List Methods me insert ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 3: what does remove do in a List Methods workflow?",
+        "a": "remove pehli matching value hatata hai; value na mile to ValueError aata hai.",
+        "explain": "remove pehli matching value hatata hai; value na mile to ValueError aata hai. Snippet chala kar output se confirm karo.",
+        "tip": "List Methods me remove ka behaviour edge cases par test karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Realworld drill 1: what does pop do in a List Methods workflow?",
+        "a": "pop index se item hatata hai aur hataya hua item return karta hai.",
+        "explain": "pop index se item hatata hai aur hataya hua item return karta hai. Snippet chala kar output se confirm karo.",
+        "code": "items = [10, 20, 30]\nlast = items.pop()\nprint(last, items)",
+        "output": "",
+        "tip": "List Methods me pop ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 2: what does index_count do in a List Methods workflow?",
+        "a": "index pehla position deta hai, count occurrences ginta hai.",
+        "explain": "index pehla position deta hai, count occurrences ginta hai. Snippet chala kar output se confirm karo.",
+        "tip": "List Methods me index_count ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 3: what does sort do in a List Methods workflow?",
+        "a": "sort in-place order badalta hai aur None return karta hai.",
+        "explain": "sort in-place order badalta hai aur None return karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "List Methods me sort ka behaviour edge cases par test karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 1: implement append and print the result.",
+      "build": "append ek item ko list ke end me jodta hai aur None return karta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "append ke liye sample data snippet me diya hai",
+      "expected": "Printed output append ka result dikhata hai",
+      "hint": "Solution ka core append hai; output ko readable rakho.",
+      "concept": "List Methods · append",
+      "solution": "items = ['pen', 'book']\nitems.append('bag')\nprint(items)",
+      "output": "",
+      "explanation": "append ek item ko list ke end me jodta hai aur None return karta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to append ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 2: implement extend and print the result.",
+      "build": "extend doosri iterable ke saare items ek-ek karke jodta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "extend ke liye sample data snippet me diya hai",
+      "expected": "Printed output extend ka result dikhata hai",
+      "hint": "Solution ka core extend hai; output ko readable rakho.",
+      "concept": "List Methods · extend",
+      "solution": "items = [1, 2]\nitems.extend([3, 4])\nprint(items)",
+      "output": "",
+      "explanation": "extend doosri iterable ke saare items ek-ek karke jodta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to extend ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 3: implement insert and print the result.",
+      "build": "insert position par item daalta hai aur baaki items ko aage shift karta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "insert ke liye sample data snippet me diya hai",
+      "expected": "Printed output insert ka result dikhata hai",
+      "hint": "Solution ka core insert hai; output ko readable rakho.",
+      "concept": "List Methods · insert",
+      "solution": "items = [1, 3]\nitems.insert(1, 2)\nprint(items)",
+      "output": "",
+      "explanation": "insert position par item daalta hai aur baaki items ko aage shift karta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to insert ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 4: implement remove and print the result.",
+      "build": "remove pehli matching value hatata hai; value na mile to ValueError aata hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "remove ke liye sample data snippet me diya hai",
+      "expected": "Printed output remove ka result dikhata hai",
+      "hint": "Solution ka core remove hai; output ko readable rakho.",
+      "concept": "List Methods · remove",
+      "solution": "items = ['x', 'y', 'x']\nitems.remove('x')\nprint(items)",
+      "output": "",
+      "explanation": "remove pehli matching value hatata hai; value na mile to ValueError aata hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to remove ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 5: implement pop and print the result.",
+      "build": "pop index se item hatata hai aur hataya hua item return karta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "pop ke liye sample data snippet me diya hai",
+      "expected": "Printed output pop ka result dikhata hai",
+      "hint": "Solution ka core pop hai; output ko readable rakho.",
+      "concept": "List Methods · pop",
+      "solution": "items = [10, 20, 30]\nlast = items.pop()\nprint(last, items)",
+      "output": "",
+      "explanation": "pop index se item hatata hai aur hataya hua item return karta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to pop ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 6: implement index_count and print the result.",
+      "build": "index pehla position deta hai, count occurrences ginta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "index_count ke liye sample data snippet me diya hai",
+      "expected": "Printed output index_count ka result dikhata hai",
+      "hint": "Solution ka core index_count hai; output ko readable rakho.",
+      "concept": "List Methods · index_count",
+      "solution": "items = ['a', 'b', 'a']\nprint(items.index('b'), items.count('a'))",
+      "output": "",
+      "explanation": "index pehla position deta hai, count occurrences ginta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to index_count ka approach kaise badlega?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "name = 'Asha'\nprint('Hello ' + 2024)",
+      "error": "TypeError: can only concatenate str (not \"int\") to str",
+      "why": "String concatenation ko dono taraf str chahiye; Python implicit conversion nahi karta. Ye List Methods ke workflow me bhi wahi galti hai.",
+      "fix": "f-string ya str() se explicit conversion karo.",
+      "correct": "name = 'Asha'\nprint(f'Hello {2024}')",
+      "output": "",
+      "lesson": "TypeError type mismatch batata hai — conversion explicit karo."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "raise",
+      "broken": "scores = [10, 20]\nprint(scores[5])",
+      "error": "IndexError: list index out of range",
+      "why": "List me sirf 0 aur 1 index hain; 5 par kuch nahi. Ye List Methods ke workflow me bhi wahi galti hai.",
+      "fix": "Index se pehle length check karo ya safe getter use karo.",
+      "correct": "scores = [10, 20]\nprint(scores[1] if len(scores) > 1 else None)",
+      "output": "",
+      "lesson": "IndexError off-by-one aur empty collection ka signal hai."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "raise",
+      "broken": "profile = {'name': 'Asha'}\nprint(profile['score'])",
+      "error": "KeyError: 'score'",
+      "why": "Dict me score key exist nahi karti; [] missing key par KeyError deta hai. Ye List Methods ke workflow me bhi wahi galti hai.",
+      "fix": "get() se default do ya key ki presence check karo.",
+      "correct": "profile = {'name': 'Asha'}\nprint(profile.get('score', 'not recorded'))",
+      "output": "",
+      "lesson": "KeyError expected-missing field ka case hai — get/default se handle karo."
+    },
+    {
+      "difficulty": "expert",
+      "mode": "raise",
+      "broken": "raw = '12.5'\nprint(int(raw))",
+      "error": "ValueError: invalid literal for int() with base 10: '12.5'",
+      "why": "int() sirf poore number ka string parse karta hai. Ye List Methods ke workflow me bhi wahi galti hai.",
+      "fix": "Pehle float() phir int() karo, ya Decimal use karo.",
+      "correct": "raw = '12.5'\nprint(int(float(raw)))",
+      "output": "",
+      "lesson": "ValueError format ka issue hai, type ka nahi."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Quick drill: append ka ek minimal example likho aur output predict karo.",
+      "hint": "List Methods ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Coding round: extend aur insert ko ek function me combine karo.",
+      "hint": "List Methods ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Advanced: List Methods ka chhota pipeline banao jisme remove, pop aur validation ho.",
+      "hint": "List Methods ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview: List Methods ke 3 trade-offs whiteboard par likho aur index_count se example do.",
+      "hint": "List Methods ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Build: List Methods ka mini project banao — input, processing, output aur README.",
+      "hint": "List Methods ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "List Methods Starter Lab",
+      "problem": "List Methods ke basics ko ek chhote runnable program me jodna.",
+      "objective": "append aur extend ka demo jo output print kare.",
+      "code": "items = ['pen', 'book']\nitems.append('bag')\nprint(items)\nitems = [1, 2]\nitems.extend([3, 4])\nprint(items)",
+      "explanation": "append ek item ko list ke end me jodta hai aur None return karta hai. extend doosri iterable ke saare items ek-ek karke jodta hai. Dono snippets ek hi file me chalte hain.",
+      "testing": "append ke empty aur normal input par output check karo.",
+      "errors": "Galat type ya missing value par Python exception dega — Version 2 me validation add hoti hai.",
+      "realWorld": "List Methods ke production code me yahi chhote steps repeated hote hain.",
+      "resume": "List Methods starter lab: append aur extend ka runnable demo.",
+      "features": [
+        "append ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "List Methods",
+        "append"
+      ],
+      "structure": "s09_project_1/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "append ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "index_count ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "List Methods Starter Lab interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "List Methods Starter Lab interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "List Methods Starter Lab interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "List Methods Starter Lab ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "List Methods Data Pipeline",
+      "problem": "Raw input ko validate karke List Methods ke useful output me badalna.",
+      "objective": "insert, remove aur pop se chhota pipeline banao.",
+      "code": "items = [1, 3]\nitems.insert(1, 2)\nprint(items)\nitems = ['x', 'y', 'x']\nitems.remove('x')\nprint(items)\nitems = [10, 20, 30]\nlast = items.pop()\nprint(last, items)",
+      "explanation": "insert position par item daalta hai aur baaki items ko aage shift karta hai. remove pehli matching value hatata hai; value na mile to ValueError aata hai. pop index se item hatata hai aur hataya hua item return karta hai. Pipeline ke steps alag-alag testable hain.",
+      "testing": "Ek valid aur ek invalid input se pipeline chalao; dono ka behaviour note karo.",
+      "errors": "Invalid input par crash ke bajaye clear error/message do — Version 3 me error shape add hota hai.",
+      "realWorld": "Yahi load → transform → report pattern List Methods ke dashboards aur services me hota hai.",
+      "resume": "List Methods pipeline: validation aur insert/remove ke saath end-to-end demo.",
+      "features": [
+        "extend ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "List Methods",
+        "extend"
+      ],
+      "structure": "s09_project_2/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "extend ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "sort ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "List Methods Data Pipeline interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "List Methods Data Pipeline interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "List Methods Data Pipeline interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "List Methods Data Pipeline ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "List Methods Capstone",
+      "problem": "Ek believable List Methods use case jo end-to-end chale aur explain ho sake.",
+      "objective": "sort key function se dict rows ko score par order karta hai, bina data copy kiye. Isse project interview me trade-offs ke saath present karo.",
+      "code": "rows = [\n    {'name': 'Asha', 'score': 91},\n    {'name': 'Ravi', 'score': 78},\n    {'name': 'Meera', 'score': 85},\n]\nrows.sort(key=lambda row: row['score'], reverse=True)\nprint([row['name'] for row in rows[:2]])\nprint([row['name'] for row in rows])",
+      "explanation": "sort key function se dict rows ko score par order karta hai, bina data copy kiye.",
+      "testing": "Expected output ko haath se verify karo, phir edge case (empty/missing) add karo.",
+      "errors": "Failure modes document karo: missing data, bad type aur duplicate records.",
+      "realWorld": "Ye capstone resume aur interview dono me ek concrete List Methods story deta hai.",
+      "resume": "List Methods capstone: sort key function se dict rows ko score par order karta hai, bina data copy kiye.",
+      "features": [
+        "insert ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "List Methods",
+        "insert"
+      ],
+      "structure": "s09_project_3/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "insert ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "copy ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "List Methods Capstone interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "List Methods Capstone interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "List Methods Capstone interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "List Methods Capstone ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      {
+        "q": "Understanding 1.1: why does List Methods Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.2: why does List Methods Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.3: why does List Methods Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.1: why does List Methods Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.2: why does List Methods Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.3: why does List Methods Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.1: why does List Methods Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.2: why does List Methods Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.3: why does List Methods Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      }
+    ],
+    "coding": [
+      {
+        "q": "Coding 1.1: extend List Methods Starter Lab with one more append step.",
+        "a": "append ek item ko list ke end me jodta hai aur None return karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.2: extend List Methods Starter Lab with one more extend step.",
+        "a": "extend doosri iterable ke saare items ek-ek karke jodta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.3: extend List Methods Starter Lab with one more insert step.",
+        "a": "insert position par item daalta hai aur baaki items ko aage shift karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.1: extend List Methods Data Pipeline with one more append step.",
+        "a": "append ek item ko list ke end me jodta hai aur None return karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.2: extend List Methods Data Pipeline with one more extend step.",
+        "a": "extend doosri iterable ke saare items ek-ek karke jodta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.3: extend List Methods Data Pipeline with one more insert step.",
+        "a": "insert position par item daalta hai aur baaki items ko aage shift karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.1: extend List Methods Capstone with one more append step.",
+        "a": "append ek item ko list ke end me jodta hai aur None return karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.2: extend List Methods Capstone with one more extend step.",
+        "a": "extend doosri iterable ke saare items ek-ek karke jodta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.3: extend List Methods Capstone with one more insert step.",
+        "a": "insert position par item daalta hai aur baaki items ko aage shift karta hai. Naya step add karke output compare karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced 1.1: how would List Methods Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.2: how would List Methods Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.3: how would List Methods Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.1: how would List Methods Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.2: how would List Methods Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.3: how would List Methods Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.1: how would List Methods Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.2: how would List Methods Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.3: how would List Methods Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview 1.1: defend one trade-off in List Methods Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.2: defend one trade-off in List Methods Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.3: defend one trade-off in List Methods Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.1: defend one trade-off in List Methods Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.2: defend one trade-off in List Methods Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.3: defend one trade-off in List Methods Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.1: defend one trade-off in List Methods Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.2: defend one trade-off in List Methods Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.3: defend one trade-off in List Methods Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      }
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Practical 1: validate List Methods data in 15 minutes.",
+      "a": "Steps likho: input, append, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 2: transform List Methods data in 15 minutes.",
+      "a": "Steps likho: input, extend, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 3: aggregate List Methods data in 15 minutes.",
+      "a": "Steps likho: input, insert, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 4: present List Methods data in 15 minutes.",
+      "a": "Steps likho: input, remove, expected output; phir code chala kar dikhao."
+    }
+  ],
+  "revision": [
+    "List Methods: revise append — append ek item ko list ke end me jodta hai aur None return karta hai.",
+    "List Methods: revise extend — extend doosri iterable ke saare items ek-ek karke jodta hai.",
+    "List Methods: revise insert — insert position par item daalta hai aur baaki items ko aage shift karta hai.",
+    "List Methods: revise remove — remove pehli matching value hatata hai; value na mile to ValueError aata hai.",
+    "List Methods: revise pop — pop index se item hatata hai aur hataya hua item return karta hai."
+  ]
+}

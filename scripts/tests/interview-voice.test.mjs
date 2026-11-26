@@ -115,7 +115,7 @@ test('interview: the authored answer can be revealed without pretending it was c
 });
 
 test('interview: a follow-up and an advance are never locked behind a check', () => {
-  const panel = read('src/features/ai/MockInterviewPanel.tsx');
+  const panel = read('src/features/ai/MockInterviewPanel.tsx').replace(/\r\n?/g, '\n');
   // The reported bug: Ask a follow-up was disabled until Check answer ran, and Skip was disabled
   // AFTER it ran — so the two ways out of a question could each be blocked.
   assert.match(panel, /onClick=\{askFollowUp\}\n\s*disabled=\{checking\}/, 'the follow-up is gated only by a run in flight');

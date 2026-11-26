@@ -29,10 +29,13 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
+/** A Windows checkout materialises the generated files as CRLF; compare content, not line endings. */
+const normalizeEol = (text) => String(text).replace(/\r\n?/g, '\n');
+
 const { buildSitemap, buildRobots, DEFAULT_BASE, SKIPPED, PRIVATE } = await import(pathToFileURL(path.join(ROOT, 'scripts/sitemap.cjs')).href);
 
-const xml = read('public/sitemap.xml');
-const robots = read('public/robots.txt');
+const xml = normalizeEol(read('public/sitemap.xml'));
+const robots = normalizeEol(read('public/robots.txt'));
 const shell = read('index.html');
 const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
 
@@ -49,7 +52,7 @@ const jModules = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/generated/ja
 test('sitemap: the committed file IS the build output, byte for byte', () => {
   // Same contract as the search index: no timestamp, no hand edits — regenerating over unchanged
   // registries must reproduce the file, or staleness becomes invisible.
-  assert.equal(buildSitemap(DEFAULT_BASE), xml, 'public/sitemap.xml is stale — run npm run sitemap:write');
+  assert.equal(normalizeEol(buildSitemap(DEFAULT_BASE)), xml, 'public/sitemap.xml is stale — run npm run sitemap:write');
 });
 
 test('sitemap: every registered route is represented — expanded, or deliberately skipped', () => {
@@ -122,7 +125,7 @@ test('sitemap: it is well-formed XML a crawler can parse', () => {
 });
 
 test('robots: the committed file IS the build output, byte for byte', () => {
-  assert.equal(buildRobots(DEFAULT_BASE), robots, 'public/robots.txt is stale — run npm run sitemap:write');
+  assert.equal(normalizeEol(buildRobots(DEFAULT_BASE)), robots, 'public/robots.txt is stale — run npm run sitemap:write');
 });
 
 test('crawl: nothing in the shell forbids indexing', () => {

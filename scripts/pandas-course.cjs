@@ -12,7 +12,8 @@
  * `scripts/pandas-fill-outputs.cjs`. Duplicate ids, duplicate question text, an empty section or a
  * debug entry whose fix does not change the result fail the run instead of shipping.
  *
- * Dry run validates only; `--write` publishes; `check` also verifies the published artifact is current.
+ * Dry run validates the content; `--write` publishes; `check` compares the published artifact only —
+ * it deliberately does not re-execute the content guards just to compare one file.
  */
 'use strict';
 const fs = require('fs');
@@ -28,6 +29,8 @@ const SRC = path.join(ROOT, 'content', 'pandas-mastery');
 const OUT = path.join(ROOT, 'public', 'generated', 'pandas-course');
 const WRITE = process.argv.includes('--write');
 const CHECK = process.argv.includes('check');
+/** Content guards belong to the dry run; `check` is projection + comparison only. */
+const VALIDATE = !CHECK;
 const readJSON = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
 /** Git may materialise the artifact with CRLF on Windows; compare content, not line endings. */
 const normalizeEol = (text) => String(text).replace(/\r\n?/g, '\n');
@@ -60,16 +63,18 @@ for (const file of deepeningFiles) {
 }
 
 /* --------------------------------- course -------------------------------- */
-for (const key of ['id', 'slug', 'title', 'tagline', 'description', 'level', 'hours', 'prerequisites', 'outcomes']) {
-  if (!course[key]) fail(`course: missing ${key}`);
+if (VALIDATE) {
+  for (const key of ['id', 'slug', 'title', 'tagline', 'description', 'level', 'hours', 'prerequisites', 'outcomes']) {
+    if (!course[key]) fail(`course: missing ${key}`);
+  }
+  if (course.id !== 'pandas-mastery') fail('course.id must be pandas-mastery');
+  if (!Array.isArray(course.modules) || course.modules.length !== 20) fail('course.modules must list 20 ids');
 }
-if (course.id !== 'pandas-mastery') fail('course.id must be pandas-mastery');
-if (!Array.isArray(course.modules) || course.modules.length !== 20) fail('course.modules must list 20 ids');
 
 /* -------------------------------- modules -------------------------------- */
 const LEVELS = new Set(['beginner', 'intermediate', 'advanced']);
 const seenTitles = new Set();
-modules.forEach((m, index) => {
+if (VALIDATE) modules.forEach((m, index) => {
   if (!/^p\d{2}$/.test(m.id || '')) fail(`${m.id || index}: id must be pNN`);
   if (m.id !== `p${String(index + 1).padStart(2, '0')}`) fail(`${m.id}: id must be p${String(index + 1).padStart(2, '0')}`);
   if (m.no !== index + 1) fail(`${m.id}: no must be ${index + 1}`);
@@ -130,13 +135,15 @@ modules.forEach((m, index) => {
   if (!m.lab?.title || !m.lab?.brief || !m.lab.milestones?.length) fail(`${m.id}: project lab incomplete`);
 });
 
-for (const problem of validateCrossModuleDiversity(modules)) fail(problem);
-for (const problem of validateDebugChallenges(modules)) fail(problem);
-for (const problem of validateTaskFixtures(modules)) fail(problem);
-for (const problem of validateTaskAnswers(modules)) fail(problem);
-for (const problem of validateOperationCoverage(modules)) fail(problem);
+if (VALIDATE) {
+  for (const problem of validateCrossModuleDiversity(modules)) fail(problem);
+  for (const problem of validateDebugChallenges(modules)) fail(problem);
+  for (const problem of validateTaskFixtures(modules)) fail(problem);
+  for (const problem of validateTaskAnswers(modules)) fail(problem);
+  for (const problem of validateOperationCoverage(modules)) fail(problem);
 
-if (modules.length !== 20) fail(`expected 20 modules, found ${modules.length}`);
+  if (modules.length !== 20) fail(`expected 20 modules, found ${modules.length}`);
+}
 
 /* -------------------------------- sections ------------------------------- */
 const SECTIONS = [
@@ -297,7 +304,8 @@ function buildSections(m) {
 
 const published = modules.map((m) => {
   const sections = buildSections(m);
-  for (const [key, label] of SECTIONS) {
+  /* Section checks validate content; the projection above runs in both modes. */
+  if (VALIDATE) for (const [key, label] of SECTIONS) {
     const list = sections[key];
     if (!list.length) fail(`${m.id}: section ${label} is empty`);
     const ids = new Set();
@@ -308,7 +316,7 @@ const published = modules.map((m) => {
     const questions = list.map((e) => e.q || e.title || '').filter(Boolean);
     if (new Set(questions).size !== questions.length) fail(`${m.id}/${label}: duplicate question text`);
   }
-  for (const entry of sections.checkpoint) {
+  if (VALIDATE) for (const entry of sections.checkpoint) {
     if (entry.options) {
       const expected = entry.format === 'truefalse' ? 2 : entry.format === 'mcq' ? 4 : 3;
       if (entry.options.length !== expected) fail(`${entry.id}: a checkpoint quiz needs ${expected} options`);
@@ -378,9 +386,13 @@ if (problems.length) {
 const artifact = { course, stats, modules: published };
 if (CHECK) {
   const target = path.join(OUT, 'index.json');
+  if (!fs.existsSync(target)) {
+    console.error('pandas-course: the published artifact is missing — run npm run pandas-course:write');
+    process.exit(1);
+  }
   const expected = normalizeEol(`${JSON.stringify(artifact, null, 1)}\n`);
-  if (!fs.existsSync(target) || normalizeEol(fs.readFileSync(target, 'utf8')) !== expected) {
-    console.error('pandas-course: stale artifact — public/generated/pandas-course/index.json does not match the source; run npm run pandas-course:write');
+  if (normalizeEol(fs.readFileSync(target, 'utf8')) !== expected) {
+    console.error('pandas-course: the published artifact is stale — public/generated/pandas-course/index.json does not match the source; run npm run pandas-course:write');
     process.exit(1);
   }
   console.log(`pandas-course: artifact is current — ${stats.modules} modules, ${stats.entries} entries`);

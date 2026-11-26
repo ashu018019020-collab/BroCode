@@ -1,0 +1,717 @@
+{
+  "section": "s27",
+  "topic": "AI Engineer + Data Scientist Interview Mastery",
+  "authored": true,
+  "intro": "Interview me sirf sahi answer nahi, sochne ka tarika dikhta hai. Is section me wahi classic problems hain jo screening me aate hain — reverse, palindrome, two-sum, anagram, binary search, memoized fibonacci — har ek ke saath complexity aur edge cases.",
+  "theory": [
+    "Pehle problem ko restate karo: input, output, constraints aur edge cases. Interviewer ke saath assumption align karna aadha answer hai.",
+    "Brute force se shuru karke complexity batao, phir optimize karo. Direct optimal solution bolna bhi theek hai par reasoning dikhao.",
+    "Hash map lookup O(1) se nested loop O(n²) se O(n) hota hai — two-sum aur frequency problems ka core trade-off.",
+    "Sorted input par binary search O(log n) deta hai; har iteration me search space aadha karna hai aur boundary conditions carefully likhni hain.",
+    "Recursion me overlapping subproblems ho to memoization se exponential se polynomial ho jata hai; stack depth aur base case check karo."
+  ],
+  "syntax": [
+    "def two_sum(nums, target):\n    seen = {}\n    for index, value in enumerate(nums):\n        need = target - value\n        if need in seen:\n            return [seen[need], index]\n        seen[value] = index",
+    "def binary_search(nums, target):\n    low, high = 0, len(nums) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if nums[mid] == target:\n            return mid\n        if nums[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1",
+    "from functools import lru_cache\n\n@lru_cache(maxsize=None)\ndef fib(n):\n    return n if n < 2 else fib(n - 1) + fib(n - 2)"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "from functools import lru_cache\n\n@lru_cache(maxsize=None)\ndef fib(n):\n    return n if n < 2 else fib(n - 1) + fib(n - 2)\n\nprint([fib(i) for i in range(8)])",
+      "output": "",
+      "explain": [
+        "Memoization overlapping recursion ko linear banata hai.",
+        "Output ko print se verify karo.",
+        "Ye AI Engineer + Data Scientist Interview Mastery ka basic building block hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "def search(nums, target):\n    low, high = 0, len(nums) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if nums[mid] == target:\n            return mid\n        if nums[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1\n\nprint(search([1, 3, 5, 7, 9], 7))",
+      "output": "",
+      "explain": [
+        "Har step search space aadha karta hai — O(log n).",
+        "Ek step aur jodne se behaviour kaise badalta hai, dekho.",
+        "Input badal kar edge case test karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "def dedupe_stable(items):\n    seen = set()\n    output = []\n    for item in items:\n        if item not in seen:\n            seen.add(item)\n            output.append(item)\n    return output\n\nrows = ['b', 'a', 'b', 'c', 'a']\nprint(dedupe_stable(rows))\nprint(sorted(set(rows)))\n\ndef group_anagrams(words):\n    groups = {}\n    for word in words:\n        key = ''.join(sorted(word))\n        groups.setdefault(key, []).append(word)\n    return list(groups.values())\n\nprint(group_anagrams(['eat', 'tea', 'tan', 'ate']))",
+      "output": "",
+      "explain": [
+        "Stable dedupe order bachata hai aur anagram grouping sorted key par hash map use karti hai.",
+        "Ye snippet end-to-end flow dikhata hai.",
+        "Output ko project/interview me evidence ki tarah use karo."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Two-sum/hash-map pattern duplicate detection, pair matching aur reconciliation me directly use hota hai.",
+    "Binary search sirf arrays me nahi, version/commit range aur capacity planning me bhi lagta hai.",
+    "Anagram/frequency patterns text dedupe aur data-quality checks me kaam aate hain."
+  ],
+  "interview": [
+    {
+      "q": "Two-sum ka optimal approach kya hai?",
+      "a": "Ek pass me hash map: har value ke liye target-value pehle dekha gaya hai ya nahi check karo, phir current value store karo. O(n) time, O(n) space."
+    },
+    {
+      "q": "Binary search me off-by-one errors kaise avoid karte hain?",
+      "a": "Invariant clear rakho: target [low, high] me hai. `while low <= high`, mid ke baad low=mid+1 ya high=mid-1. Har case ke baad space strictly chhota hona chahiye."
+    },
+    {
+      "q": "Memoization aur tabulation me kya chunenge?",
+      "a": "Memoization top-down hai, recursion + cache — likhna aasan, stack depth concern. Tabulation bottom-up iterative hai, space control better. Overlapping subproblems dono me chahiye."
+    },
+    {
+      "q": "Time complexity batate waqt kya dhyan rakhte hain?",
+      "a": "Input size ka definition, best/average/worst case, aur space (extra structures). Hash map average O(1), worst O(n) collision par — interview me ye nuance bolna acha lagta hai."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Beginner drill 1: what does palindrome do in a AI Engineer + Data Scientist Interview Mastery workflow?",
+        "a": "Palindrome check normalization ke baad reverse comparison hai.",
+        "explain": "Palindrome check normalization ke baad reverse comparison hai. Snippet chala kar output se confirm karo.",
+        "code": "text = 'Madam'\nclean = text.lower()\nprint(clean == clean[::-1])",
+        "output": "",
+        "tip": "AI Engineer + Data Scientist Interview Mastery me palindrome ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 2: what does fizzbuzz do in a AI Engineer + Data Scientist Interview Mastery workflow?",
+        "a": "Divisibility branches ka order 15 se shuru karna zaroori hai.",
+        "explain": "Divisibility branches ka order 15 se shuru karna zaroori hai. Snippet chala kar output se confirm karo.",
+        "code": "for n in range(1, 6):\n    label = 'FizzBuzz' if n % 15 == 0 else 'Fizz' if n % 3 == 0 else 'Buzz' if n % 5 == 0 else str(n)\n    print(label)",
+        "output": "",
+        "tip": "AI Engineer + Data Scientist Interview Mastery me fizzbuzz ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 3: what does two_sum do in a AI Engineer + Data Scientist Interview Mastery workflow?",
+        "a": "Hash map se one-pass O(n) solution milta hai.",
+        "explain": "Hash map se one-pass O(n) solution milta hai. Snippet chala kar output se confirm karo.",
+        "code": "def two_sum(nums, target):\n    seen = {}\n    for index, value in enumerate(nums):\n        if target - value in seen:\n            return [seen[target - value], index]\n        seen[value] = index\n    return []\n\nprint(two_sum([2, 7, 11, 15], 9))",
+        "output": "",
+        "tip": "AI Engineer + Data Scientist Interview Mastery me two_sum ka behaviour edge cases par test karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Intermediate drill 1: what does anagram do in a AI Engineer + Data Scientist Interview Mastery workflow?",
+        "a": "Anagram check frequency comparison hai, sorting se bhi ho sakta hai.",
+        "explain": "Anagram check frequency comparison hai, sorting se bhi ho sakta hai. Snippet chala kar output se confirm karo.",
+        "code": "from collections import Counter\n\nprint(Counter('listen') == Counter('silent'))",
+        "output": "",
+        "tip": "AI Engineer + Data Scientist Interview Mastery me anagram ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 2: what does fib_memo do in a AI Engineer + Data Scientist Interview Mastery workflow?",
+        "a": "Memoization overlapping recursion ko linear banata hai.",
+        "explain": "Memoization overlapping recursion ko linear banata hai. Snippet chala kar output se confirm karo.",
+        "tip": "AI Engineer + Data Scientist Interview Mastery me fib_memo ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 3: what does binary_search do in a AI Engineer + Data Scientist Interview Mastery workflow?",
+        "a": "Har step search space aadha karta hai — O(log n).",
+        "explain": "Har step search space aadha karta hai — O(log n). Snippet chala kar output se confirm karo.",
+        "tip": "AI Engineer + Data Scientist Interview Mastery me binary_search ka behaviour edge cases par test karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced drill 1: what does flatten do in a AI Engineer + Data Scientist Interview Mastery workflow?",
+        "a": "Recursive generator nested lists ko flat sequence me badalta hai.",
+        "explain": "Recursive generator nested lists ko flat sequence me badalta hai. Snippet chala kar output se confirm karo.",
+        "code": "nested = [[1, 2], [3], [4, [5]]]\ndef flatten(items):\n    for item in items:\n        if isinstance(item, list):\n            yield from flatten(item)\n        else:\n            yield item\nprint(list(flatten(nested)))",
+        "output": "",
+        "tip": "AI Engineer + Data Scientist Interview Mastery me flatten ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 2: what does reverse do in a AI Engineer + Data Scientist Interview Mastery workflow?",
+        "a": "Slicing [::-1] string ko ulta karti hai, O(n) time aur space.",
+        "explain": "Slicing [::-1] string ko ulta karti hai, O(n) time aur space. Snippet chala kar output se confirm karo.",
+        "tip": "AI Engineer + Data Scientist Interview Mastery me reverse ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 3: what does palindrome do in a AI Engineer + Data Scientist Interview Mastery workflow?",
+        "a": "Palindrome check normalization ke baad reverse comparison hai.",
+        "explain": "Palindrome check normalization ke baad reverse comparison hai. Snippet chala kar output se confirm karo.",
+        "tip": "AI Engineer + Data Scientist Interview Mastery me palindrome ka behaviour edge cases par test karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview drill 1: what does fizzbuzz do in a AI Engineer + Data Scientist Interview Mastery workflow?",
+        "a": "Divisibility branches ka order 15 se shuru karna zaroori hai.",
+        "explain": "Divisibility branches ka order 15 se shuru karna zaroori hai. Snippet chala kar output se confirm karo.",
+        "tip": "AI Engineer + Data Scientist Interview Mastery me fizzbuzz ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 2: what does two_sum do in a AI Engineer + Data Scientist Interview Mastery workflow?",
+        "a": "Hash map se one-pass O(n) solution milta hai.",
+        "explain": "Hash map se one-pass O(n) solution milta hai. Snippet chala kar output se confirm karo.",
+        "tip": "AI Engineer + Data Scientist Interview Mastery me two_sum ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 3: what does anagram do in a AI Engineer + Data Scientist Interview Mastery workflow?",
+        "a": "Anagram check frequency comparison hai, sorting se bhi ho sakta hai.",
+        "explain": "Anagram check frequency comparison hai, sorting se bhi ho sakta hai. Snippet chala kar output se confirm karo.",
+        "tip": "AI Engineer + Data Scientist Interview Mastery me anagram ka behaviour edge cases par test karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Realworld drill 1: what does fib_memo do in a AI Engineer + Data Scientist Interview Mastery workflow?",
+        "a": "Memoization overlapping recursion ko linear banata hai.",
+        "explain": "Memoization overlapping recursion ko linear banata hai. Snippet chala kar output se confirm karo.",
+        "code": "from functools import lru_cache\n\n@lru_cache(maxsize=None)\ndef fib(n):\n    return n if n < 2 else fib(n - 1) + fib(n - 2)\n\nprint([fib(i) for i in range(8)])",
+        "output": "",
+        "tip": "AI Engineer + Data Scientist Interview Mastery me fib_memo ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 2: what does binary_search do in a AI Engineer + Data Scientist Interview Mastery workflow?",
+        "a": "Har step search space aadha karta hai — O(log n).",
+        "explain": "Har step search space aadha karta hai — O(log n). Snippet chala kar output se confirm karo.",
+        "tip": "AI Engineer + Data Scientist Interview Mastery me binary_search ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 3: what does flatten do in a AI Engineer + Data Scientist Interview Mastery workflow?",
+        "a": "Recursive generator nested lists ko flat sequence me badalta hai.",
+        "explain": "Recursive generator nested lists ko flat sequence me badalta hai. Snippet chala kar output se confirm karo.",
+        "tip": "AI Engineer + Data Scientist Interview Mastery me flatten ka behaviour edge cases par test karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 1: implement reverse and print the result.",
+      "build": "Slicing [::-1] string ko ulta karti hai, O(n) time aur space. Ek chhota runnable example likho jo output print kare.",
+      "input": "reverse ke liye sample data snippet me diya hai",
+      "expected": "Printed output reverse ka result dikhata hai",
+      "hint": "Solution ka core reverse hai; output ko readable rakho.",
+      "concept": "AI Engineer + Data Scientist Interview Mastery · reverse",
+      "solution": "text = 'interview'\nprint(text[::-1])",
+      "output": "",
+      "explanation": "Slicing [::-1] string ko ulta karti hai, O(n) time aur space. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to reverse ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 2: implement palindrome and print the result.",
+      "build": "Palindrome check normalization ke baad reverse comparison hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "palindrome ke liye sample data snippet me diya hai",
+      "expected": "Printed output palindrome ka result dikhata hai",
+      "hint": "Solution ka core palindrome hai; output ko readable rakho.",
+      "concept": "AI Engineer + Data Scientist Interview Mastery · palindrome",
+      "solution": "text = 'Madam'\nclean = text.lower()\nprint(clean == clean[::-1])",
+      "output": "",
+      "explanation": "Palindrome check normalization ke baad reverse comparison hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to palindrome ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 3: implement fizzbuzz and print the result.",
+      "build": "Divisibility branches ka order 15 se shuru karna zaroori hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "fizzbuzz ke liye sample data snippet me diya hai",
+      "expected": "Printed output fizzbuzz ka result dikhata hai",
+      "hint": "Solution ka core fizzbuzz hai; output ko readable rakho.",
+      "concept": "AI Engineer + Data Scientist Interview Mastery · fizzbuzz",
+      "solution": "for n in range(1, 6):\n    label = 'FizzBuzz' if n % 15 == 0 else 'Fizz' if n % 3 == 0 else 'Buzz' if n % 5 == 0 else str(n)\n    print(label)",
+      "output": "",
+      "explanation": "Divisibility branches ka order 15 se shuru karna zaroori hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to fizzbuzz ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 4: implement two_sum and print the result.",
+      "build": "Hash map se one-pass O(n) solution milta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "two_sum ke liye sample data snippet me diya hai",
+      "expected": "Printed output two_sum ka result dikhata hai",
+      "hint": "Solution ka core two_sum hai; output ko readable rakho.",
+      "concept": "AI Engineer + Data Scientist Interview Mastery · two_sum",
+      "solution": "def two_sum(nums, target):\n    seen = {}\n    for index, value in enumerate(nums):\n        if target - value in seen:\n            return [seen[target - value], index]\n        seen[value] = index\n    return []\n\nprint(two_sum([2, 7, 11, 15], 9))",
+      "output": "",
+      "explanation": "Hash map se one-pass O(n) solution milta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to two_sum ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 5: implement anagram and print the result.",
+      "build": "Anagram check frequency comparison hai, sorting se bhi ho sakta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "anagram ke liye sample data snippet me diya hai",
+      "expected": "Printed output anagram ka result dikhata hai",
+      "hint": "Solution ka core anagram hai; output ko readable rakho.",
+      "concept": "AI Engineer + Data Scientist Interview Mastery · anagram",
+      "solution": "from collections import Counter\n\nprint(Counter('listen') == Counter('silent'))",
+      "output": "",
+      "explanation": "Anagram check frequency comparison hai, sorting se bhi ho sakta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to anagram ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 6: implement fib_memo and print the result.",
+      "build": "Memoization overlapping recursion ko linear banata hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "fib_memo ke liye sample data snippet me diya hai",
+      "expected": "Printed output fib_memo ka result dikhata hai",
+      "hint": "Solution ka core fib_memo hai; output ko readable rakho.",
+      "concept": "AI Engineer + Data Scientist Interview Mastery · fib_memo",
+      "solution": "from functools import lru_cache\n\n@lru_cache(maxsize=None)\ndef fib(n):\n    return n if n < 2 else fib(n - 1) + fib(n - 2)\n\nprint([fib(i) for i in range(8)])",
+      "output": "",
+      "explanation": "Memoization overlapping recursion ko linear banata hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to fib_memo ka approach kaise badlega?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "logic",
+      "broken": "items = [1, 2, 3]\nprint(items[0:1])",
+      "error": "Logic error — pehla do items chahiye the, sirf pehla aaya",
+      "why": "Slice ka end exclusive hota hai; 0:1 sirf index 0 deta hai. Ye AI Engineer + Data Scientist Interview Mastery ke workflow me bhi wahi galti hai.",
+      "fix": "End index ko +1 karo: 0:2.",
+      "correct": "items = [1, 2, 3]\nprint(items[0:2])",
+      "output": "",
+      "lesson": "Slice boundaries exclusive hoti hain — range jaisa hi rule."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "raise",
+      "broken": "name = 'Asha'\nprint('Hello ' + 2024)",
+      "error": "TypeError: can only concatenate str (not \"int\") to str",
+      "why": "String concatenation ko dono taraf str chahiye; Python implicit conversion nahi karta. Ye AI Engineer + Data Scientist Interview Mastery ke workflow me bhi wahi galti hai.",
+      "fix": "f-string ya str() se explicit conversion karo.",
+      "correct": "name = 'Asha'\nprint(f'Hello {2024}')",
+      "output": "",
+      "lesson": "TypeError type mismatch batata hai — conversion explicit karo."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "raise",
+      "broken": "scores = [10, 20]\nprint(scores[5])",
+      "error": "IndexError: list index out of range",
+      "why": "List me sirf 0 aur 1 index hain; 5 par kuch nahi. Ye AI Engineer + Data Scientist Interview Mastery ke workflow me bhi wahi galti hai.",
+      "fix": "Index se pehle length check karo ya safe getter use karo.",
+      "correct": "scores = [10, 20]\nprint(scores[1] if len(scores) > 1 else None)",
+      "output": "",
+      "lesson": "IndexError off-by-one aur empty collection ka signal hai."
+    },
+    {
+      "difficulty": "expert",
+      "mode": "raise",
+      "broken": "profile = {'name': 'Asha'}\nprint(profile['score'])",
+      "error": "KeyError: 'score'",
+      "why": "Dict me score key exist nahi karti; [] missing key par KeyError deta hai. Ye AI Engineer + Data Scientist Interview Mastery ke workflow me bhi wahi galti hai.",
+      "fix": "get() se default do ya key ki presence check karo.",
+      "correct": "profile = {'name': 'Asha'}\nprint(profile.get('score', 'not recorded'))",
+      "output": "",
+      "lesson": "KeyError expected-missing field ka case hai — get/default se handle karo."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Quick drill: reverse ka ek minimal example likho aur output predict karo.",
+      "hint": "AI Engineer + Data Scientist Interview Mastery ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Coding round: palindrome aur fizzbuzz ko ek function me combine karo.",
+      "hint": "AI Engineer + Data Scientist Interview Mastery ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Advanced: AI Engineer + Data Scientist Interview Mastery ka chhota pipeline banao jisme two_sum, anagram aur validation ho.",
+      "hint": "AI Engineer + Data Scientist Interview Mastery ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview: AI Engineer + Data Scientist Interview Mastery ke 3 trade-offs whiteboard par likho aur fib_memo se example do.",
+      "hint": "AI Engineer + Data Scientist Interview Mastery ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Build: AI Engineer + Data Scientist Interview Mastery ka mini project banao — input, processing, output aur README.",
+      "hint": "AI Engineer + Data Scientist Interview Mastery ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "AI Engineer + Data Scientist Interview Mastery Starter Lab",
+      "problem": "AI Engineer + Data Scientist Interview Mastery ke basics ko ek chhote runnable program me jodna.",
+      "objective": "reverse aur palindrome ka demo jo output print kare.",
+      "code": "text = 'interview'\nprint(text[::-1])\ntext = 'Madam'\nclean = text.lower()\nprint(clean == clean[::-1])",
+      "explanation": "Slicing [::-1] string ko ulta karti hai, O(n) time aur space. Palindrome check normalization ke baad reverse comparison hai. Dono snippets ek hi file me chalte hain.",
+      "testing": "reverse ke empty aur normal input par output check karo.",
+      "errors": "Galat type ya missing value par Python exception dega — Version 2 me validation add hoti hai.",
+      "realWorld": "AI Engineer + Data Scientist Interview Mastery ke production code me yahi chhote steps repeated hote hain.",
+      "resume": "AI Engineer + Data Scientist Interview Mastery starter lab: reverse aur palindrome ka runnable demo.",
+      "features": [
+        "reverse ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "AI Engineer + Data Scientist Interview Mastery",
+        "reverse"
+      ],
+      "structure": "s27_project_1/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "reverse ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "fib_memo ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "AI Engineer + Data Scientist Interview Mastery Starter Lab interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "AI Engineer + Data Scientist Interview Mastery Starter Lab interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "AI Engineer + Data Scientist Interview Mastery Starter Lab interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "AI Engineer + Data Scientist Interview Mastery Starter Lab ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "AI Engineer + Data Scientist Interview Mastery Data Pipeline",
+      "problem": "Raw input ko validate karke AI Engineer + Data Scientist Interview Mastery ke useful output me badalna.",
+      "objective": "fizzbuzz, two_sum aur anagram se chhota pipeline banao.",
+      "code": "for n in range(1, 6):\n    label = 'FizzBuzz' if n % 15 == 0 else 'Fizz' if n % 3 == 0 else 'Buzz' if n % 5 == 0 else str(n)\n    print(label)\ndef two_sum(nums, target):\n    seen = {}\n    for index, value in enumerate(nums):\n        if target - value in seen:\n            return [seen[target - value], index]\n        seen[value] = index\n    return []\n\nprint(two_sum([2, 7, 11, 15], 9))\nfrom collections import Counter\n\nprint(Counter('listen') == Counter('silent'))",
+      "explanation": "Divisibility branches ka order 15 se shuru karna zaroori hai. Hash map se one-pass O(n) solution milta hai. Anagram check frequency comparison hai, sorting se bhi ho sakta hai. Pipeline ke steps alag-alag testable hain.",
+      "testing": "Ek valid aur ek invalid input se pipeline chalao; dono ka behaviour note karo.",
+      "errors": "Invalid input par crash ke bajaye clear error/message do — Version 3 me error shape add hota hai.",
+      "realWorld": "Yahi load → transform → report pattern AI Engineer + Data Scientist Interview Mastery ke dashboards aur services me hota hai.",
+      "resume": "AI Engineer + Data Scientist Interview Mastery pipeline: validation aur fizzbuzz/two_sum ke saath end-to-end demo.",
+      "features": [
+        "palindrome ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "AI Engineer + Data Scientist Interview Mastery",
+        "palindrome"
+      ],
+      "structure": "s27_project_2/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "palindrome ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "binary_search ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "AI Engineer + Data Scientist Interview Mastery Data Pipeline interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "AI Engineer + Data Scientist Interview Mastery Data Pipeline interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "AI Engineer + Data Scientist Interview Mastery Data Pipeline interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "AI Engineer + Data Scientist Interview Mastery Data Pipeline ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "AI Engineer + Data Scientist Interview Mastery Capstone",
+      "problem": "Ek believable AI Engineer + Data Scientist Interview Mastery use case jo end-to-end chale aur explain ho sake.",
+      "objective": "Stable dedupe order bachata hai aur anagram grouping sorted key par hash map use karti hai. Isse project interview me trade-offs ke saath present karo.",
+      "code": "def dedupe_stable(items):\n    seen = set()\n    output = []\n    for item in items:\n        if item not in seen:\n            seen.add(item)\n            output.append(item)\n    return output\n\nrows = ['b', 'a', 'b', 'c', 'a']\nprint(dedupe_stable(rows))\nprint(sorted(set(rows)))\n\ndef group_anagrams(words):\n    groups = {}\n    for word in words:\n        key = ''.join(sorted(word))\n        groups.setdefault(key, []).append(word)\n    return list(groups.values())\n\nprint(group_anagrams(['eat', 'tea', 'tan', 'ate']))",
+      "explanation": "Stable dedupe order bachata hai aur anagram grouping sorted key par hash map use karti hai.",
+      "testing": "Expected output ko haath se verify karo, phir edge case (empty/missing) add karo.",
+      "errors": "Failure modes document karo: missing data, bad type aur duplicate records.",
+      "realWorld": "Ye capstone resume aur interview dono me ek concrete AI Engineer + Data Scientist Interview Mastery story deta hai.",
+      "resume": "AI Engineer + Data Scientist Interview Mastery capstone: Stable dedupe order bachata hai aur anagram grouping sorted key par hash map use karti hai.",
+      "features": [
+        "fizzbuzz ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "AI Engineer + Data Scientist Interview Mastery",
+        "fizzbuzz"
+      ],
+      "structure": "s27_project_3/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "fizzbuzz ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "flatten ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "AI Engineer + Data Scientist Interview Mastery Capstone interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "AI Engineer + Data Scientist Interview Mastery Capstone interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "AI Engineer + Data Scientist Interview Mastery Capstone interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "AI Engineer + Data Scientist Interview Mastery Capstone ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      {
+        "q": "Understanding 1.1: why does AI Engineer + Data Scientist Interview Mastery Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.2: why does AI Engineer + Data Scientist Interview Mastery Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.3: why does AI Engineer + Data Scientist Interview Mastery Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.1: why does AI Engineer + Data Scientist Interview Mastery Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.2: why does AI Engineer + Data Scientist Interview Mastery Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.3: why does AI Engineer + Data Scientist Interview Mastery Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.1: why does AI Engineer + Data Scientist Interview Mastery Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.2: why does AI Engineer + Data Scientist Interview Mastery Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.3: why does AI Engineer + Data Scientist Interview Mastery Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      }
+    ],
+    "coding": [
+      {
+        "q": "Coding 1.1: extend AI Engineer + Data Scientist Interview Mastery Starter Lab with one more reverse step.",
+        "a": "Slicing [::-1] string ko ulta karti hai, O(n) time aur space. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.2: extend AI Engineer + Data Scientist Interview Mastery Starter Lab with one more palindrome step.",
+        "a": "Palindrome check normalization ke baad reverse comparison hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.3: extend AI Engineer + Data Scientist Interview Mastery Starter Lab with one more fizzbuzz step.",
+        "a": "Divisibility branches ka order 15 se shuru karna zaroori hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.1: extend AI Engineer + Data Scientist Interview Mastery Data Pipeline with one more reverse step.",
+        "a": "Slicing [::-1] string ko ulta karti hai, O(n) time aur space. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.2: extend AI Engineer + Data Scientist Interview Mastery Data Pipeline with one more palindrome step.",
+        "a": "Palindrome check normalization ke baad reverse comparison hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.3: extend AI Engineer + Data Scientist Interview Mastery Data Pipeline with one more fizzbuzz step.",
+        "a": "Divisibility branches ka order 15 se shuru karna zaroori hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.1: extend AI Engineer + Data Scientist Interview Mastery Capstone with one more reverse step.",
+        "a": "Slicing [::-1] string ko ulta karti hai, O(n) time aur space. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.2: extend AI Engineer + Data Scientist Interview Mastery Capstone with one more palindrome step.",
+        "a": "Palindrome check normalization ke baad reverse comparison hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.3: extend AI Engineer + Data Scientist Interview Mastery Capstone with one more fizzbuzz step.",
+        "a": "Divisibility branches ka order 15 se shuru karna zaroori hai. Naya step add karke output compare karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced 1.1: how would AI Engineer + Data Scientist Interview Mastery Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.2: how would AI Engineer + Data Scientist Interview Mastery Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.3: how would AI Engineer + Data Scientist Interview Mastery Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.1: how would AI Engineer + Data Scientist Interview Mastery Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.2: how would AI Engineer + Data Scientist Interview Mastery Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.3: how would AI Engineer + Data Scientist Interview Mastery Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.1: how would AI Engineer + Data Scientist Interview Mastery Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.2: how would AI Engineer + Data Scientist Interview Mastery Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.3: how would AI Engineer + Data Scientist Interview Mastery Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview 1.1: defend one trade-off in AI Engineer + Data Scientist Interview Mastery Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.2: defend one trade-off in AI Engineer + Data Scientist Interview Mastery Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.3: defend one trade-off in AI Engineer + Data Scientist Interview Mastery Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.1: defend one trade-off in AI Engineer + Data Scientist Interview Mastery Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.2: defend one trade-off in AI Engineer + Data Scientist Interview Mastery Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.3: defend one trade-off in AI Engineer + Data Scientist Interview Mastery Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.1: defend one trade-off in AI Engineer + Data Scientist Interview Mastery Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.2: defend one trade-off in AI Engineer + Data Scientist Interview Mastery Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.3: defend one trade-off in AI Engineer + Data Scientist Interview Mastery Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      }
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Practical 1: validate AI Engineer + Data Scientist Interview Mastery data in 15 minutes.",
+      "a": "Steps likho: input, reverse, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 2: transform AI Engineer + Data Scientist Interview Mastery data in 15 minutes.",
+      "a": "Steps likho: input, palindrome, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 3: aggregate AI Engineer + Data Scientist Interview Mastery data in 15 minutes.",
+      "a": "Steps likho: input, fizzbuzz, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 4: present AI Engineer + Data Scientist Interview Mastery data in 15 minutes.",
+      "a": "Steps likho: input, two_sum, expected output; phir code chala kar dikhao."
+    }
+  ],
+  "revision": [
+    "AI Engineer + Data Scientist Interview Mastery: revise reverse — Slicing [::-1] string ko ulta karti hai, O(n) time aur space.",
+    "AI Engineer + Data Scientist Interview Mastery: revise palindrome — Palindrome check normalization ke baad reverse comparison hai.",
+    "AI Engineer + Data Scientist Interview Mastery: revise fizzbuzz — Divisibility branches ka order 15 se shuru karna zaroori hai.",
+    "AI Engineer + Data Scientist Interview Mastery: revise two_sum — Hash map se one-pass O(n) solution milta hai.",
+    "AI Engineer + Data Scientist Interview Mastery: revise anagram — Anagram check frequency comparison hai, sorting se bhi ho sakta hai."
+  ]
+}

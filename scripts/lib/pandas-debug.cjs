@@ -232,11 +232,13 @@ function runPythonSamples(samples) {
 }
 
 /**
- * Validate every debug entry. Returns human-readable problems; an empty array means the Debug
- * section passes. `runSamples` is injectable for tests and defaults to the real Python executor.
+ * Inspect every debug entry. Returns the human-readable problems plus the set of entries that
+ * produced at least one — one pair that fails several checks is still one failed pair, which is
+ * what a pass/total count must subtract. `runSamples` is injectable for tests.
  */
-function validateDebugChallenges(modules, options = {}) {
+function inspectDebugChallenges(modules, options = {}) {
   const problems = [];
+  const failed = new Set();
   const fail = (message) => problems.push(message);
   const samples = [];
   const seenPairs = new Map();
@@ -245,6 +247,10 @@ function validateDebugChallenges(modules, options = {}) {
     const debug = Array.isArray(module.debug) ? module.debug : [];
     for (const [index, entry] of debug.entries()) {
       const at = `${module.id}: debug \"${entry?.title || index + 1}\"`;
+      const fail = (message) => {
+        problems.push(message);
+        failed.add(`${module.id}:${index}`);
+      };
       if (!entry || !entry.title || !entry.broken || !entry.fix || !entry.error) {
         fail(`${at} needs title/broken/fix/error`);
         continue;
@@ -274,14 +280,15 @@ function validateDebugChallenges(modules, options = {}) {
     }
   }
 
-  if (options.execute === false || !samples.length) return problems;
+  if (options.execute === false || !samples.length) return { problems, failed };
 
   let results;
   try {
     results = (options.runSamples || runPythonSamples)(samples);
   } catch (error) {
+    for (const sample of samples) failed.add(`${sample.module}:${sample.index}`);
     fail(`debug execution failed: ${error.message}`);
-    return problems;
+    return { problems, failed };
   }
 
   for (const module of modules) {
@@ -289,6 +296,10 @@ function validateDebugChallenges(modules, options = {}) {
     for (const [index, entry] of debug.entries()) {
       if (!entry || !entry.title || !entry.broken || !entry.fix || !entry.error) continue;
       const at = `${module.id}: debug \"${entry.title}\"`;
+      const fail = (message) => {
+        problems.push(message);
+        failed.add(`${module.id}:${index}`);
+      };
       const broken = results.get(`${module.id}:${index}:broken`);
       const fixed = results.get(`${module.id}:${index}:fix`);
       if (!broken || !fixed) {
@@ -329,7 +340,12 @@ function validateDebugChallenges(modules, options = {}) {
     }
   }
 
-  return problems;
+  return { problems, failed };
+}
+
+/** The guard's contract: just the human-readable problems. */
+function validateDebugChallenges(modules, options = {}) {
+  return inspectDebugChallenges(modules, options).problems;
 }
 
 module.exports = {
@@ -337,6 +353,7 @@ module.exports = {
   MIN_TOKEN_SIMILARITY,
   SUPPORTED_RUNTIMES,
   debugDiff,
+  inspectDebugChallenges,
   normalizeCode,
   normalizeError,
   normalizeOutput,

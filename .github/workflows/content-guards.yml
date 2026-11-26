@@ -1,0 +1,67 @@
+name: Content guards
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  content-guards:
+    name: content guards (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      # setup-python creates `python` on both runners; the scripts default to `python3`.
+      PYTHON: python
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pandas for executed fixtures
+        run: python -m pip install --disable-pip-version-check pandas==3.0.6
+
+      - name: Coverage guard
+        run: npm run pandas-coverage:check
+
+      - name: Diversity guard
+        run: npm run pandas-diversity:check
+
+      - name: Course content guards
+        run: npm run pandas-course
+
+      - name: Executed examples audit
+        run: npm run pandas:audit
+
+      - name: Published artifact is current
+        run: npm run pandas-course:check
+
+      - name: Check modes reject corrupted input
+        run: node --test scripts/tests/pandas-check-modes.test.mjs
+
+      - name: ML dataset freshness
+        run: npm run ml:datasets:check
+
+      - name: ML Colab freshness
+        run: npm run ml:colab:check
+
+      - name: ML freshness rejects date drift and CRLF
+        run: node --test scripts/tests/ml-freshness.test.mjs

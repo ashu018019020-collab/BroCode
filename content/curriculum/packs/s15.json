@@ -1,0 +1,717 @@
+{
+  "section": "s15",
+  "topic": "Exceptions, Files & Modules",
+  "authored": true,
+  "intro": "Real programs fail karte hain: file missing ho sakti hai, JSON kharab ho sakta hai, conversion fail ho sakta hai. Is section me exceptions ko sahi jagah pakadna, files safely read/write karna aur modules import karke code reuse karna practice hota hai.",
+  "theory": [
+    "try/except sirf us code ko wrap karta hai jahan failure expected hai; poora function wrap karna bugs chhupa deta hai. Specific exception pakdo, bare `except:` nahi.",
+    "else tab chalta hai jab try bina exception ke poora ho; finally har haal me chalta hai — file close ya lock release ke liye.",
+    "`raise` se exception dobara throw hoti hai; custom exception class domain error ko naam deti hai. `raise ... from None` confusing chained traceback hata deta hai.",
+    "File ke liye `with open(...)` use karo — error par bhi file close hoti hai. Encoding explicitly do (`encoding=\"utf-8\"`), warna platform default bharosa nahi.",
+    "Module import karne se code reuse hota hai: `import math`, `from pathlib import Path`, `import json`. Har module ka apna namespace hota hai, isliye naam collision kam hote hain."
+  ],
+  "syntax": [
+    "try:\n    value = int(raw)\nexcept ValueError:\n    value = 0\nelse:\n    print(\"parsed\")\nfinally:\n    print(\"done\")",
+    "try:\n    raise ValueError(\"bad input\")\nexcept ValueError as error:\n    print(error)\nelse:\n    pass",
+    "from pathlib import Path\nimport json\n\npath = Path(\"data.json\")\npath.write_text(json.dumps({\"ok\": True}), encoding=\"utf-8\")\nprint(json.loads(path.read_text(encoding=\"utf-8\")))"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "import json\n\npayload = {'name': 'Asha', 'scores': [91, 85]}\ntext = json.dumps(payload)\nrestored = json.loads(text)\nprint(text)\nprint(restored['name'], restored['scores'])",
+      "output": "",
+      "explain": [
+        "json.dumps text banata hai aur loads usse wapas Python object me laata hai.",
+        "Output ko print se verify karo.",
+        "Ye Exceptions, Files & Modules ka basic building block hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "from pathlib import Path\n\npath = Path('reports') / 'daily.csv'\nprint(path.name, path.stem, path.suffix)\nprint(path.parent)",
+      "output": "",
+      "explain": [
+        "Path objects path join aur parts ko readable aur cross-platform banate hain.",
+        "Ek step aur jodne se behaviour kaise badalta hai, dekho.",
+        "Input badal kar edge case test karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "import csv\nimport io\n\nraw = 'name,score\\nAsha,91\\nRavi,not-a-number\\nMeera,85\\n'\nrows, skipped = [], 0\n\nfor row in csv.DictReader(io.StringIO(raw)):\n    try:\n        rows.append((row['name'], int(row['score'])))\n    except ValueError:\n        skipped += 1\n\nprint('valid:', rows)\nprint('skipped:', skipped)",
+      "output": "",
+      "explain": [
+        "csv.DictReader + per-row try/except se ek bad row poore import ko fail nahi karti.",
+        "Ye snippet end-to-end flow dikhata hai.",
+        "Output ko project/interview me evidence ki tarah use karo."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Config/JSON load karte waqt missing file aur invalid JSON do alag failures hain — dono ko alag message dena operator ka time bachata hai.",
+    "ETL me ek bad row poore batch ko fail na kare, isliye per-row parse ko try/except me rakha jata hai aur skipped count report hota hai.",
+    "Temp files aur reports likhte waqt `with` + explicit encoding use karna Windows/Linux dono par same behaviour deta hai."
+  ],
+  "interview": [
+    {
+      "q": "Bare `except:` kyun avoid karna chahiye?",
+      "a": "Wo KeyboardInterrupt aur system exits bhi pakad leta hai, bugs chhupa deta hai aur debugging mushkil banata hai. Specific exception types pakdo."
+    },
+    {
+      "q": "else aur finally ka role kya hai?",
+      "a": "else try ke successful completion par chalta hai, isliye success-only code try ke andar nahi rakhna padta. finally har case me chalta hai — cleanup ke liye."
+    },
+    {
+      "q": "File handling me with kyun zaroori hai?",
+      "a": "with context manager error par bhi file close karta hai. Manual open ke saath exception aane par descriptor leak ho sakta hai."
+    },
+    {
+      "q": "Custom exception kab banate hain?",
+      "a": "Jab caller ko domain error ko alag handle karna ho. Standard exception reuse karna theek hai jab semantics match karein; custom class tab jab library-specific error contract chahiye."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Beginner drill 1: what does json_roundtrip do in a Exceptions, Files & Modules workflow?",
+        "a": "json.dumps text banata hai aur loads usse wapas Python object me laata hai.",
+        "explain": "json.dumps text banata hai aur loads usse wapas Python object me laata hai. Snippet chala kar output se confirm karo.",
+        "code": "import json\n\npayload = {'name': 'Asha', 'scores': [91, 85]}\ntext = json.dumps(payload)\nrestored = json.loads(text)\nprint(text)\nprint(restored['name'], restored['scores'])",
+        "output": "",
+        "tip": "Exceptions, Files & Modules me json_roundtrip ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 2: what does pathlib_paths do in a Exceptions, Files & Modules workflow?",
+        "a": "Path objects path join aur parts ko readable aur cross-platform banate hain.",
+        "explain": "Path objects path join aur parts ko readable aur cross-platform banate hain. Snippet chala kar output se confirm karo.",
+        "code": "from pathlib import Path\n\npath = Path('reports') / 'daily.csv'\nprint(path.name, path.stem, path.suffix)\nprint(path.parent)",
+        "output": "",
+        "tip": "Exceptions, Files & Modules me pathlib_paths ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 3: what does module_import do in a Exceptions, Files & Modules workflow?",
+        "a": "Standard library modules import karke tested functionality reuse hoti hai.",
+        "explain": "Standard library modules import karke tested functionality reuse hoti hai. Snippet chala kar output se confirm karo.",
+        "code": "import math\nfrom statistics import mean\n\nprint(round(math.sqrt(81), 2))\nprint(mean([10, 20, 30]))",
+        "output": "",
+        "tip": "Exceptions, Files & Modules me module_import ka behaviour edge cases par test karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Intermediate drill 1: what does try_except do in a Exceptions, Files & Modules workflow?",
+        "a": "Specific exception pakadne se program crash nahi hota aur fallback milta hai.",
+        "explain": "Specific exception pakadne se program crash nahi hota aur fallback milta hai. Snippet chala kar output se confirm karo.",
+        "code": "raw = 'not-a-number'\ntry:\n    value = int(raw)\nexcept ValueError:\n    value = 0\nprint(value)",
+        "output": "",
+        "tip": "Exceptions, Files & Modules me try_except ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 2: what does else_finally do in a Exceptions, Files & Modules workflow?",
+        "a": "else success path ke liye hai aur finally har haal me chalta hai.",
+        "explain": "else success path ke liye hai aur finally har haal me chalta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Exceptions, Files & Modules me else_finally ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 3: what does raise_error do in a Exceptions, Files & Modules workflow?",
+        "a": "raise se invalid input ko boundary par hi rok dete hain.",
+        "explain": "raise se invalid input ko boundary par hi rok dete hain. Snippet chala kar output se confirm karo.",
+        "tip": "Exceptions, Files & Modules me raise_error ka behaviour edge cases par test karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced drill 1: what does custom_exception do in a Exceptions, Files & Modules workflow?",
+        "a": "Custom exception domain-specific errors ko alag catch karne deti hai.",
+        "explain": "Custom exception domain-specific errors ko alag catch karne deti hai. Snippet chala kar output se confirm karo.",
+        "code": "class ConfigError(Exception):\n    pass\n\ndef load(port):\n    if not str(port).isdigit():\n        raise ConfigError(f'bad port: {port!r}')\n    return int(port)\n\ntry:\n    load('http')\nexcept ConfigError as error:\n    print(type(error).__name__, error)",
+        "output": "",
+        "tip": "Exceptions, Files & Modules me custom_exception ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 2: what does file_write_read do in a Exceptions, Files & Modules workflow?",
+        "a": "pathlib + explicit encoding se file read/write portable rehta hai.",
+        "explain": "pathlib + explicit encoding se file read/write portable rehta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Exceptions, Files & Modules me file_write_read ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 3: what does json_roundtrip do in a Exceptions, Files & Modules workflow?",
+        "a": "json.dumps text banata hai aur loads usse wapas Python object me laata hai.",
+        "explain": "json.dumps text banata hai aur loads usse wapas Python object me laata hai. Snippet chala kar output se confirm karo.",
+        "tip": "Exceptions, Files & Modules me json_roundtrip ka behaviour edge cases par test karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview drill 1: what does pathlib_paths do in a Exceptions, Files & Modules workflow?",
+        "a": "Path objects path join aur parts ko readable aur cross-platform banate hain.",
+        "explain": "Path objects path join aur parts ko readable aur cross-platform banate hain. Snippet chala kar output se confirm karo.",
+        "tip": "Exceptions, Files & Modules me pathlib_paths ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 2: what does module_import do in a Exceptions, Files & Modules workflow?",
+        "a": "Standard library modules import karke tested functionality reuse hoti hai.",
+        "explain": "Standard library modules import karke tested functionality reuse hoti hai. Snippet chala kar output se confirm karo.",
+        "tip": "Exceptions, Files & Modules me module_import ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 3: what does try_except do in a Exceptions, Files & Modules workflow?",
+        "a": "Specific exception pakadne se program crash nahi hota aur fallback milta hai.",
+        "explain": "Specific exception pakadne se program crash nahi hota aur fallback milta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Exceptions, Files & Modules me try_except ka behaviour edge cases par test karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Realworld drill 1: what does else_finally do in a Exceptions, Files & Modules workflow?",
+        "a": "else success path ke liye hai aur finally har haal me chalta hai.",
+        "explain": "else success path ke liye hai aur finally har haal me chalta hai. Snippet chala kar output se confirm karo.",
+        "code": "try:\n    value = int('42')\nexcept ValueError:\n    value = 0\nelse:\n    print('parsed', value)\nfinally:\n    print('cleanup')",
+        "output": "",
+        "tip": "Exceptions, Files & Modules me else_finally ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 2: what does raise_error do in a Exceptions, Files & Modules workflow?",
+        "a": "raise se invalid input ko boundary par hi rok dete hain.",
+        "explain": "raise se invalid input ko boundary par hi rok dete hain. Snippet chala kar output se confirm karo.",
+        "tip": "Exceptions, Files & Modules me raise_error ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 3: what does custom_exception do in a Exceptions, Files & Modules workflow?",
+        "a": "Custom exception domain-specific errors ko alag catch karne deti hai.",
+        "explain": "Custom exception domain-specific errors ko alag catch karne deti hai. Snippet chala kar output se confirm karo.",
+        "tip": "Exceptions, Files & Modules me custom_exception ka behaviour edge cases par test karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 1: implement try_except and print the result.",
+      "build": "Specific exception pakadne se program crash nahi hota aur fallback milta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "try_except ke liye sample data snippet me diya hai",
+      "expected": "Printed output try_except ka result dikhata hai",
+      "hint": "Solution ka core try_except hai; output ko readable rakho.",
+      "concept": "Exceptions, Files & Modules · try_except",
+      "solution": "raw = 'not-a-number'\ntry:\n    value = int(raw)\nexcept ValueError:\n    value = 0\nprint(value)",
+      "output": "",
+      "explanation": "Specific exception pakadne se program crash nahi hota aur fallback milta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to try_except ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 2: implement else_finally and print the result.",
+      "build": "else success path ke liye hai aur finally har haal me chalta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "else_finally ke liye sample data snippet me diya hai",
+      "expected": "Printed output else_finally ka result dikhata hai",
+      "hint": "Solution ka core else_finally hai; output ko readable rakho.",
+      "concept": "Exceptions, Files & Modules · else_finally",
+      "solution": "try:\n    value = int('42')\nexcept ValueError:\n    value = 0\nelse:\n    print('parsed', value)\nfinally:\n    print('cleanup')",
+      "output": "",
+      "explanation": "else success path ke liye hai aur finally har haal me chalta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to else_finally ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 3: implement raise_error and print the result.",
+      "build": "raise se invalid input ko boundary par hi rok dete hain. Ek chhota runnable example likho jo output print kare.",
+      "input": "raise_error ke liye sample data snippet me diya hai",
+      "expected": "Printed output raise_error ka result dikhata hai",
+      "hint": "Solution ka core raise_error hai; output ko readable rakho.",
+      "concept": "Exceptions, Files & Modules · raise_error",
+      "solution": "def set_age(age):\n    if age < 0:\n        raise ValueError(f'age cannot be negative: {age}')\n    return age\n\ntry:\n    set_age(-1)\nexcept ValueError as error:\n    print('rejected:', error)",
+      "output": "",
+      "explanation": "raise se invalid input ko boundary par hi rok dete hain. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to raise_error ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 4: implement custom_exception and print the result.",
+      "build": "Custom exception domain-specific errors ko alag catch karne deti hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "custom_exception ke liye sample data snippet me diya hai",
+      "expected": "Printed output custom_exception ka result dikhata hai",
+      "hint": "Solution ka core custom_exception hai; output ko readable rakho.",
+      "concept": "Exceptions, Files & Modules · custom_exception",
+      "solution": "class ConfigError(Exception):\n    pass\n\ndef load(port):\n    if not str(port).isdigit():\n        raise ConfigError(f'bad port: {port!r}')\n    return int(port)\n\ntry:\n    load('http')\nexcept ConfigError as error:\n    print(type(error).__name__, error)",
+      "output": "",
+      "explanation": "Custom exception domain-specific errors ko alag catch karne deti hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to custom_exception ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 5: implement file_write_read and print the result.",
+      "build": "pathlib + explicit encoding se file read/write portable rehta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "file_write_read ke liye sample data snippet me diya hai",
+      "expected": "Printed output file_write_read ka result dikhata hai",
+      "hint": "Solution ka core file_write_read hai; output ko readable rakho.",
+      "concept": "Exceptions, Files & Modules · file_write_read",
+      "solution": "from pathlib import Path\nimport tempfile\n\nwith tempfile.TemporaryDirectory() as folder:\n    path = Path(folder) / 'notes.txt'\n    path.write_text('hello file', encoding='utf-8')\n    print(path.read_text(encoding='utf-8'))",
+      "output": "",
+      "explanation": "pathlib + explicit encoding se file read/write portable rehta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to file_write_read ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 6: implement json_roundtrip and print the result.",
+      "build": "json.dumps text banata hai aur loads usse wapas Python object me laata hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "json_roundtrip ke liye sample data snippet me diya hai",
+      "expected": "Printed output json_roundtrip ka result dikhata hai",
+      "hint": "Solution ka core json_roundtrip hai; output ko readable rakho.",
+      "concept": "Exceptions, Files & Modules · json_roundtrip",
+      "solution": "import json\n\npayload = {'name': 'Asha', 'scores': [91, 85]}\ntext = json.dumps(payload)\nrestored = json.loads(text)\nprint(text)\nprint(restored['name'], restored['scores'])",
+      "output": "",
+      "explanation": "json.dumps text banata hai aur loads usse wapas Python object me laata hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to json_roundtrip ka approach kaise badlega?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "total = 10\nprint(totl + 1)",
+      "error": "NameError: name 'totl' is not defined",
+      "why": "Naam ki spelling galat hai; Python namespace me wo naam nahi milta. Ye Exceptions, Files & Modules ke workflow me bhi wahi galti hai.",
+      "fix": "Variable ka naam theek karo.",
+      "correct": "total = 10\nprint(total + 1)",
+      "output": "",
+      "lesson": "NameError typo ya missing assignment batata hai."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "items = [3, 1, 2]\nprint(items.sort())",
+      "error": "Logic error — sort() None return karta hai, list print nahi hoti",
+      "why": "sort() in-place hai aur None deta hai, isliye print None dikhata hai. Ye Exceptions, Files & Modules ke workflow me bhi wahi galti hai.",
+      "fix": "sorted() use karo ya pehle sort phir list print karo.",
+      "correct": "items = [3, 1, 2]\nitems.sort()\nprint(items)",
+      "output": "",
+      "lesson": "Mutating methods ka return value None hota hai — usse assign/print mat karo."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "logic",
+      "broken": "prices = [100, 200]\ntotal = 0\nfor p in prices:\n    total = p\nprint(total)",
+      "error": "Logic error — total 200 aata hai, sum 300 hona chahiye",
+      "why": "Assignment purani value replace karta hai; accumulator chahiye. Ye Exceptions, Files & Modules ke workflow me bhi wahi galti hai.",
+      "fix": "total += p use karo ya sum(prices).",
+      "correct": "prices = [100, 200]\ntotal = 0\nfor p in prices:\n    total += p\nprint(total)",
+      "output": "",
+      "lesson": "Logic bugs exception nahi dete — chhote sample par expected value likho."
+    },
+    {
+      "difficulty": "expert",
+      "mode": "logic",
+      "broken": "items = [1, 2, 3]\nprint(items[0:1])",
+      "error": "Logic error — pehla do items chahiye the, sirf pehla aaya",
+      "why": "Slice ka end exclusive hota hai; 0:1 sirf index 0 deta hai. Ye Exceptions, Files & Modules ke workflow me bhi wahi galti hai.",
+      "fix": "End index ko +1 karo: 0:2.",
+      "correct": "items = [1, 2, 3]\nprint(items[0:2])",
+      "output": "",
+      "lesson": "Slice boundaries exclusive hoti hain — range jaisa hi rule."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Quick drill: try_except ka ek minimal example likho aur output predict karo.",
+      "hint": "Exceptions, Files & Modules ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Coding round: else_finally aur raise_error ko ek function me combine karo.",
+      "hint": "Exceptions, Files & Modules ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Advanced: Exceptions, Files & Modules ka chhota pipeline banao jisme custom_exception, file_write_read aur validation ho.",
+      "hint": "Exceptions, Files & Modules ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview: Exceptions, Files & Modules ke 3 trade-offs whiteboard par likho aur json_roundtrip se example do.",
+      "hint": "Exceptions, Files & Modules ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Build: Exceptions, Files & Modules ka mini project banao — input, processing, output aur README.",
+      "hint": "Exceptions, Files & Modules ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Exceptions, Files & Modules Starter Lab",
+      "problem": "Exceptions, Files & Modules ke basics ko ek chhote runnable program me jodna.",
+      "objective": "try_except aur else_finally ka demo jo output print kare.",
+      "code": "raw = 'not-a-number'\ntry:\n    value = int(raw)\nexcept ValueError:\n    value = 0\nprint(value)\ntry:\n    value = int('42')\nexcept ValueError:\n    value = 0\nelse:\n    print('parsed', value)\nfinally:\n    print('cleanup')",
+      "explanation": "Specific exception pakadne se program crash nahi hota aur fallback milta hai. else success path ke liye hai aur finally har haal me chalta hai. Dono snippets ek hi file me chalte hain.",
+      "testing": "try_except ke empty aur normal input par output check karo.",
+      "errors": "Galat type ya missing value par Python exception dega — Version 2 me validation add hoti hai.",
+      "realWorld": "Exceptions, Files & Modules ke production code me yahi chhote steps repeated hote hain.",
+      "resume": "Exceptions, Files & Modules starter lab: try_except aur else_finally ka runnable demo.",
+      "features": [
+        "try_except ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Exceptions, Files & Modules",
+        "try_except"
+      ],
+      "structure": "s15_project_1/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "try_except ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "json_roundtrip ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Exceptions, Files & Modules Starter Lab interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Exceptions, Files & Modules Starter Lab interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Exceptions, Files & Modules Starter Lab interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Exceptions, Files & Modules Starter Lab ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Exceptions, Files & Modules Data Pipeline",
+      "problem": "Raw input ko validate karke Exceptions, Files & Modules ke useful output me badalna.",
+      "objective": "raise_error, custom_exception aur file_write_read se chhota pipeline banao.",
+      "code": "def set_age(age):\n    if age < 0:\n        raise ValueError(f'age cannot be negative: {age}')\n    return age\n\ntry:\n    set_age(-1)\nexcept ValueError as error:\n    print('rejected:', error)\nclass ConfigError(Exception):\n    pass\n\ndef load(port):\n    if not str(port).isdigit():\n        raise ConfigError(f'bad port: {port!r}')\n    return int(port)\n\ntry:\n    load('http')\nexcept ConfigError as error:\n    print(type(error).__name__, error)\nfrom pathlib import Path\nimport tempfile\n\nwith tempfile.TemporaryDirectory() as folder:\n    path = Path(folder) / 'notes.txt'\n    path.write_text('hello file', encoding='utf-8')\n    print(path.read_text(encoding='utf-8'))",
+      "explanation": "raise se invalid input ko boundary par hi rok dete hain. Custom exception domain-specific errors ko alag catch karne deti hai. pathlib + explicit encoding se file read/write portable rehta hai. Pipeline ke steps alag-alag testable hain.",
+      "testing": "Ek valid aur ek invalid input se pipeline chalao; dono ka behaviour note karo.",
+      "errors": "Invalid input par crash ke bajaye clear error/message do — Version 3 me error shape add hota hai.",
+      "realWorld": "Yahi load → transform → report pattern Exceptions, Files & Modules ke dashboards aur services me hota hai.",
+      "resume": "Exceptions, Files & Modules pipeline: validation aur raise_error/custom_exception ke saath end-to-end demo.",
+      "features": [
+        "else_finally ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Exceptions, Files & Modules",
+        "else_finally"
+      ],
+      "structure": "s15_project_2/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "else_finally ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "pathlib_paths ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Exceptions, Files & Modules Data Pipeline interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Exceptions, Files & Modules Data Pipeline interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Exceptions, Files & Modules Data Pipeline interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Exceptions, Files & Modules Data Pipeline ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "Exceptions, Files & Modules Capstone",
+      "problem": "Ek believable Exceptions, Files & Modules use case jo end-to-end chale aur explain ho sake.",
+      "objective": "csv.DictReader + per-row try/except se ek bad row poore import ko fail nahi karti. Isse project interview me trade-offs ke saath present karo.",
+      "code": "import csv\nimport io\n\nraw = 'name,score\\nAsha,91\\nRavi,not-a-number\\nMeera,85\\n'\nrows, skipped = [], 0\n\nfor row in csv.DictReader(io.StringIO(raw)):\n    try:\n        rows.append((row['name'], int(row['score'])))\n    except ValueError:\n        skipped += 1\n\nprint('valid:', rows)\nprint('skipped:', skipped)",
+      "explanation": "csv.DictReader + per-row try/except se ek bad row poore import ko fail nahi karti.",
+      "testing": "Expected output ko haath se verify karo, phir edge case (empty/missing) add karo.",
+      "errors": "Failure modes document karo: missing data, bad type aur duplicate records.",
+      "realWorld": "Ye capstone resume aur interview dono me ek concrete Exceptions, Files & Modules story deta hai.",
+      "resume": "Exceptions, Files & Modules capstone: csv.DictReader + per-row try/except se ek bad row poore import ko fail nahi karti.",
+      "features": [
+        "raise_error ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Exceptions, Files & Modules",
+        "raise_error"
+      ],
+      "structure": "s15_project_3/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "raise_error ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "module_import ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Exceptions, Files & Modules Capstone interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Exceptions, Files & Modules Capstone interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Exceptions, Files & Modules Capstone interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Exceptions, Files & Modules Capstone ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      {
+        "q": "Understanding 1.1: why does Exceptions, Files & Modules Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.2: why does Exceptions, Files & Modules Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.3: why does Exceptions, Files & Modules Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.1: why does Exceptions, Files & Modules Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.2: why does Exceptions, Files & Modules Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.3: why does Exceptions, Files & Modules Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.1: why does Exceptions, Files & Modules Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.2: why does Exceptions, Files & Modules Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.3: why does Exceptions, Files & Modules Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      }
+    ],
+    "coding": [
+      {
+        "q": "Coding 1.1: extend Exceptions, Files & Modules Starter Lab with one more try_except step.",
+        "a": "Specific exception pakadne se program crash nahi hota aur fallback milta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.2: extend Exceptions, Files & Modules Starter Lab with one more else_finally step.",
+        "a": "else success path ke liye hai aur finally har haal me chalta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.3: extend Exceptions, Files & Modules Starter Lab with one more raise_error step.",
+        "a": "raise se invalid input ko boundary par hi rok dete hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.1: extend Exceptions, Files & Modules Data Pipeline with one more try_except step.",
+        "a": "Specific exception pakadne se program crash nahi hota aur fallback milta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.2: extend Exceptions, Files & Modules Data Pipeline with one more else_finally step.",
+        "a": "else success path ke liye hai aur finally har haal me chalta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.3: extend Exceptions, Files & Modules Data Pipeline with one more raise_error step.",
+        "a": "raise se invalid input ko boundary par hi rok dete hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.1: extend Exceptions, Files & Modules Capstone with one more try_except step.",
+        "a": "Specific exception pakadne se program crash nahi hota aur fallback milta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.2: extend Exceptions, Files & Modules Capstone with one more else_finally step.",
+        "a": "else success path ke liye hai aur finally har haal me chalta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.3: extend Exceptions, Files & Modules Capstone with one more raise_error step.",
+        "a": "raise se invalid input ko boundary par hi rok dete hain. Naya step add karke output compare karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced 1.1: how would Exceptions, Files & Modules Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.2: how would Exceptions, Files & Modules Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.3: how would Exceptions, Files & Modules Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.1: how would Exceptions, Files & Modules Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.2: how would Exceptions, Files & Modules Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.3: how would Exceptions, Files & Modules Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.1: how would Exceptions, Files & Modules Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.2: how would Exceptions, Files & Modules Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.3: how would Exceptions, Files & Modules Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview 1.1: defend one trade-off in Exceptions, Files & Modules Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.2: defend one trade-off in Exceptions, Files & Modules Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.3: defend one trade-off in Exceptions, Files & Modules Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.1: defend one trade-off in Exceptions, Files & Modules Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.2: defend one trade-off in Exceptions, Files & Modules Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.3: defend one trade-off in Exceptions, Files & Modules Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.1: defend one trade-off in Exceptions, Files & Modules Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.2: defend one trade-off in Exceptions, Files & Modules Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.3: defend one trade-off in Exceptions, Files & Modules Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      }
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Practical 1: validate Exceptions, Files & Modules data in 15 minutes.",
+      "a": "Steps likho: input, try_except, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 2: transform Exceptions, Files & Modules data in 15 minutes.",
+      "a": "Steps likho: input, else_finally, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 3: aggregate Exceptions, Files & Modules data in 15 minutes.",
+      "a": "Steps likho: input, raise_error, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 4: present Exceptions, Files & Modules data in 15 minutes.",
+      "a": "Steps likho: input, custom_exception, expected output; phir code chala kar dikhao."
+    }
+  ],
+  "revision": [
+    "Exceptions, Files & Modules: revise try_except — Specific exception pakadne se program crash nahi hota aur fallback milta hai.",
+    "Exceptions, Files & Modules: revise else_finally — else success path ke liye hai aur finally har haal me chalta hai.",
+    "Exceptions, Files & Modules: revise raise_error — raise se invalid input ko boundary par hi rok dete hain.",
+    "Exceptions, Files & Modules: revise custom_exception — Custom exception domain-specific errors ko alag catch karne deti hai.",
+    "Exceptions, Files & Modules: revise file_write_read — pathlib + explicit encoding se file read/write portable rehta hai."
+  ]
+}

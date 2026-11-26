@@ -272,7 +272,7 @@
     "title": "Deduplicating on a column that does not exist",
     "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1]})\nprint(df.drop_duplicates(subset=[\"key\"]).shape)",
     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1]})\nprint(df.drop_duplicates(subset=[\"id\"]).shape)",
-    "error": "KeyError: Index(['key'], dtype='str')",
+    "error": "KeyError: Index(['key'])",
     "fixedOutput": "(1, 1)"
    },
    {

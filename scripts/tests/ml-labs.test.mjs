@@ -50,8 +50,9 @@ test('canonical datasets: every CSV has the advertised shape, hash and provenanc
     assert.ok(entry.id && entry.title && entry.source.startsWith('https://') && entry.license, `${entry.id}: provenance is incomplete`);
     assert.ok(!ids.has(entry.id), `${entry.id}: duplicate id`);
     ids.add(entry.id);
-    const csv = fs.readFileSync(path.join(DATA, entry.file), 'utf8').trimEnd();
-    const published = fs.readFileSync(path.join(PUB_DATA, entry.file), 'utf8').trimEnd();
+    const raw = fs.readFileSync(path.join(DATA, entry.file), 'utf8').replace(/\r\n?/g, '\n');
+    const csv = raw.trimEnd();
+    const published = fs.readFileSync(path.join(PUB_DATA, entry.file), 'utf8').replace(/\r\n?/g, '\n').trimEnd();
     assert.equal(published, csv, `${entry.file}: public copy drifted from content`);
     const lines = csv.split('\n');
     assert.ok(lines.length > 100, `${entry.id}: too few rows`);
@@ -62,7 +63,7 @@ test('canonical datasets: every CSV has the advertised shape, hash and provenanc
     assert.ok(found, `${entry.id}: missing from manifest`);
     assert.equal(found.rows, lines.length - 1);
     assert.equal(found.featureCount, header.length - 1);
-    assert.equal(found.sha256, crypto.createHash('sha256').update(fs.readFileSync(path.join(DATA, entry.file))).digest('hex'));
+    assert.equal(found.sha256, crypto.createHash('sha256').update(raw).digest('hex'), `${entry.id}: hash must cover the LF-normalised canonical text`);
   }
 });
 

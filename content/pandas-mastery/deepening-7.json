@@ -4,11 +4,11 @@
    {
     "title": "Read a column as text",
     "statement": "Read the id column as text and print its dtype.",
-    "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": str})\nprint(df[\"id\"].dtype)",
-    "expected": "str",
+    "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": object})\nprint(df[\"id\"].dtype)",
+    "expected": "object",
     "setup": "import pandas as pd\nfrom io import StringIO",
-    "fixture": "df = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": str})",
-    "starter": "import pandas as pd\nfrom io import StringIO\ndf = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": str})\n\n# write the result the task asks for and print it\n",
+    "fixture": "df = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": object})",
+    "starter": "import pandas as pd\nfrom io import StringIO\ndf = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": object})\n\n# write the result the task asks for and print it\n",
     "requires": "__getitem__()"
    },
    {

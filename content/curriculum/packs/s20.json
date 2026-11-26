@@ -1,0 +1,717 @@
+{
+  "section": "s20",
+  "topic": "Machine Learning + scikit-learn",
+  "authored": true,
+  "intro": "Machine learning data se pattern seekhna hai, memorize karna nahi. Is section me train/test split, standardization, linear regression, accuracy, confusion matrix aur sigmoid ko NumPy se implement karke scikit-learn ke concepts ki neev rakhi jati hai.",
+  "theory": [
+    "Supervised learning me labels hote hain: model features se target predict karta hai. Unsupervised me labels nahi hote — structure dhoondha jata hai.",
+    "Train/test split model ka imtihaan hai: training data par score hamesha optimistic hota hai. Test set kabhi training me use nahi hona chahiye.",
+    "Features ka scale model ko affect karta hai, isliye standardization (mean 0, std 1) linear models aur distance-based models ke liye zaroori hai — statistics sirf train par fit karo.",
+    "Regression continuous value predict karti hai (MSE loss), classification discrete label (accuracy/confusion matrix). Dono ke metrics alag sawaalon ke jawab dete hain.",
+    "Overfitting ka matlab train bahut acha, test kharab. Regularization, simpler model aur cross-validation iske standard tools hain."
+  ],
+  "syntax": [
+    "from sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler\n\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\nscaler = StandardScaler().fit(X_train)\nX_train = scaler.transform(X_train)\nX_test = scaler.transform(X_test)",
+    "from sklearn.linear_model import LinearRegression\nmodel = LinearRegression().fit(X_train, y_train)\npredictions = model.predict(X_test)",
+    "from sklearn.metrics import accuracy_score, mean_squared_error, confusion_matrix\nprint(accuracy_score(y_test, preds))\nprint(mean_squared_error(y_test, preds))\nprint(confusion_matrix(y_test, preds))"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "pred = [1, 0, 1, 1, 0]\nactual = [1, 0, 1, 0, 0]\ntp = sum(p == 1 and a == 1 for p, a in zip(pred, actual))\nfp = sum(p == 1 and a == 0 for p, a in zip(pred, actual))\nfn = sum(p == 0 and a == 1 for p, a in zip(pred, actual))\ntn = sum(p == 0 and a == 0 for p, a in zip(pred, actual))\nprint([[tp, fp], [fn, tn]])",
+      "output": "",
+      "explain": [
+        "Confusion matrix batata hai model kis tarah ki galti kar raha hai.",
+        "Output ko print se verify karo.",
+        "Ye Machine Learning + scikit-learn ka basic building block hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "import math\n\nz = [-2, 0, 2]\nprint([round(1 / (1 + math.exp(-value)), 2) for value in z])",
+      "output": "",
+      "explain": [
+        "Sigmoid kisi bhi score ko 0–1 probability me badalta hai.",
+        "Ek step aur jodne se behaviour kaise badalta hai, dekho.",
+        "Input badal kar edge case test karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "import numpy as np\n\nX = np.array([[1.0], [2.0], [3.0], [4.0], [5.0]])\ny = np.array([2.0, 4.0, 6.0, 8.0, 10.0])\ntrain, test = slice(0, 4), slice(4, 5)\n\nmean = X[train].mean(axis=0)\nstd = X[train].std(axis=0)\nX_train = (X[train] - mean) / std\nX_test = (X[test] - mean) / std\n\nweight, *_ = np.linalg.lstsq(X_train, y[train], rcond=None)\nprediction = float((X_test * weight[0])[0, 0])\nprint('prediction:', round(prediction, 2), 'actual:', y[test][0])",
+      "output": "",
+      "explain": [
+        "Preprocessing train par fit hoti hai aur test par sirf apply — leakage-free evaluation ka pattern.",
+        "Ye snippet end-to-end flow dikhata hai.",
+        "Output ko project/interview me evidence ki tarah use karo."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Churn/credit-risk models me leakage sabse bada risk hai: test data ka statistic training me aa jaye to offline score jhooth bolta hai.",
+    "Production me model ke saath preprocessing pipeline save hoti hai; sirf model file save karna scale mismatch la deta hai.",
+    "Confusion matrix se pata chalta hai model kis class par galti kar raha hai — accuracy akela imbalanced data me dhoka deta hai."
+  ],
+  "interview": [
+    {
+      "q": "Train aur test me scale kyun alag fit karte hain?",
+      "a": "Scaler sirf training data par fit hota hai; test par sirf transform. Test ka data training statistics me leak hone se evaluation optimistic ho jata hai."
+    },
+    {
+      "q": "Accuracy imbalanced data me kyun dhoka deti hai?",
+      "a": "Agar 95% examples negative hain, hamesha negative predict karne par 95% accuracy mil jati hai. Precision, recall, F1 aur confusion matrix asli picture dete hain."
+    },
+    {
+      "q": "Overfitting kaise pakadte hain?",
+      "a": "Train score bahut high aur validation/test score kaafi kam. Learning curves, cross-validation aur simpler model/regularization se diagnose aur fix karte hain."
+    },
+    {
+      "q": "Linear regression aur logistic regression me fark batao.",
+      "a": "Linear regression continuous value aur squared-error loss use karti hai; logistic regression sigmoid ke through class probability deti hai aur cross-entropy loss use karti hai."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Beginner drill 1: what does linear_regression do in a Machine Learning + scikit-learn workflow?",
+        "a": "Least squares se line ka slope milta hai — linear regression ka core.",
+        "explain": "Least squares se line ka slope milta hai — linear regression ka core. Snippet chala kar output se confirm karo.",
+        "code": "import numpy as np\n\nX = np.array([[1.0], [2.0], [3.0]])\ny = np.array([2.0, 4.0, 6.0])\nweight, *_ = np.linalg.lstsq(X, y, rcond=None)\nprint(round(float(weight[0]), 2))",
+        "output": "",
+        "tip": "Machine Learning + scikit-learn me linear_regression ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 2: what does mse do in a Machine Learning + scikit-learn workflow?",
+        "a": "MSE squared errors ka mean hai, isliye bade errors ko zyada punish karta hai.",
+        "explain": "MSE squared errors ka mean hai, isliye bade errors ko zyada punish karta hai. Snippet chala kar output se confirm karo.",
+        "code": "import numpy as np\n\npred = np.array([1.0, 2.0])\nactual = np.array([1.5, 2.5])\nprint(round(float(((pred - actual) ** 2).mean()), 3))",
+        "output": "",
+        "tip": "Machine Learning + scikit-learn me mse ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 3: what does accuracy do in a Machine Learning + scikit-learn workflow?",
+        "a": "Accuracy kitne predictions sahi nikle ka ratio hai.",
+        "explain": "Accuracy kitne predictions sahi nikle ka ratio hai. Snippet chala kar output se confirm karo.",
+        "code": "pred = [1, 0, 1, 1, 0]\nactual = [1, 0, 1, 0, 0]\ncorrect = sum(p == a for p, a in zip(pred, actual))\nprint(round(correct / len(actual), 2))",
+        "output": "",
+        "tip": "Machine Learning + scikit-learn me accuracy ka behaviour edge cases par test karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Intermediate drill 1: what does confusion_matrix do in a Machine Learning + scikit-learn workflow?",
+        "a": "Confusion matrix batata hai model kis tarah ki galti kar raha hai.",
+        "explain": "Confusion matrix batata hai model kis tarah ki galti kar raha hai. Snippet chala kar output se confirm karo.",
+        "code": "pred = [1, 0, 1, 1, 0]\nactual = [1, 0, 1, 0, 0]\ntp = sum(p == 1 and a == 1 for p, a in zip(pred, actual))\nfp = sum(p == 1 and a == 0 for p, a in zip(pred, actual))\nfn = sum(p == 0 and a == 1 for p, a in zip(pred, actual))\ntn = sum(p == 0 and a == 0 for p, a in zip(pred, actual))\nprint([[tp, fp], [fn, tn]])",
+        "output": "",
+        "tip": "Machine Learning + scikit-learn me confusion_matrix ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 2: what does sigmoid do in a Machine Learning + scikit-learn workflow?",
+        "a": "Sigmoid kisi bhi score ko 0–1 probability me badalta hai.",
+        "explain": "Sigmoid kisi bhi score ko 0–1 probability me badalta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Machine Learning + scikit-learn me sigmoid ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 3: what does gradient_descent do in a Machine Learning + scikit-learn workflow?",
+        "a": "Gradient descent loss ka gradient le kar weight ko target ki taraf le jata hai.",
+        "explain": "Gradient descent loss ka gradient le kar weight ko target ki taraf le jata hai. Snippet chala kar output se confirm karo.",
+        "tip": "Machine Learning + scikit-learn me gradient_descent ka behaviour edge cases par test karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced drill 1: what does train_test_split do in a Machine Learning + scikit-learn workflow?",
+        "a": "Data ko train aur test me todna evaluation ko honest banata hai.",
+        "explain": "Data ko train aur test me todna evaluation ko honest banata hai. Snippet chala kar output se confirm karo.",
+        "code": "import numpy as np\n\nX = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])\ntrain, test = X[:3], X[3:]\nprint(train.shape, test.shape)",
+        "output": "",
+        "tip": "Machine Learning + scikit-learn me train_test_split ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 2: what does standardize do in a Machine Learning + scikit-learn workflow?",
+        "a": "Standardization har feature ko zero mean aur unit variance deta hai.",
+        "explain": "Standardization har feature ko zero mean aur unit variance deta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Machine Learning + scikit-learn me standardize ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 3: what does linear_regression do in a Machine Learning + scikit-learn workflow?",
+        "a": "Least squares se line ka slope milta hai — linear regression ka core.",
+        "explain": "Least squares se line ka slope milta hai — linear regression ka core. Snippet chala kar output se confirm karo.",
+        "tip": "Machine Learning + scikit-learn me linear_regression ka behaviour edge cases par test karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview drill 1: what does mse do in a Machine Learning + scikit-learn workflow?",
+        "a": "MSE squared errors ka mean hai, isliye bade errors ko zyada punish karta hai.",
+        "explain": "MSE squared errors ka mean hai, isliye bade errors ko zyada punish karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Machine Learning + scikit-learn me mse ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 2: what does accuracy do in a Machine Learning + scikit-learn workflow?",
+        "a": "Accuracy kitne predictions sahi nikle ka ratio hai.",
+        "explain": "Accuracy kitne predictions sahi nikle ka ratio hai. Snippet chala kar output se confirm karo.",
+        "tip": "Machine Learning + scikit-learn me accuracy ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 3: what does confusion_matrix do in a Machine Learning + scikit-learn workflow?",
+        "a": "Confusion matrix batata hai model kis tarah ki galti kar raha hai.",
+        "explain": "Confusion matrix batata hai model kis tarah ki galti kar raha hai. Snippet chala kar output se confirm karo.",
+        "tip": "Machine Learning + scikit-learn me confusion_matrix ka behaviour edge cases par test karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Realworld drill 1: what does sigmoid do in a Machine Learning + scikit-learn workflow?",
+        "a": "Sigmoid kisi bhi score ko 0–1 probability me badalta hai.",
+        "explain": "Sigmoid kisi bhi score ko 0–1 probability me badalta hai. Snippet chala kar output se confirm karo.",
+        "code": "import math\n\nz = [-2, 0, 2]\nprint([round(1 / (1 + math.exp(-value)), 2) for value in z])",
+        "output": "",
+        "tip": "Machine Learning + scikit-learn me sigmoid ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 2: what does gradient_descent do in a Machine Learning + scikit-learn workflow?",
+        "a": "Gradient descent loss ka gradient le kar weight ko target ki taraf le jata hai.",
+        "explain": "Gradient descent loss ka gradient le kar weight ko target ki taraf le jata hai. Snippet chala kar output se confirm karo.",
+        "tip": "Machine Learning + scikit-learn me gradient_descent ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 3: what does train_test_split do in a Machine Learning + scikit-learn workflow?",
+        "a": "Data ko train aur test me todna evaluation ko honest banata hai.",
+        "explain": "Data ko train aur test me todna evaluation ko honest banata hai. Snippet chala kar output se confirm karo.",
+        "tip": "Machine Learning + scikit-learn me train_test_split ka behaviour edge cases par test karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 1: implement train_test_split and print the result.",
+      "build": "Data ko train aur test me todna evaluation ko honest banata hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "train_test_split ke liye sample data snippet me diya hai",
+      "expected": "Printed output train_test_split ka result dikhata hai",
+      "hint": "Solution ka core train_test_split hai; output ko readable rakho.",
+      "concept": "Machine Learning + scikit-learn · train_test_split",
+      "solution": "import numpy as np\n\nX = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])\ntrain, test = X[:3], X[3:]\nprint(train.shape, test.shape)",
+      "output": "",
+      "explanation": "Data ko train aur test me todna evaluation ko honest banata hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to train_test_split ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 2: implement standardize and print the result.",
+      "build": "Standardization har feature ko zero mean aur unit variance deta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "standardize ke liye sample data snippet me diya hai",
+      "expected": "Printed output standardize ka result dikhata hai",
+      "hint": "Solution ka core standardize hai; output ko readable rakho.",
+      "concept": "Machine Learning + scikit-learn · standardize",
+      "solution": "import numpy as np\n\nX = np.array([[1.0, 10.0], [2.0, 20.0], [3.0, 30.0]])\nscaled = (X - X.mean(axis=0)) / X.std(axis=0)\nprint(np.round(scaled, 2))",
+      "output": "",
+      "explanation": "Standardization har feature ko zero mean aur unit variance deta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to standardize ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 3: implement linear_regression and print the result.",
+      "build": "Least squares se line ka slope milta hai — linear regression ka core. Ek chhota runnable example likho jo output print kare.",
+      "input": "linear_regression ke liye sample data snippet me diya hai",
+      "expected": "Printed output linear_regression ka result dikhata hai",
+      "hint": "Solution ka core linear_regression hai; output ko readable rakho.",
+      "concept": "Machine Learning + scikit-learn · linear_regression",
+      "solution": "import numpy as np\n\nX = np.array([[1.0], [2.0], [3.0]])\ny = np.array([2.0, 4.0, 6.0])\nweight, *_ = np.linalg.lstsq(X, y, rcond=None)\nprint(round(float(weight[0]), 2))",
+      "output": "",
+      "explanation": "Least squares se line ka slope milta hai — linear regression ka core. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to linear_regression ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 4: implement mse and print the result.",
+      "build": "MSE squared errors ka mean hai, isliye bade errors ko zyada punish karta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "mse ke liye sample data snippet me diya hai",
+      "expected": "Printed output mse ka result dikhata hai",
+      "hint": "Solution ka core mse hai; output ko readable rakho.",
+      "concept": "Machine Learning + scikit-learn · mse",
+      "solution": "import numpy as np\n\npred = np.array([1.0, 2.0])\nactual = np.array([1.5, 2.5])\nprint(round(float(((pred - actual) ** 2).mean()), 3))",
+      "output": "",
+      "explanation": "MSE squared errors ka mean hai, isliye bade errors ko zyada punish karta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to mse ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 5: implement accuracy and print the result.",
+      "build": "Accuracy kitne predictions sahi nikle ka ratio hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "accuracy ke liye sample data snippet me diya hai",
+      "expected": "Printed output accuracy ka result dikhata hai",
+      "hint": "Solution ka core accuracy hai; output ko readable rakho.",
+      "concept": "Machine Learning + scikit-learn · accuracy",
+      "solution": "pred = [1, 0, 1, 1, 0]\nactual = [1, 0, 1, 0, 0]\ncorrect = sum(p == a for p, a in zip(pred, actual))\nprint(round(correct / len(actual), 2))",
+      "output": "",
+      "explanation": "Accuracy kitne predictions sahi nikle ka ratio hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to accuracy ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 6: implement confusion_matrix and print the result.",
+      "build": "Confusion matrix batata hai model kis tarah ki galti kar raha hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "confusion_matrix ke liye sample data snippet me diya hai",
+      "expected": "Printed output confusion_matrix ka result dikhata hai",
+      "hint": "Solution ka core confusion_matrix hai; output ko readable rakho.",
+      "concept": "Machine Learning + scikit-learn · confusion_matrix",
+      "solution": "pred = [1, 0, 1, 1, 0]\nactual = [1, 0, 1, 0, 0]\ntp = sum(p == 1 and a == 1 for p, a in zip(pred, actual))\nfp = sum(p == 1 and a == 0 for p, a in zip(pred, actual))\nfn = sum(p == 0 and a == 1 for p, a in zip(pred, actual))\ntn = sum(p == 0 and a == 0 for p, a in zip(pred, actual))\nprint([[tp, fp], [fn, tn]])",
+      "output": "",
+      "explanation": "Confusion matrix batata hai model kis tarah ki galti kar raha hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to confusion_matrix ka approach kaise badlega?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "scores = [10, 20]\nprint(scores[5])",
+      "error": "IndexError: list index out of range",
+      "why": "List me sirf 0 aur 1 index hain; 5 par kuch nahi. Ye Machine Learning + scikit-learn ke workflow me bhi wahi galti hai.",
+      "fix": "Index se pehle length check karo ya safe getter use karo.",
+      "correct": "scores = [10, 20]\nprint(scores[1] if len(scores) > 1 else None)",
+      "output": "",
+      "lesson": "IndexError off-by-one aur empty collection ka signal hai."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "raise",
+      "broken": "profile = {'name': 'Asha'}\nprint(profile['score'])",
+      "error": "KeyError: 'score'",
+      "why": "Dict me score key exist nahi karti; [] missing key par KeyError deta hai. Ye Machine Learning + scikit-learn ke workflow me bhi wahi galti hai.",
+      "fix": "get() se default do ya key ki presence check karo.",
+      "correct": "profile = {'name': 'Asha'}\nprint(profile.get('score', 'not recorded'))",
+      "output": "",
+      "lesson": "KeyError expected-missing field ka case hai — get/default se handle karo."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "raise",
+      "broken": "raw = '12.5'\nprint(int(raw))",
+      "error": "ValueError: invalid literal for int() with base 10: '12.5'",
+      "why": "int() sirf poore number ka string parse karta hai. Ye Machine Learning + scikit-learn ke workflow me bhi wahi galti hai.",
+      "fix": "Pehle float() phir int() karo, ya Decimal use karo.",
+      "correct": "raw = '12.5'\nprint(int(float(raw)))",
+      "output": "",
+      "lesson": "ValueError format ka issue hai, type ka nahi."
+    },
+    {
+      "difficulty": "expert",
+      "mode": "raise",
+      "broken": "text = 'hello'\nprint(text.append('!'))",
+      "error": "AttributeError: 'str' object has no attribute 'append'",
+      "why": "String immutable hai; append list ka method hai. Ye Machine Learning + scikit-learn ke workflow me bhi wahi galti hai.",
+      "fix": "String concatenation ya join use karo.",
+      "correct": "text = 'hello'\nprint(text + '!')",
+      "output": "",
+      "lesson": "AttributeError galat type par method call ka signal hai."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Quick drill: train_test_split ka ek minimal example likho aur output predict karo.",
+      "hint": "Machine Learning + scikit-learn ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Coding round: standardize aur linear_regression ko ek function me combine karo.",
+      "hint": "Machine Learning + scikit-learn ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Advanced: Machine Learning + scikit-learn ka chhota pipeline banao jisme mse, accuracy aur validation ho.",
+      "hint": "Machine Learning + scikit-learn ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview: Machine Learning + scikit-learn ke 3 trade-offs whiteboard par likho aur confusion_matrix se example do.",
+      "hint": "Machine Learning + scikit-learn ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Build: Machine Learning + scikit-learn ka mini project banao — input, processing, output aur README.",
+      "hint": "Machine Learning + scikit-learn ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Machine Learning + scikit-learn Starter Lab",
+      "problem": "Machine Learning + scikit-learn ke basics ko ek chhote runnable program me jodna.",
+      "objective": "train_test_split aur standardize ka demo jo output print kare.",
+      "code": "import numpy as np\n\nX = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])\ntrain, test = X[:3], X[3:]\nprint(train.shape, test.shape)\nimport numpy as np\n\nX = np.array([[1.0, 10.0], [2.0, 20.0], [3.0, 30.0]])\nscaled = (X - X.mean(axis=0)) / X.std(axis=0)\nprint(np.round(scaled, 2))",
+      "explanation": "Data ko train aur test me todna evaluation ko honest banata hai. Standardization har feature ko zero mean aur unit variance deta hai. Dono snippets ek hi file me chalte hain.",
+      "testing": "train_test_split ke empty aur normal input par output check karo.",
+      "errors": "Galat type ya missing value par Python exception dega — Version 2 me validation add hoti hai.",
+      "realWorld": "Machine Learning + scikit-learn ke production code me yahi chhote steps repeated hote hain.",
+      "resume": "Machine Learning + scikit-learn starter lab: train_test_split aur standardize ka runnable demo.",
+      "features": [
+        "train_test_split ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Machine Learning + scikit-learn",
+        "train_test_split"
+      ],
+      "structure": "s20_project_1/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "train_test_split ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "confusion_matrix ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Machine Learning + scikit-learn Starter Lab interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Machine Learning + scikit-learn Starter Lab interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Machine Learning + scikit-learn Starter Lab interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Machine Learning + scikit-learn Starter Lab ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Machine Learning + scikit-learn Data Pipeline",
+      "problem": "Raw input ko validate karke Machine Learning + scikit-learn ke useful output me badalna.",
+      "objective": "linear_regression, mse aur accuracy se chhota pipeline banao.",
+      "code": "import numpy as np\n\nX = np.array([[1.0], [2.0], [3.0]])\ny = np.array([2.0, 4.0, 6.0])\nweight, *_ = np.linalg.lstsq(X, y, rcond=None)\nprint(round(float(weight[0]), 2))\nimport numpy as np\n\npred = np.array([1.0, 2.0])\nactual = np.array([1.5, 2.5])\nprint(round(float(((pred - actual) ** 2).mean()), 3))\npred = [1, 0, 1, 1, 0]\nactual = [1, 0, 1, 0, 0]\ncorrect = sum(p == a for p, a in zip(pred, actual))\nprint(round(correct / len(actual), 2))",
+      "explanation": "Least squares se line ka slope milta hai — linear regression ka core. MSE squared errors ka mean hai, isliye bade errors ko zyada punish karta hai. Accuracy kitne predictions sahi nikle ka ratio hai. Pipeline ke steps alag-alag testable hain.",
+      "testing": "Ek valid aur ek invalid input se pipeline chalao; dono ka behaviour note karo.",
+      "errors": "Invalid input par crash ke bajaye clear error/message do — Version 3 me error shape add hota hai.",
+      "realWorld": "Yahi load → transform → report pattern Machine Learning + scikit-learn ke dashboards aur services me hota hai.",
+      "resume": "Machine Learning + scikit-learn pipeline: validation aur linear_regression/mse ke saath end-to-end demo.",
+      "features": [
+        "standardize ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Machine Learning + scikit-learn",
+        "standardize"
+      ],
+      "structure": "s20_project_2/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "standardize ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "sigmoid ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Machine Learning + scikit-learn Data Pipeline interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Machine Learning + scikit-learn Data Pipeline interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Machine Learning + scikit-learn Data Pipeline interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Machine Learning + scikit-learn Data Pipeline ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "Machine Learning + scikit-learn Capstone",
+      "problem": "Ek believable Machine Learning + scikit-learn use case jo end-to-end chale aur explain ho sake.",
+      "objective": "Preprocessing train par fit hoti hai aur test par sirf apply — leakage-free evaluation ka pattern. Isse project interview me trade-offs ke saath present karo.",
+      "code": "import numpy as np\n\nX = np.array([[1.0], [2.0], [3.0], [4.0], [5.0]])\ny = np.array([2.0, 4.0, 6.0, 8.0, 10.0])\ntrain, test = slice(0, 4), slice(4, 5)\n\nmean = X[train].mean(axis=0)\nstd = X[train].std(axis=0)\nX_train = (X[train] - mean) / std\nX_test = (X[test] - mean) / std\n\nweight, *_ = np.linalg.lstsq(X_train, y[train], rcond=None)\nprediction = float((X_test * weight[0])[0, 0])\nprint('prediction:', round(prediction, 2), 'actual:', y[test][0])",
+      "explanation": "Preprocessing train par fit hoti hai aur test par sirf apply — leakage-free evaluation ka pattern.",
+      "testing": "Expected output ko haath se verify karo, phir edge case (empty/missing) add karo.",
+      "errors": "Failure modes document karo: missing data, bad type aur duplicate records.",
+      "realWorld": "Ye capstone resume aur interview dono me ek concrete Machine Learning + scikit-learn story deta hai.",
+      "resume": "Machine Learning + scikit-learn capstone: Preprocessing train par fit hoti hai aur test par sirf apply — leakage-free evaluation ka pattern.",
+      "features": [
+        "linear_regression ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Machine Learning + scikit-learn",
+        "linear_regression"
+      ],
+      "structure": "s20_project_3/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "linear_regression ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "gradient_descent ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Machine Learning + scikit-learn Capstone interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Machine Learning + scikit-learn Capstone interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Machine Learning + scikit-learn Capstone interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Machine Learning + scikit-learn Capstone ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      {
+        "q": "Understanding 1.1: why does Machine Learning + scikit-learn Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.2: why does Machine Learning + scikit-learn Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.3: why does Machine Learning + scikit-learn Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.1: why does Machine Learning + scikit-learn Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.2: why does Machine Learning + scikit-learn Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.3: why does Machine Learning + scikit-learn Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.1: why does Machine Learning + scikit-learn Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.2: why does Machine Learning + scikit-learn Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.3: why does Machine Learning + scikit-learn Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      }
+    ],
+    "coding": [
+      {
+        "q": "Coding 1.1: extend Machine Learning + scikit-learn Starter Lab with one more train_test_split step.",
+        "a": "Data ko train aur test me todna evaluation ko honest banata hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.2: extend Machine Learning + scikit-learn Starter Lab with one more standardize step.",
+        "a": "Standardization har feature ko zero mean aur unit variance deta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.3: extend Machine Learning + scikit-learn Starter Lab with one more linear_regression step.",
+        "a": "Least squares se line ka slope milta hai — linear regression ka core. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.1: extend Machine Learning + scikit-learn Data Pipeline with one more train_test_split step.",
+        "a": "Data ko train aur test me todna evaluation ko honest banata hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.2: extend Machine Learning + scikit-learn Data Pipeline with one more standardize step.",
+        "a": "Standardization har feature ko zero mean aur unit variance deta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.3: extend Machine Learning + scikit-learn Data Pipeline with one more linear_regression step.",
+        "a": "Least squares se line ka slope milta hai — linear regression ka core. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.1: extend Machine Learning + scikit-learn Capstone with one more train_test_split step.",
+        "a": "Data ko train aur test me todna evaluation ko honest banata hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.2: extend Machine Learning + scikit-learn Capstone with one more standardize step.",
+        "a": "Standardization har feature ko zero mean aur unit variance deta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.3: extend Machine Learning + scikit-learn Capstone with one more linear_regression step.",
+        "a": "Least squares se line ka slope milta hai — linear regression ka core. Naya step add karke output compare karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced 1.1: how would Machine Learning + scikit-learn Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.2: how would Machine Learning + scikit-learn Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.3: how would Machine Learning + scikit-learn Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.1: how would Machine Learning + scikit-learn Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.2: how would Machine Learning + scikit-learn Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.3: how would Machine Learning + scikit-learn Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.1: how would Machine Learning + scikit-learn Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.2: how would Machine Learning + scikit-learn Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.3: how would Machine Learning + scikit-learn Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview 1.1: defend one trade-off in Machine Learning + scikit-learn Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.2: defend one trade-off in Machine Learning + scikit-learn Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.3: defend one trade-off in Machine Learning + scikit-learn Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.1: defend one trade-off in Machine Learning + scikit-learn Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.2: defend one trade-off in Machine Learning + scikit-learn Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.3: defend one trade-off in Machine Learning + scikit-learn Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.1: defend one trade-off in Machine Learning + scikit-learn Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.2: defend one trade-off in Machine Learning + scikit-learn Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.3: defend one trade-off in Machine Learning + scikit-learn Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      }
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Practical 1: validate Machine Learning + scikit-learn data in 15 minutes.",
+      "a": "Steps likho: input, train_test_split, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 2: transform Machine Learning + scikit-learn data in 15 minutes.",
+      "a": "Steps likho: input, standardize, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 3: aggregate Machine Learning + scikit-learn data in 15 minutes.",
+      "a": "Steps likho: input, linear_regression, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 4: present Machine Learning + scikit-learn data in 15 minutes.",
+      "a": "Steps likho: input, mse, expected output; phir code chala kar dikhao."
+    }
+  ],
+  "revision": [
+    "Machine Learning + scikit-learn: revise train_test_split — Data ko train aur test me todna evaluation ko honest banata hai.",
+    "Machine Learning + scikit-learn: revise standardize — Standardization har feature ko zero mean aur unit variance deta hai.",
+    "Machine Learning + scikit-learn: revise linear_regression — Least squares se line ka slope milta hai — linear regression ka core.",
+    "Machine Learning + scikit-learn: revise mse — MSE squared errors ka mean hai, isliye bade errors ko zyada punish karta hai.",
+    "Machine Learning + scikit-learn: revise accuracy — Accuracy kitne predictions sahi nikle ka ratio hai."
+  ]
+}

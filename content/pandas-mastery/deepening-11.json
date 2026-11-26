@@ -34,11 +34,11 @@
    {
     "title": "Keep the zip as text",
     "statement": "Read the zip column as text and print its value and dtype.",
-    "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": str})\nprint(df[\"zip\"].tolist(), df[\"zip\"].dtype)",
-    "expected": "['012345'] str",
+    "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": object})\nprint(df[\"zip\"].tolist(), df[\"zip\"].dtype)",
+    "expected": "['012345'] object",
     "setup": "import pandas as pd\nfrom io import StringIO",
-    "fixture": "df = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": str})",
-    "starter": "import pandas as pd\nfrom io import StringIO\ndf = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": str})\n\n# write the result the task asks for and print it\n",
+    "fixture": "df = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": object})",
+    "starter": "import pandas as pd\nfrom io import StringIO\ndf = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": object})\n\n# write the result the task asks for and print it\n",
     "requires": "__getitem__()"
    }
   ],
@@ -53,7 +53,7 @@
    {
     "title": "to_csv given an integer as a destination",
     "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(1))",
-    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False).strip())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip())",
     "error": "ValueError: Invalid file path or buffer object type: <class 'int'>",
     "fixedOutput": "a\n1"
    },
@@ -66,8 +66,8 @@
    },
    {
     "title": "A headerless export read as if it had names",
-    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False, header=False).strip())",
-    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False).strip())",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False, header=False, lineterminator=\"\\n\").strip())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip())",
     "error": "Wrong output: 1 — with header=False the file has no column name, so a later read invents one.",
     "fixedOutput": "a\n1",
     "brokenOutput": "1"
@@ -122,7 +122,7 @@
     "title": "A join with overlapping non-key columns",
     "broken": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]}, index=[1])\nb = pd.DataFrame({\"x\": [2]}, index=[1])\nprint(a.join(b).shape)",
     "fix": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]}, index=[1])\nb = pd.DataFrame({\"y\": [2]}, index=[1])\nprint(a.join(b).shape)",
-    "error": "ValueError: columns overlap but no suffix specified: Index(['x'], dtype='str')",
+    "error": "ValueError: columns overlap but no suffix specified: Index(['x'])",
     "fixedOutput": "(1, 2)"
    },
    {

@@ -1,0 +1,717 @@
+{
+  "section": "s29",
+  "topic": "Project Interview Labs",
+  "authored": true,
+  "intro": "Project interview me \"kya banaya\" se zyada \"kaise socha\" dekha jata hai. Is section me ek data pipeline ka poora chhota version banaya jata hai — records, validation, filtering, aggregation, pagination aur export — taaki aap architecture aur trade-offs dono explain kar sakein.",
+  "theory": [
+    "Project ka pehla slide problem statement hota hai: user, pain, success metric. Technology uske baad aati hai.",
+    "Data model grain se shuru hota hai; har record ka schema aur validation rule explicit rakho.",
+    "Pipeline ko pure steps me todo: load, validate, transform, aggregate, present. Har step independently testable hona chahiye.",
+    "API/CLI boundary par pagination aur limits rakho taaki bada result set memory aur response size na tode.",
+    "Interview me trade-offs bolo: abhi simple kya rakha, scale par kya badlega, aur kaunsa metric success batayega."
+  ],
+  "syntax": [
+    "RECORD = {\"id\": int, \"city\": str, \"amount\": int}\n\ndef validate(record):\n    missing = [key for key in RECORD if key not in record]\n    if missing:\n        raise ValueError(f\"missing: {missing}\")\n    return record",
+    "rows = [row for row in records if row[\"amount\"] > 0]\ntotals = {}\nfor row in rows:\n    totals[row[\"city\"]] = totals.get(row[\"city\"], 0) + row[\"amount\"]",
+    "def paginate(items, page, size):\n    start = (page - 1) * size\n    return items[start:start + size]"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "totals = {'pune': 150, 'delhi': 250, 'mumbai': 90}\nprint(sorted(totals.items(), key=lambda item: -item[1])[:2])",
+      "output": "",
+      "explain": [
+        "Top-k se report ka headline number nikalta hai.",
+        "Output ko print se verify karo.",
+        "Ye Project Interview Labs ka basic building block hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "import csv\nimport io\n\nbuffer = io.StringIO()\nwriter = csv.writer(buffer)\nwriter.writerow(['city', 'total'])\nwriter.writerows([('pune', 150)])\nprint(buffer.getvalue().strip())",
+      "output": "",
+      "explain": [
+        "CSV export ko StringIO se test kiya ja sakta hai.",
+        "Ek step aur jodne se behaviour kaise badalta hai, dekho.",
+        "Input badal kar edge case test karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "import csv\nimport io\n\nraw = '''id,city,amount\n1,pune,100\n2,delhi,250\n3,pune,-10\n4,pune,50\n'''\nrows, rejected = [], []\nfor row in csv.DictReader(io.StringIO(raw)):\n    try:\n        amount = int(row['amount'])\n    except ValueError:\n        rejected.append((row['id'], 'bad amount'))\n        continue\n    if amount <= 0:\n        rejected.append((row['id'], 'non-positive'))\n        continue\n    rows.append({'id': int(row['id']), 'city': row['city'], 'amount': amount})\n\ntotals = {}\nfor row in rows:\n    totals[row['city']] = totals.get(row['city'], 0) + row['amount']\n\nprint('accepted:', len(rows), 'rejected:', rejected)\nprint('totals:', totals)\nprint('top city:', max(totals, key=totals.get))",
+      "output": "",
+      "explain": [
+        "Load → validate → filter → aggregate → report: project interview me yahi pipeline explain karo.",
+        "Ye snippet end-to-end flow dikhata hai.",
+        "Output ko project/interview me evidence ki tarah use karo."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Project demo me end-to-end flow dikhao: raw input, validation errors, clean output aur ek metric — sirf UI screenshot kaafi nahi hota.",
+    "Interviewer scale par poochta hai: 10x data par kya badlega? Index, batching, pagination aur async processing ka plan batao.",
+    "Failures ka handling bhi design ka hissa hai: bad rows, duplicate ids aur partial writes ka plan rakho."
+  ],
+  "interview": [
+    {
+      "q": "Apne project ka grain kaise explain karoge?",
+      "a": "Ek row kis entity ko represent karti hai — order, user-day, ya city-month. Grain bata kar hi totals/shares ka matlab clear hota hai."
+    },
+    {
+      "q": "Project me validation aur cleaning kaha rakhte hain?",
+      "a": "Boundary par: ingestion ke waqt schema validate, invalid rows ko reason ke saath quarantine, phir transform. Andar ke steps clean data par chalte hain."
+    },
+    {
+      "q": "10x data par aapka pipeline kaise scale karega?",
+      "a": "Streaming/batching, database indexes, pagination, caching aggregates aur async workers. Pehle bottleneck measure karo, phir optimize."
+    },
+    {
+      "q": "Project ka success metric kya hoga?",
+      "a": "Business metric (time saved, error rate, conversion) aur technical metric (latency, failure rate) dono. Baseline ke against measure karo."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Beginner drill 1: what does validate do in a Project Interview Labs workflow?",
+        "a": "Validation missing fields ko explicit list me return karta hai.",
+        "explain": "Validation missing fields ko explicit list me return karta hai. Snippet chala kar output se confirm karo.",
+        "code": "REQUIRED = ('id', 'amount')\nrecord = {'id': 1, 'city': 'pune'}\nprint([field for field in REQUIRED if field not in record])",
+        "output": "",
+        "tip": "Project Interview Labs me validate ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 2: what does paginate do in a Project Interview Labs workflow?",
+        "a": "Pagination bade result set ko chhote pages me deta hai.",
+        "explain": "Pagination bade result set ko chhote pages me deta hai. Snippet chala kar output se confirm karo.",
+        "code": "items = list(range(1, 11))\npage, size = 2, 3\nstart = (page - 1) * size\nprint(items[start:start + size])",
+        "output": "",
+        "tip": "Project Interview Labs me paginate ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 3: what does top_k do in a Project Interview Labs workflow?",
+        "a": "Top-k se report ka headline number nikalta hai.",
+        "explain": "Top-k se report ka headline number nikalta hai. Snippet chala kar output se confirm karo.",
+        "code": "totals = {'pune': 150, 'delhi': 250, 'mumbai': 90}\nprint(sorted(totals.items(), key=lambda item: -item[1])[:2])",
+        "output": "",
+        "tip": "Project Interview Labs me top_k ka behaviour edge cases par test karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Intermediate drill 1: what does export_csv do in a Project Interview Labs workflow?",
+        "a": "CSV export ko StringIO se test kiya ja sakta hai.",
+        "explain": "CSV export ko StringIO se test kiya ja sakta hai. Snippet chala kar output se confirm karo.",
+        "code": "import csv\nimport io\n\nbuffer = io.StringIO()\nwriter = csv.writer(buffer)\nwriter.writerow(['city', 'total'])\nwriter.writerows([('pune', 150)])\nprint(buffer.getvalue().strip())",
+        "output": "",
+        "tip": "Project Interview Labs me export_csv ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 2: what does dedupe do in a Project Interview Labs workflow?",
+        "a": "Idempotent pipeline ke liye duplicate ids hatao.",
+        "explain": "Idempotent pipeline ke liye duplicate ids hatao. Snippet chala kar output se confirm karo.",
+        "tip": "Project Interview Labs me dedupe ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 3: what does records do in a Project Interview Labs workflow?",
+        "a": "Records list of dicts ka simple data model hai.",
+        "explain": "Records list of dicts ka simple data model hai. Snippet chala kar output se confirm karo.",
+        "tip": "Project Interview Labs me records ka behaviour edge cases par test karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced drill 1: what does filter_pipeline do in a Project Interview Labs workflow?",
+        "a": "Filter step invalid rows ko boundary par hata deta hai.",
+        "explain": "Filter step invalid rows ko boundary par hata deta hai. Snippet chala kar output se confirm karo.",
+        "code": "records = [{'amount': 100}, {'amount': -5}, {'amount': 250}]\nvalid = [row for row in records if row['amount'] > 0]\nprint(valid)",
+        "output": "",
+        "tip": "Project Interview Labs me filter_pipeline ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 2: what does aggregate do in a Project Interview Labs workflow?",
+        "a": "Aggregation step group-wise totals banata hai.",
+        "explain": "Aggregation step group-wise totals banata hai. Snippet chala kar output se confirm karo.",
+        "tip": "Project Interview Labs me aggregate ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 3: what does validate do in a Project Interview Labs workflow?",
+        "a": "Validation missing fields ko explicit list me return karta hai.",
+        "explain": "Validation missing fields ko explicit list me return karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Project Interview Labs me validate ka behaviour edge cases par test karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview drill 1: what does paginate do in a Project Interview Labs workflow?",
+        "a": "Pagination bade result set ko chhote pages me deta hai.",
+        "explain": "Pagination bade result set ko chhote pages me deta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Project Interview Labs me paginate ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 2: what does top_k do in a Project Interview Labs workflow?",
+        "a": "Top-k se report ka headline number nikalta hai.",
+        "explain": "Top-k se report ka headline number nikalta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Project Interview Labs me top_k ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 3: what does export_csv do in a Project Interview Labs workflow?",
+        "a": "CSV export ko StringIO se test kiya ja sakta hai.",
+        "explain": "CSV export ko StringIO se test kiya ja sakta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Project Interview Labs me export_csv ka behaviour edge cases par test karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Realworld drill 1: what does dedupe do in a Project Interview Labs workflow?",
+        "a": "Idempotent pipeline ke liye duplicate ids hatao.",
+        "explain": "Idempotent pipeline ke liye duplicate ids hatao. Snippet chala kar output se confirm karo.",
+        "code": "rows = [{'id': 1}, {'id': 2}, {'id': 1}]\nseen = set()\nclean = []\nfor row in rows:\n    if row['id'] not in seen:\n        seen.add(row['id'])\n        clean.append(row)\nprint(clean)",
+        "output": "",
+        "tip": "Project Interview Labs me dedupe ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 2: what does records do in a Project Interview Labs workflow?",
+        "a": "Records list of dicts ka simple data model hai.",
+        "explain": "Records list of dicts ka simple data model hai. Snippet chala kar output se confirm karo.",
+        "tip": "Project Interview Labs me records ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 3: what does filter_pipeline do in a Project Interview Labs workflow?",
+        "a": "Filter step invalid rows ko boundary par hata deta hai.",
+        "explain": "Filter step invalid rows ko boundary par hata deta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Project Interview Labs me filter_pipeline ka behaviour edge cases par test karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 1: implement records and print the result.",
+      "build": "Records list of dicts ka simple data model hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "records ke liye sample data snippet me diya hai",
+      "expected": "Printed output records ka result dikhata hai",
+      "hint": "Solution ka core records hai; output ko readable rakho.",
+      "concept": "Project Interview Labs · records",
+      "solution": "records = [{'id': 1, 'city': 'pune', 'amount': 100}, {'id': 2, 'city': 'delhi', 'amount': 250}]\nprint(records[0]['city'], len(records))",
+      "output": "",
+      "explanation": "Records list of dicts ka simple data model hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to records ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 2: implement filter_pipeline and print the result.",
+      "build": "Filter step invalid rows ko boundary par hata deta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "filter_pipeline ke liye sample data snippet me diya hai",
+      "expected": "Printed output filter_pipeline ka result dikhata hai",
+      "hint": "Solution ka core filter_pipeline hai; output ko readable rakho.",
+      "concept": "Project Interview Labs · filter_pipeline",
+      "solution": "records = [{'amount': 100}, {'amount': -5}, {'amount': 250}]\nvalid = [row for row in records if row['amount'] > 0]\nprint(valid)",
+      "output": "",
+      "explanation": "Filter step invalid rows ko boundary par hata deta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to filter_pipeline ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 3: implement aggregate and print the result.",
+      "build": "Aggregation step group-wise totals banata hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "aggregate ke liye sample data snippet me diya hai",
+      "expected": "Printed output aggregate ka result dikhata hai",
+      "hint": "Solution ka core aggregate hai; output ko readable rakho.",
+      "concept": "Project Interview Labs · aggregate",
+      "solution": "rows = [('pune', 100), ('delhi', 250), ('pune', 50)]\ntotals = {}\nfor city, amount in rows:\n    totals[city] = totals.get(city, 0) + amount\nprint(totals)",
+      "output": "",
+      "explanation": "Aggregation step group-wise totals banata hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to aggregate ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 4: implement validate and print the result.",
+      "build": "Validation missing fields ko explicit list me return karta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "validate ke liye sample data snippet me diya hai",
+      "expected": "Printed output validate ka result dikhata hai",
+      "hint": "Solution ka core validate hai; output ko readable rakho.",
+      "concept": "Project Interview Labs · validate",
+      "solution": "REQUIRED = ('id', 'amount')\nrecord = {'id': 1, 'city': 'pune'}\nprint([field for field in REQUIRED if field not in record])",
+      "output": "",
+      "explanation": "Validation missing fields ko explicit list me return karta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to validate ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 5: implement paginate and print the result.",
+      "build": "Pagination bade result set ko chhote pages me deta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "paginate ke liye sample data snippet me diya hai",
+      "expected": "Printed output paginate ka result dikhata hai",
+      "hint": "Solution ka core paginate hai; output ko readable rakho.",
+      "concept": "Project Interview Labs · paginate",
+      "solution": "items = list(range(1, 11))\npage, size = 2, 3\nstart = (page - 1) * size\nprint(items[start:start + size])",
+      "output": "",
+      "explanation": "Pagination bade result set ko chhote pages me deta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to paginate ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 6: implement top_k and print the result.",
+      "build": "Top-k se report ka headline number nikalta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "top_k ke liye sample data snippet me diya hai",
+      "expected": "Printed output top_k ka result dikhata hai",
+      "hint": "Solution ka core top_k hai; output ko readable rakho.",
+      "concept": "Project Interview Labs · top_k",
+      "solution": "totals = {'pune': 150, 'delhi': 250, 'mumbai': 90}\nprint(sorted(totals.items(), key=lambda item: -item[1])[:2])",
+      "output": "",
+      "explanation": "Top-k se report ka headline number nikalta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to top_k ka approach kaise badlega?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "scores = [10, 20]\nprint(scores[5])",
+      "error": "IndexError: list index out of range",
+      "why": "List me sirf 0 aur 1 index hain; 5 par kuch nahi. Ye Project Interview Labs ke workflow me bhi wahi galti hai.",
+      "fix": "Index se pehle length check karo ya safe getter use karo.",
+      "correct": "scores = [10, 20]\nprint(scores[1] if len(scores) > 1 else None)",
+      "output": "",
+      "lesson": "IndexError off-by-one aur empty collection ka signal hai."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "raise",
+      "broken": "profile = {'name': 'Asha'}\nprint(profile['score'])",
+      "error": "KeyError: 'score'",
+      "why": "Dict me score key exist nahi karti; [] missing key par KeyError deta hai. Ye Project Interview Labs ke workflow me bhi wahi galti hai.",
+      "fix": "get() se default do ya key ki presence check karo.",
+      "correct": "profile = {'name': 'Asha'}\nprint(profile.get('score', 'not recorded'))",
+      "output": "",
+      "lesson": "KeyError expected-missing field ka case hai — get/default se handle karo."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "raise",
+      "broken": "raw = '12.5'\nprint(int(raw))",
+      "error": "ValueError: invalid literal for int() with base 10: '12.5'",
+      "why": "int() sirf poore number ka string parse karta hai. Ye Project Interview Labs ke workflow me bhi wahi galti hai.",
+      "fix": "Pehle float() phir int() karo, ya Decimal use karo.",
+      "correct": "raw = '12.5'\nprint(int(float(raw)))",
+      "output": "",
+      "lesson": "ValueError format ka issue hai, type ka nahi."
+    },
+    {
+      "difficulty": "expert",
+      "mode": "raise",
+      "broken": "text = 'hello'\nprint(text.append('!'))",
+      "error": "AttributeError: 'str' object has no attribute 'append'",
+      "why": "String immutable hai; append list ka method hai. Ye Project Interview Labs ke workflow me bhi wahi galti hai.",
+      "fix": "String concatenation ya join use karo.",
+      "correct": "text = 'hello'\nprint(text + '!')",
+      "output": "",
+      "lesson": "AttributeError galat type par method call ka signal hai."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Quick drill: records ka ek minimal example likho aur output predict karo.",
+      "hint": "Project Interview Labs ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Coding round: filter_pipeline aur aggregate ko ek function me combine karo.",
+      "hint": "Project Interview Labs ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Advanced: Project Interview Labs ka chhota pipeline banao jisme validate, paginate aur validation ho.",
+      "hint": "Project Interview Labs ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview: Project Interview Labs ke 3 trade-offs whiteboard par likho aur top_k se example do.",
+      "hint": "Project Interview Labs ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Build: Project Interview Labs ka mini project banao — input, processing, output aur README.",
+      "hint": "Project Interview Labs ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Project Interview Labs Starter Lab",
+      "problem": "Project Interview Labs ke basics ko ek chhote runnable program me jodna.",
+      "objective": "records aur filter_pipeline ka demo jo output print kare.",
+      "code": "records = [{'id': 1, 'city': 'pune', 'amount': 100}, {'id': 2, 'city': 'delhi', 'amount': 250}]\nprint(records[0]['city'], len(records))\nrecords = [{'amount': 100}, {'amount': -5}, {'amount': 250}]\nvalid = [row for row in records if row['amount'] > 0]\nprint(valid)",
+      "explanation": "Records list of dicts ka simple data model hai. Filter step invalid rows ko boundary par hata deta hai. Dono snippets ek hi file me chalte hain.",
+      "testing": "records ke empty aur normal input par output check karo.",
+      "errors": "Galat type ya missing value par Python exception dega — Version 2 me validation add hoti hai.",
+      "realWorld": "Project Interview Labs ke production code me yahi chhote steps repeated hote hain.",
+      "resume": "Project Interview Labs starter lab: records aur filter_pipeline ka runnable demo.",
+      "features": [
+        "records ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Project Interview Labs",
+        "records"
+      ],
+      "structure": "s29_project_1/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "records ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "top_k ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Project Interview Labs Starter Lab interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Project Interview Labs Starter Lab interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Project Interview Labs Starter Lab interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Project Interview Labs Starter Lab ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Project Interview Labs Data Pipeline",
+      "problem": "Raw input ko validate karke Project Interview Labs ke useful output me badalna.",
+      "objective": "aggregate, validate aur paginate se chhota pipeline banao.",
+      "code": "rows = [('pune', 100), ('delhi', 250), ('pune', 50)]\ntotals = {}\nfor city, amount in rows:\n    totals[city] = totals.get(city, 0) + amount\nprint(totals)\nREQUIRED = ('id', 'amount')\nrecord = {'id': 1, 'city': 'pune'}\nprint([field for field in REQUIRED if field not in record])\nitems = list(range(1, 11))\npage, size = 2, 3\nstart = (page - 1) * size\nprint(items[start:start + size])",
+      "explanation": "Aggregation step group-wise totals banata hai. Validation missing fields ko explicit list me return karta hai. Pagination bade result set ko chhote pages me deta hai. Pipeline ke steps alag-alag testable hain.",
+      "testing": "Ek valid aur ek invalid input se pipeline chalao; dono ka behaviour note karo.",
+      "errors": "Invalid input par crash ke bajaye clear error/message do — Version 3 me error shape add hota hai.",
+      "realWorld": "Yahi load → transform → report pattern Project Interview Labs ke dashboards aur services me hota hai.",
+      "resume": "Project Interview Labs pipeline: validation aur aggregate/validate ke saath end-to-end demo.",
+      "features": [
+        "filter_pipeline ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Project Interview Labs",
+        "filter_pipeline"
+      ],
+      "structure": "s29_project_2/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "filter_pipeline ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "export_csv ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Project Interview Labs Data Pipeline interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Project Interview Labs Data Pipeline interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Project Interview Labs Data Pipeline interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Project Interview Labs Data Pipeline ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "Project Interview Labs Capstone",
+      "problem": "Ek believable Project Interview Labs use case jo end-to-end chale aur explain ho sake.",
+      "objective": "Load → validate → filter → aggregate → report: project interview me yahi pipeline explain karo. Isse project interview me trade-offs ke saath present karo.",
+      "code": "import csv\nimport io\n\nraw = '''id,city,amount\n1,pune,100\n2,delhi,250\n3,pune,-10\n4,pune,50\n'''\nrows, rejected = [], []\nfor row in csv.DictReader(io.StringIO(raw)):\n    try:\n        amount = int(row['amount'])\n    except ValueError:\n        rejected.append((row['id'], 'bad amount'))\n        continue\n    if amount <= 0:\n        rejected.append((row['id'], 'non-positive'))\n        continue\n    rows.append({'id': int(row['id']), 'city': row['city'], 'amount': amount})\n\ntotals = {}\nfor row in rows:\n    totals[row['city']] = totals.get(row['city'], 0) + row['amount']\n\nprint('accepted:', len(rows), 'rejected:', rejected)\nprint('totals:', totals)\nprint('top city:', max(totals, key=totals.get))",
+      "explanation": "Load → validate → filter → aggregate → report: project interview me yahi pipeline explain karo.",
+      "testing": "Expected output ko haath se verify karo, phir edge case (empty/missing) add karo.",
+      "errors": "Failure modes document karo: missing data, bad type aur duplicate records.",
+      "realWorld": "Ye capstone resume aur interview dono me ek concrete Project Interview Labs story deta hai.",
+      "resume": "Project Interview Labs capstone: Load → validate → filter → aggregate → report: project interview me yahi pipeline explain karo.",
+      "features": [
+        "aggregate ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Project Interview Labs",
+        "aggregate"
+      ],
+      "structure": "s29_project_3/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "aggregate ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "dedupe ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Project Interview Labs Capstone interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Project Interview Labs Capstone interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Project Interview Labs Capstone interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Project Interview Labs Capstone ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      {
+        "q": "Understanding 1.1: why does Project Interview Labs Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.2: why does Project Interview Labs Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.3: why does Project Interview Labs Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.1: why does Project Interview Labs Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.2: why does Project Interview Labs Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.3: why does Project Interview Labs Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.1: why does Project Interview Labs Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.2: why does Project Interview Labs Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.3: why does Project Interview Labs Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      }
+    ],
+    "coding": [
+      {
+        "q": "Coding 1.1: extend Project Interview Labs Starter Lab with one more records step.",
+        "a": "Records list of dicts ka simple data model hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.2: extend Project Interview Labs Starter Lab with one more filter_pipeline step.",
+        "a": "Filter step invalid rows ko boundary par hata deta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.3: extend Project Interview Labs Starter Lab with one more aggregate step.",
+        "a": "Aggregation step group-wise totals banata hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.1: extend Project Interview Labs Data Pipeline with one more records step.",
+        "a": "Records list of dicts ka simple data model hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.2: extend Project Interview Labs Data Pipeline with one more filter_pipeline step.",
+        "a": "Filter step invalid rows ko boundary par hata deta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.3: extend Project Interview Labs Data Pipeline with one more aggregate step.",
+        "a": "Aggregation step group-wise totals banata hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.1: extend Project Interview Labs Capstone with one more records step.",
+        "a": "Records list of dicts ka simple data model hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.2: extend Project Interview Labs Capstone with one more filter_pipeline step.",
+        "a": "Filter step invalid rows ko boundary par hata deta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.3: extend Project Interview Labs Capstone with one more aggregate step.",
+        "a": "Aggregation step group-wise totals banata hai. Naya step add karke output compare karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced 1.1: how would Project Interview Labs Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.2: how would Project Interview Labs Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.3: how would Project Interview Labs Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.1: how would Project Interview Labs Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.2: how would Project Interview Labs Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.3: how would Project Interview Labs Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.1: how would Project Interview Labs Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.2: how would Project Interview Labs Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.3: how would Project Interview Labs Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview 1.1: defend one trade-off in Project Interview Labs Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.2: defend one trade-off in Project Interview Labs Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.3: defend one trade-off in Project Interview Labs Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.1: defend one trade-off in Project Interview Labs Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.2: defend one trade-off in Project Interview Labs Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.3: defend one trade-off in Project Interview Labs Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.1: defend one trade-off in Project Interview Labs Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.2: defend one trade-off in Project Interview Labs Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.3: defend one trade-off in Project Interview Labs Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      }
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Practical 1: validate Project Interview Labs data in 15 minutes.",
+      "a": "Steps likho: input, records, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 2: transform Project Interview Labs data in 15 minutes.",
+      "a": "Steps likho: input, filter_pipeline, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 3: aggregate Project Interview Labs data in 15 minutes.",
+      "a": "Steps likho: input, aggregate, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 4: present Project Interview Labs data in 15 minutes.",
+      "a": "Steps likho: input, validate, expected output; phir code chala kar dikhao."
+    }
+  ],
+  "revision": [
+    "Project Interview Labs: revise records — Records list of dicts ka simple data model hai.",
+    "Project Interview Labs: revise filter_pipeline — Filter step invalid rows ko boundary par hata deta hai.",
+    "Project Interview Labs: revise aggregate — Aggregation step group-wise totals banata hai.",
+    "Project Interview Labs: revise validate — Validation missing fields ko explicit list me return karta hai.",
+    "Project Interview Labs: revise paginate — Pagination bade result set ko chhote pages me deta hai."
+  ]
+}

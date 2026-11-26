@@ -1,0 +1,717 @@
+{
+  "section": "s28",
+  "topic": "Coding Patterns, Projects & Final Practice",
+  "authored": true,
+  "intro": "Interview patterns repeat hote hain: two pointers, sliding window, prefix sums, stack, hashing aur interval merge. Is section me har pattern ka ek chhota, runnable example hai — inhe pehchan kar naye problem me apply karna hi asli practice hai.",
+  "theory": [
+    "Two pointers tab lagta hai jab sorted array me pair/range dhoondhna ho; dono ends se move karke O(n) milta hai.",
+    "Sliding window contiguous subarray/substring problems ke liye hai: window grow karo, condition fail hone par shrink karo.",
+    "Prefix sums range-sum queries ko O(1) me badalte hain, kyunki sum(l..r) = prefix[r+1] - prefix[l].",
+    "Stack matching brackets aur nested structure ke liye natural hai; LIFO order validation ko simple banata hai.",
+    "Grouping problems me canonical key (sorted string, tuple) banao aur hash map me group karo — O(n) average."
+  ],
+  "syntax": [
+    "left = 0\nfor right, value in enumerate(nums):\n    while condition_fails():\n        left += 1\n    best = max(best, right - left + 1)",
+    "prefix = [0]\nfor value in nums:\n    prefix.append(prefix[-1] + value)\nrange_sum = prefix[r + 1] - prefix[l]",
+    "stack = []\nfor char in text:\n    if char in \"([{\":\n        stack.append(char)\n    elif not stack or PAIRS[stack.pop()] != char:\n        return False"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "import math\n\nprint(math.gcd(48, 18))",
+      "output": "",
+      "explain": [
+        "Euclid algorithm built-in math.gcd me available hai.",
+        "Output ko print se verify karo.",
+        "Ye Coding Patterns, Projects & Final Practice ka basic building block hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "limit = 20\nprime = [True] * (limit + 1)\nprime[0] = prime[1] = False\nfor n in range(2, int(limit ** 0.5) + 1):\n    if prime[n]:\n        for multiple in range(n * n, limit + 1, n):\n            prime[multiple] = False\nprint([n for n in range(limit + 1) if prime[n]])",
+      "output": "",
+      "explain": [
+        "Sieve multiples ko mark karke primes O(n log log n) me nikalta hai.",
+        "Ek step aur jodne se behaviour kaise badalta hai, dekho.",
+        "Input badal kar edge case test karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "def merge_intervals(intervals):\n    merged = []\n    for start, end in sorted(intervals):\n        if merged and start <= merged[-1][1]:\n            merged[-1] = (merged[-1][0], max(merged[-1][1], end))\n        else:\n            merged.append((start, end))\n    return merged\n\nprint(merge_intervals([(1, 3), (2, 6), (8, 10), (15, 18)]))\n\nprefix = [0]\nfor value in [4, 2, 7]:\n    prefix.append(prefix[-1] + value)\nprint('range 1..2:', prefix[3] - prefix[1])",
+      "output": "",
+      "explain": [
+        "Sort + merge intervals aur prefix-sum range query — do patterns jo interviews me sabse zyada repeat hote hain.",
+        "Ye snippet end-to-end flow dikhata hai.",
+        "Output ko project/interview me evidence ki tarah use karo."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Rate limiting aur log analysis me sliding windows contiguous time ranges par lagte hain.",
+    "Prefix sums se dashboards ke range queries fast hoti hain.",
+    "Interval merge calendar/booking systems me overlapping slots combine karne ke liye use hota hai."
+  ],
+  "interview": [
+    {
+      "q": "Sliding window kab apply karte hain?",
+      "a": "Jab contiguous subarray/substring par condition monotonic ho — window grow karne par constraint bigadta hai aur shrink karne par sudharta hai. Negative numbers ke saath sum-window aksar nahi chalta."
+    },
+    {
+      "q": "Prefix sum ka trade-off kya hai?",
+      "a": "O(n) preprocessing se range sum O(1), par array update ho to prefix rebuild O(n) lagta hai. Static data ke liye perfect; dynamic ke liye Fenwick/segment tree."
+    },
+    {
+      "q": "Stack se bracket validation kyun kaam karta hai?",
+      "a": "Brackets nested hote hain aur last opened sabse pehle close hota hai — LIFO exactly wahi order hai. End me stack empty hona chahiye."
+    },
+    {
+      "q": "Anagram grouping ki complexity kya hai?",
+      "a": "Har word ko sort karke key banane me O(k log k), total O(n·k log k). Counting key se O(n·k) possible hai par alphabet size ke hisaab se."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Beginner drill 1: what does prefix_sums do in a Coding Patterns, Projects & Final Practice workflow?",
+        "a": "Prefix sums se kisi bhi range ka sum constant time me milta hai.",
+        "explain": "Prefix sums se kisi bhi range ka sum constant time me milta hai. Snippet chala kar output se confirm karo.",
+        "code": "nums = [3, 1, 4, 1, 5]\nprefix = [0]\nfor value in nums:\n    prefix.append(prefix[-1] + value)\nprint(prefix[4] - prefix[1])",
+        "output": "",
+        "tip": "Coding Patterns, Projects & Final Practice me prefix_sums ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 2: what does brackets do in a Coding Patterns, Projects & Final Practice workflow?",
+        "a": "Stack opening brackets ko yaad rakhta hai aur closing par match check karta hai.",
+        "explain": "Stack opening brackets ko yaad rakhta hai aur closing par match check karta hai. Snippet chala kar output se confirm karo.",
+        "code": "PAIRS = {')': '(', ']': '[', '}': '{'}\ndef valid(text):\n    stack = []\n    for char in text:\n        if char in '([{':\n            stack.append(char)\n        elif char in PAIRS:\n            if not stack or stack.pop() != PAIRS[char]:\n                return False\n    return not stack\n\nprint(valid('({[]})'), valid('(]'))",
+        "output": "",
+        "tip": "Coding Patterns, Projects & Final Practice me brackets ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 3: what does transpose do in a Coding Patterns, Projects & Final Practice workflow?",
+        "a": "zip(*matrix) rows ko columns me badal deta hai.",
+        "explain": "zip(*matrix) rows ko columns me badal deta hai. Snippet chala kar output se confirm karo.",
+        "code": "matrix = [[1, 2, 3], [4, 5, 6]]\nprint([list(row) for row in zip(*matrix)])",
+        "output": "",
+        "tip": "Coding Patterns, Projects & Final Practice me transpose ka behaviour edge cases par test karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Intermediate drill 1: what does gcd do in a Coding Patterns, Projects & Final Practice workflow?",
+        "a": "Euclid algorithm built-in math.gcd me available hai.",
+        "explain": "Euclid algorithm built-in math.gcd me available hai. Snippet chala kar output se confirm karo.",
+        "code": "import math\n\nprint(math.gcd(48, 18))",
+        "output": "",
+        "tip": "Coding Patterns, Projects & Final Practice me gcd ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 2: what does sieve do in a Coding Patterns, Projects & Final Practice workflow?",
+        "a": "Sieve multiples ko mark karke primes O(n log log n) me nikalta hai.",
+        "explain": "Sieve multiples ko mark karke primes O(n log log n) me nikalta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Coding Patterns, Projects & Final Practice me sieve ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 3: what does group_anagrams do in a Coding Patterns, Projects & Final Practice workflow?",
+        "a": "Sorted word canonical key banta hai, hash map groups rakhta hai.",
+        "explain": "Sorted word canonical key banta hai, hash map groups rakhta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Coding Patterns, Projects & Final Practice me group_anagrams ka behaviour edge cases par test karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced drill 1: what does two_pointers do in a Coding Patterns, Projects & Final Practice workflow?",
+        "a": "Sorted array par two pointers pair ko linear time me dhoondhte hain.",
+        "explain": "Sorted array par two pointers pair ko linear time me dhoondhte hain. Snippet chala kar output se confirm karo.",
+        "code": "nums = [1, 2, 4, 7, 11]\ntarget = 9\nleft, right = 0, len(nums) - 1\nwhile left < right:\n    total = nums[left] + nums[right]\n    if total == target:\n        print(nums[left], nums[right])\n        break\n    if total < target:\n        left += 1\n    else:\n        right -= 1",
+        "output": "",
+        "tip": "Coding Patterns, Projects & Final Practice me two_pointers ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 2: what does sliding_window do in a Coding Patterns, Projects & Final Practice workflow?",
+        "a": "Fixed-size window ko slide karke sum O(1) me update hota hai.",
+        "explain": "Fixed-size window ko slide karke sum O(1) me update hota hai. Snippet chala kar output se confirm karo.",
+        "tip": "Coding Patterns, Projects & Final Practice me sliding_window ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 3: what does prefix_sums do in a Coding Patterns, Projects & Final Practice workflow?",
+        "a": "Prefix sums se kisi bhi range ka sum constant time me milta hai.",
+        "explain": "Prefix sums se kisi bhi range ka sum constant time me milta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Coding Patterns, Projects & Final Practice me prefix_sums ka behaviour edge cases par test karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview drill 1: what does brackets do in a Coding Patterns, Projects & Final Practice workflow?",
+        "a": "Stack opening brackets ko yaad rakhta hai aur closing par match check karta hai.",
+        "explain": "Stack opening brackets ko yaad rakhta hai aur closing par match check karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Coding Patterns, Projects & Final Practice me brackets ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 2: what does transpose do in a Coding Patterns, Projects & Final Practice workflow?",
+        "a": "zip(*matrix) rows ko columns me badal deta hai.",
+        "explain": "zip(*matrix) rows ko columns me badal deta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Coding Patterns, Projects & Final Practice me transpose ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 3: what does gcd do in a Coding Patterns, Projects & Final Practice workflow?",
+        "a": "Euclid algorithm built-in math.gcd me available hai.",
+        "explain": "Euclid algorithm built-in math.gcd me available hai. Snippet chala kar output se confirm karo.",
+        "tip": "Coding Patterns, Projects & Final Practice me gcd ka behaviour edge cases par test karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Realworld drill 1: what does sieve do in a Coding Patterns, Projects & Final Practice workflow?",
+        "a": "Sieve multiples ko mark karke primes O(n log log n) me nikalta hai.",
+        "explain": "Sieve multiples ko mark karke primes O(n log log n) me nikalta hai. Snippet chala kar output se confirm karo.",
+        "code": "limit = 20\nprime = [True] * (limit + 1)\nprime[0] = prime[1] = False\nfor n in range(2, int(limit ** 0.5) + 1):\n    if prime[n]:\n        for multiple in range(n * n, limit + 1, n):\n            prime[multiple] = False\nprint([n for n in range(limit + 1) if prime[n]])",
+        "output": "",
+        "tip": "Coding Patterns, Projects & Final Practice me sieve ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 2: what does group_anagrams do in a Coding Patterns, Projects & Final Practice workflow?",
+        "a": "Sorted word canonical key banta hai, hash map groups rakhta hai.",
+        "explain": "Sorted word canonical key banta hai, hash map groups rakhta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Coding Patterns, Projects & Final Practice me group_anagrams ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 3: what does two_pointers do in a Coding Patterns, Projects & Final Practice workflow?",
+        "a": "Sorted array par two pointers pair ko linear time me dhoondhte hain.",
+        "explain": "Sorted array par two pointers pair ko linear time me dhoondhte hain. Snippet chala kar output se confirm karo.",
+        "tip": "Coding Patterns, Projects & Final Practice me two_pointers ka behaviour edge cases par test karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 1: implement two_pointers and print the result.",
+      "build": "Sorted array par two pointers pair ko linear time me dhoondhte hain. Ek chhota runnable example likho jo output print kare.",
+      "input": "two_pointers ke liye sample data snippet me diya hai",
+      "expected": "Printed output two_pointers ka result dikhata hai",
+      "hint": "Solution ka core two_pointers hai; output ko readable rakho.",
+      "concept": "Coding Patterns, Projects & Final Practice · two_pointers",
+      "solution": "nums = [1, 2, 4, 7, 11]\ntarget = 9\nleft, right = 0, len(nums) - 1\nwhile left < right:\n    total = nums[left] + nums[right]\n    if total == target:\n        print(nums[left], nums[right])\n        break\n    if total < target:\n        left += 1\n    else:\n        right -= 1",
+      "output": "",
+      "explanation": "Sorted array par two pointers pair ko linear time me dhoondhte hain. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to two_pointers ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 2: implement sliding_window and print the result.",
+      "build": "Fixed-size window ko slide karke sum O(1) me update hota hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "sliding_window ke liye sample data snippet me diya hai",
+      "expected": "Printed output sliding_window ka result dikhata hai",
+      "hint": "Solution ka core sliding_window hai; output ko readable rakho.",
+      "concept": "Coding Patterns, Projects & Final Practice · sliding_window",
+      "solution": "nums = [2, 1, 5, 1, 3, 2]\nk = 3\nbest = sum(nums[:k])\ncurrent = best\nfor i in range(k, len(nums)):\n    current += nums[i] - nums[i - k]\n    best = max(best, current)\nprint(best)",
+      "output": "",
+      "explanation": "Fixed-size window ko slide karke sum O(1) me update hota hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to sliding_window ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 3: implement prefix_sums and print the result.",
+      "build": "Prefix sums se kisi bhi range ka sum constant time me milta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "prefix_sums ke liye sample data snippet me diya hai",
+      "expected": "Printed output prefix_sums ka result dikhata hai",
+      "hint": "Solution ka core prefix_sums hai; output ko readable rakho.",
+      "concept": "Coding Patterns, Projects & Final Practice · prefix_sums",
+      "solution": "nums = [3, 1, 4, 1, 5]\nprefix = [0]\nfor value in nums:\n    prefix.append(prefix[-1] + value)\nprint(prefix[4] - prefix[1])",
+      "output": "",
+      "explanation": "Prefix sums se kisi bhi range ka sum constant time me milta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to prefix_sums ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 4: implement brackets and print the result.",
+      "build": "Stack opening brackets ko yaad rakhta hai aur closing par match check karta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "brackets ke liye sample data snippet me diya hai",
+      "expected": "Printed output brackets ka result dikhata hai",
+      "hint": "Solution ka core brackets hai; output ko readable rakho.",
+      "concept": "Coding Patterns, Projects & Final Practice · brackets",
+      "solution": "PAIRS = {')': '(', ']': '[', '}': '{'}\ndef valid(text):\n    stack = []\n    for char in text:\n        if char in '([{':\n            stack.append(char)\n        elif char in PAIRS:\n            if not stack or stack.pop() != PAIRS[char]:\n                return False\n    return not stack\n\nprint(valid('({[]})'), valid('(]'))",
+      "output": "",
+      "explanation": "Stack opening brackets ko yaad rakhta hai aur closing par match check karta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to brackets ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 5: implement transpose and print the result.",
+      "build": "zip(*matrix) rows ko columns me badal deta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "transpose ke liye sample data snippet me diya hai",
+      "expected": "Printed output transpose ka result dikhata hai",
+      "hint": "Solution ka core transpose hai; output ko readable rakho.",
+      "concept": "Coding Patterns, Projects & Final Practice · transpose",
+      "solution": "matrix = [[1, 2, 3], [4, 5, 6]]\nprint([list(row) for row in zip(*matrix)])",
+      "output": "",
+      "explanation": "zip(*matrix) rows ko columns me badal deta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to transpose ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 6: implement gcd and print the result.",
+      "build": "Euclid algorithm built-in math.gcd me available hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "gcd ke liye sample data snippet me diya hai",
+      "expected": "Printed output gcd ka result dikhata hai",
+      "hint": "Solution ka core gcd hai; output ko readable rakho.",
+      "concept": "Coding Patterns, Projects & Final Practice · gcd",
+      "solution": "import math\n\nprint(math.gcd(48, 18))",
+      "output": "",
+      "explanation": "Euclid algorithm built-in math.gcd me available hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to gcd ka approach kaise badlega?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "name = 'Asha'\nprint('Hello ' + 2024)",
+      "error": "TypeError: can only concatenate str (not \"int\") to str",
+      "why": "String concatenation ko dono taraf str chahiye; Python implicit conversion nahi karta. Ye Coding Patterns, Projects & Final Practice ke workflow me bhi wahi galti hai.",
+      "fix": "f-string ya str() se explicit conversion karo.",
+      "correct": "name = 'Asha'\nprint(f'Hello {2024}')",
+      "output": "",
+      "lesson": "TypeError type mismatch batata hai — conversion explicit karo."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "raise",
+      "broken": "scores = [10, 20]\nprint(scores[5])",
+      "error": "IndexError: list index out of range",
+      "why": "List me sirf 0 aur 1 index hain; 5 par kuch nahi. Ye Coding Patterns, Projects & Final Practice ke workflow me bhi wahi galti hai.",
+      "fix": "Index se pehle length check karo ya safe getter use karo.",
+      "correct": "scores = [10, 20]\nprint(scores[1] if len(scores) > 1 else None)",
+      "output": "",
+      "lesson": "IndexError off-by-one aur empty collection ka signal hai."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "raise",
+      "broken": "profile = {'name': 'Asha'}\nprint(profile['score'])",
+      "error": "KeyError: 'score'",
+      "why": "Dict me score key exist nahi karti; [] missing key par KeyError deta hai. Ye Coding Patterns, Projects & Final Practice ke workflow me bhi wahi galti hai.",
+      "fix": "get() se default do ya key ki presence check karo.",
+      "correct": "profile = {'name': 'Asha'}\nprint(profile.get('score', 'not recorded'))",
+      "output": "",
+      "lesson": "KeyError expected-missing field ka case hai — get/default se handle karo."
+    },
+    {
+      "difficulty": "expert",
+      "mode": "raise",
+      "broken": "raw = '12.5'\nprint(int(raw))",
+      "error": "ValueError: invalid literal for int() with base 10: '12.5'",
+      "why": "int() sirf poore number ka string parse karta hai. Ye Coding Patterns, Projects & Final Practice ke workflow me bhi wahi galti hai.",
+      "fix": "Pehle float() phir int() karo, ya Decimal use karo.",
+      "correct": "raw = '12.5'\nprint(int(float(raw)))",
+      "output": "",
+      "lesson": "ValueError format ka issue hai, type ka nahi."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Quick drill: two_pointers ka ek minimal example likho aur output predict karo.",
+      "hint": "Coding Patterns, Projects & Final Practice ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Coding round: sliding_window aur prefix_sums ko ek function me combine karo.",
+      "hint": "Coding Patterns, Projects & Final Practice ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Advanced: Coding Patterns, Projects & Final Practice ka chhota pipeline banao jisme brackets, transpose aur validation ho.",
+      "hint": "Coding Patterns, Projects & Final Practice ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview: Coding Patterns, Projects & Final Practice ke 3 trade-offs whiteboard par likho aur gcd se example do.",
+      "hint": "Coding Patterns, Projects & Final Practice ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Build: Coding Patterns, Projects & Final Practice ka mini project banao — input, processing, output aur README.",
+      "hint": "Coding Patterns, Projects & Final Practice ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Coding Patterns, Projects & Final Practice Starter Lab",
+      "problem": "Coding Patterns, Projects & Final Practice ke basics ko ek chhote runnable program me jodna.",
+      "objective": "two_pointers aur sliding_window ka demo jo output print kare.",
+      "code": "nums = [1, 2, 4, 7, 11]\ntarget = 9\nleft, right = 0, len(nums) - 1\nwhile left < right:\n    total = nums[left] + nums[right]\n    if total == target:\n        print(nums[left], nums[right])\n        break\n    if total < target:\n        left += 1\n    else:\n        right -= 1\nnums = [2, 1, 5, 1, 3, 2]\nk = 3\nbest = sum(nums[:k])\ncurrent = best\nfor i in range(k, len(nums)):\n    current += nums[i] - nums[i - k]\n    best = max(best, current)\nprint(best)",
+      "explanation": "Sorted array par two pointers pair ko linear time me dhoondhte hain. Fixed-size window ko slide karke sum O(1) me update hota hai. Dono snippets ek hi file me chalte hain.",
+      "testing": "two_pointers ke empty aur normal input par output check karo.",
+      "errors": "Galat type ya missing value par Python exception dega — Version 2 me validation add hoti hai.",
+      "realWorld": "Coding Patterns, Projects & Final Practice ke production code me yahi chhote steps repeated hote hain.",
+      "resume": "Coding Patterns, Projects & Final Practice starter lab: two_pointers aur sliding_window ka runnable demo.",
+      "features": [
+        "two_pointers ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Coding Patterns, Projects & Final Practice",
+        "two_pointers"
+      ],
+      "structure": "s28_project_1/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "two_pointers ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "gcd ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Coding Patterns, Projects & Final Practice Starter Lab interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Coding Patterns, Projects & Final Practice Starter Lab interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Coding Patterns, Projects & Final Practice Starter Lab interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Coding Patterns, Projects & Final Practice Starter Lab ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Coding Patterns, Projects & Final Practice Data Pipeline",
+      "problem": "Raw input ko validate karke Coding Patterns, Projects & Final Practice ke useful output me badalna.",
+      "objective": "prefix_sums, brackets aur transpose se chhota pipeline banao.",
+      "code": "nums = [3, 1, 4, 1, 5]\nprefix = [0]\nfor value in nums:\n    prefix.append(prefix[-1] + value)\nprint(prefix[4] - prefix[1])\nPAIRS = {')': '(', ']': '[', '}': '{'}\ndef valid(text):\n    stack = []\n    for char in text:\n        if char in '([{':\n            stack.append(char)\n        elif char in PAIRS:\n            if not stack or stack.pop() != PAIRS[char]:\n                return False\n    return not stack\n\nprint(valid('({[]})'), valid('(]'))\nmatrix = [[1, 2, 3], [4, 5, 6]]\nprint([list(row) for row in zip(*matrix)])",
+      "explanation": "Prefix sums se kisi bhi range ka sum constant time me milta hai. Stack opening brackets ko yaad rakhta hai aur closing par match check karta hai. zip(*matrix) rows ko columns me badal deta hai. Pipeline ke steps alag-alag testable hain.",
+      "testing": "Ek valid aur ek invalid input se pipeline chalao; dono ka behaviour note karo.",
+      "errors": "Invalid input par crash ke bajaye clear error/message do — Version 3 me error shape add hota hai.",
+      "realWorld": "Yahi load → transform → report pattern Coding Patterns, Projects & Final Practice ke dashboards aur services me hota hai.",
+      "resume": "Coding Patterns, Projects & Final Practice pipeline: validation aur prefix_sums/brackets ke saath end-to-end demo.",
+      "features": [
+        "sliding_window ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Coding Patterns, Projects & Final Practice",
+        "sliding_window"
+      ],
+      "structure": "s28_project_2/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "sliding_window ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "sieve ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Coding Patterns, Projects & Final Practice Data Pipeline interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Coding Patterns, Projects & Final Practice Data Pipeline interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Coding Patterns, Projects & Final Practice Data Pipeline interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Coding Patterns, Projects & Final Practice Data Pipeline ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "Coding Patterns, Projects & Final Practice Capstone",
+      "problem": "Ek believable Coding Patterns, Projects & Final Practice use case jo end-to-end chale aur explain ho sake.",
+      "objective": "Sort + merge intervals aur prefix-sum range query — do patterns jo interviews me sabse zyada repeat hote hain. Isse project interview me trade-offs ke saath present karo.",
+      "code": "def merge_intervals(intervals):\n    merged = []\n    for start, end in sorted(intervals):\n        if merged and start <= merged[-1][1]:\n            merged[-1] = (merged[-1][0], max(merged[-1][1], end))\n        else:\n            merged.append((start, end))\n    return merged\n\nprint(merge_intervals([(1, 3), (2, 6), (8, 10), (15, 18)]))\n\nprefix = [0]\nfor value in [4, 2, 7]:\n    prefix.append(prefix[-1] + value)\nprint('range 1..2:', prefix[3] - prefix[1])",
+      "explanation": "Sort + merge intervals aur prefix-sum range query — do patterns jo interviews me sabse zyada repeat hote hain.",
+      "testing": "Expected output ko haath se verify karo, phir edge case (empty/missing) add karo.",
+      "errors": "Failure modes document karo: missing data, bad type aur duplicate records.",
+      "realWorld": "Ye capstone resume aur interview dono me ek concrete Coding Patterns, Projects & Final Practice story deta hai.",
+      "resume": "Coding Patterns, Projects & Final Practice capstone: Sort + merge intervals aur prefix-sum range query — do patterns jo interviews me sabse zyada repeat hote hain.",
+      "features": [
+        "prefix_sums ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Coding Patterns, Projects & Final Practice",
+        "prefix_sums"
+      ],
+      "structure": "s28_project_3/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "prefix_sums ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "group_anagrams ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Coding Patterns, Projects & Final Practice Capstone interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Coding Patterns, Projects & Final Practice Capstone interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Coding Patterns, Projects & Final Practice Capstone interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Coding Patterns, Projects & Final Practice Capstone ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      {
+        "q": "Understanding 1.1: why does Coding Patterns, Projects & Final Practice Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.2: why does Coding Patterns, Projects & Final Practice Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.3: why does Coding Patterns, Projects & Final Practice Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.1: why does Coding Patterns, Projects & Final Practice Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.2: why does Coding Patterns, Projects & Final Practice Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.3: why does Coding Patterns, Projects & Final Practice Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.1: why does Coding Patterns, Projects & Final Practice Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.2: why does Coding Patterns, Projects & Final Practice Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.3: why does Coding Patterns, Projects & Final Practice Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      }
+    ],
+    "coding": [
+      {
+        "q": "Coding 1.1: extend Coding Patterns, Projects & Final Practice Starter Lab with one more two_pointers step.",
+        "a": "Sorted array par two pointers pair ko linear time me dhoondhte hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.2: extend Coding Patterns, Projects & Final Practice Starter Lab with one more sliding_window step.",
+        "a": "Fixed-size window ko slide karke sum O(1) me update hota hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.3: extend Coding Patterns, Projects & Final Practice Starter Lab with one more prefix_sums step.",
+        "a": "Prefix sums se kisi bhi range ka sum constant time me milta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.1: extend Coding Patterns, Projects & Final Practice Data Pipeline with one more two_pointers step.",
+        "a": "Sorted array par two pointers pair ko linear time me dhoondhte hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.2: extend Coding Patterns, Projects & Final Practice Data Pipeline with one more sliding_window step.",
+        "a": "Fixed-size window ko slide karke sum O(1) me update hota hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.3: extend Coding Patterns, Projects & Final Practice Data Pipeline with one more prefix_sums step.",
+        "a": "Prefix sums se kisi bhi range ka sum constant time me milta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.1: extend Coding Patterns, Projects & Final Practice Capstone with one more two_pointers step.",
+        "a": "Sorted array par two pointers pair ko linear time me dhoondhte hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.2: extend Coding Patterns, Projects & Final Practice Capstone with one more sliding_window step.",
+        "a": "Fixed-size window ko slide karke sum O(1) me update hota hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.3: extend Coding Patterns, Projects & Final Practice Capstone with one more prefix_sums step.",
+        "a": "Prefix sums se kisi bhi range ka sum constant time me milta hai. Naya step add karke output compare karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced 1.1: how would Coding Patterns, Projects & Final Practice Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.2: how would Coding Patterns, Projects & Final Practice Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.3: how would Coding Patterns, Projects & Final Practice Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.1: how would Coding Patterns, Projects & Final Practice Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.2: how would Coding Patterns, Projects & Final Practice Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.3: how would Coding Patterns, Projects & Final Practice Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.1: how would Coding Patterns, Projects & Final Practice Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.2: how would Coding Patterns, Projects & Final Practice Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.3: how would Coding Patterns, Projects & Final Practice Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview 1.1: defend one trade-off in Coding Patterns, Projects & Final Practice Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.2: defend one trade-off in Coding Patterns, Projects & Final Practice Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.3: defend one trade-off in Coding Patterns, Projects & Final Practice Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.1: defend one trade-off in Coding Patterns, Projects & Final Practice Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.2: defend one trade-off in Coding Patterns, Projects & Final Practice Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.3: defend one trade-off in Coding Patterns, Projects & Final Practice Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.1: defend one trade-off in Coding Patterns, Projects & Final Practice Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.2: defend one trade-off in Coding Patterns, Projects & Final Practice Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.3: defend one trade-off in Coding Patterns, Projects & Final Practice Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      }
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Practical 1: validate Coding Patterns, Projects & Final Practice data in 15 minutes.",
+      "a": "Steps likho: input, two_pointers, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 2: transform Coding Patterns, Projects & Final Practice data in 15 minutes.",
+      "a": "Steps likho: input, sliding_window, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 3: aggregate Coding Patterns, Projects & Final Practice data in 15 minutes.",
+      "a": "Steps likho: input, prefix_sums, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 4: present Coding Patterns, Projects & Final Practice data in 15 minutes.",
+      "a": "Steps likho: input, brackets, expected output; phir code chala kar dikhao."
+    }
+  ],
+  "revision": [
+    "Coding Patterns, Projects & Final Practice: revise two_pointers — Sorted array par two pointers pair ko linear time me dhoondhte hain.",
+    "Coding Patterns, Projects & Final Practice: revise sliding_window — Fixed-size window ko slide karke sum O(1) me update hota hai.",
+    "Coding Patterns, Projects & Final Practice: revise prefix_sums — Prefix sums se kisi bhi range ka sum constant time me milta hai.",
+    "Coding Patterns, Projects & Final Practice: revise brackets — Stack opening brackets ko yaad rakhta hai aur closing par match check karta hai.",
+    "Coding Patterns, Projects & Final Practice: revise transpose — zip(*matrix) rows ko columns me badal deta hai."
+  ]
+}

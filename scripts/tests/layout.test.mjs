@@ -23,7 +23,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 import { readCss } from './_css.mjs';
 import { isImportedApp } from './_imported-app.mjs';
-const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
+const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8').replace(/\r\n?/g, '\n');
 
 // Pure (no React, no store) — the one place a track link is spelled is loadable from here.
 const sf = await import(pathToFileURL(path.join(ROOT, 'src/core/learning/surfaces.ts')).href);
@@ -68,7 +68,7 @@ for (const dir of ['src/features', 'src/components', 'src/app']) {
 const jn = read('src/components/code/JupyterNotebook.tsx');
 const nb = read('src/components/code/NotebookCells.tsx');
 const tw = read('src/components/learning/TopicWorkspace.tsx');
-const css = readCss();
+const css = readCss().replace(/\r\n?/g, '\n');
 const assistantCard = read('src/components/shared/AssistantCard.tsx');
 const aiDock = read('src/components/shared/AiDock.tsx');
 

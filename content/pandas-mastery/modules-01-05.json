@@ -254,8 +254,8 @@
    {
     "title": "dtypes are the contract",
     "body": "A numeric column stored as text breaks every mean. `dtypes` shows the truth, and `object` or `str` on a number column is the warning sign.",
-    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\nprint(df.dtypes.astype(str).tolist())",
-    "output": "['int64', 'str', 'float64']"
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\ndf[\"name\"] = df[\"name\"].astype(object)\nprint(df.dtypes.astype(str).tolist())",
+    "output": "['int64', 'object', 'float64']"
    },
    {
     "title": "describe summarises every numeric column",

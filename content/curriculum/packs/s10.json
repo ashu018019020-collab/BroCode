@@ -1,0 +1,717 @@
+{
+  "section": "s10",
+  "topic": "Tuples",
+  "authored": true,
+  "intro": "Tuple immutable sequence hai: banne ke baad uske items badal nahi sakte. Yahi property usse safe return values, dictionary keys aur fixed records ke liye perfect banati hai. Is section me tuple banane, unpack karne aur namedtuple tak ka safar hai.",
+  "theory": [
+    "Tuple parentheses se banta hai, par asli comma constructor hai: `(5)` sirf int hai, `(5,)` ek-element tuple hai.",
+    "Immutability ka matlab hai ki item rebind nahi ho sakta; lekin tuple ke andar mutable object (jaise list) rakha ja sakta hai aur wo badal sakta hai.",
+    "Unpacking tuple ki sabse badi power hai: `a, b = b, a` swap, `first, *rest = data` split, aur function se multiple values return karna.",
+    "Tuple hashable hota hai jab uske saare items hashable hon — isliye tuple dict key ya set member ban sakta hai, list nahi.",
+    "namedtuple field names ke saath readable record deta hai aur phir bhi tuple ki unpacking aur immutability rakhta hai."
+  ],
+  "syntax": [
+    "point = (3, 4)\nsingle = (5,)          # comma zaroori\nempty = ()\nfrom_list = tuple([1, 2, 2])",
+    "a, b = (1, 2)          # unpack\nfirst, *rest = (1, 2, 3)\nx, y = y, x            # swap\nname, score = record   # record se values",
+    "point[0], point[-1]    # index\npoint[1:]              # slice -> naya tuple\ntuple.count(x), tuple.index(x)\nfrom collections import namedtuple"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "letters = ('a', 'b', 'a')\nprint(letters.count('a'), letters.index('b'))",
+      "output": "",
+      "explain": [
+        "count occurrences ginta hai aur index pehla position deta hai.",
+        "Output ko print se verify karo.",
+        "Ye Tuples ka basic building block hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "numbers = (0, 1, 2, 3, 4)\nprint(numbers[1:4])\nprint(numbers[::-1])",
+      "output": "",
+      "explain": [
+        "Slicing tuple par naya tuple deti hai, original waisa hi rehta hai.",
+        "Ek step aur jodne se behaviour kaise badalta hai, dekho.",
+        "Input badal kar edge case test karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "from collections import namedtuple\n\nReading = namedtuple('Reading', 'sensor value')\nreadings = [Reading('temp', 21.5), Reading('temp', 22.0), Reading('humidity', 45)]\n\nfor reading in readings:\n    sensor, value = reading\n    print(f'{sensor:<9} {value:>6}')\n\ntemps = [r.value for r in readings if r.sensor == 'temp']\nprint('avg temp:', sum(temps) / len(temps))",
+      "output": "",
+      "explain": [
+        "namedtuple ko unpack karke aur attribute se padhkar grouped summary banayi ja sakti hai.",
+        "Ye snippet end-to-end flow dikhata hai.",
+        "Output ko project/interview me evidence ki tarah use karo."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Coordinates, RGB colours aur (latitude, longitude) jaise fixed records tuple me rakhe jate hain — galti se badalne ka dar nahi rehta.",
+    "Function se `(value, error)` ya `(rows, skipped)` return karna tuple ka standard pattern hai; caller unpack karke dono handle karta hai.",
+    "Dictionary keys ke liye composite key `(user_id, date)` tuple banai jati hai; list se ye possible nahi hota."
+  ],
+  "interview": [
+    {
+      "q": "Tuple list se kaise alag hai, aur kab tuple chunenge?",
+      "a": "Tuple immutable aur hashable (agar items hashable hon) hota hai, list mutable. Fixed record, function return value aur dict key ke liye tuple; badalne wale collection ke liye list."
+    },
+    {
+      "q": "Ek element ka tuple kaise banate hain?",
+      "a": "Trailing comma se: `(5,)`. `(5)` sirf int hai kyunki parentheses grouping karte hain, tuple comma banata hai."
+    },
+    {
+      "q": "Kya tuple ke andar list rakh sakte hain?",
+      "a": "Haan, par tab tuple hashable nahi rahega aur andar ki list mutate ho sakti hai. Immutability sirf top-level bindings par lagti hai."
+    },
+    {
+      "q": "namedtuple aur dataclass me kya choose karoge?",
+      "a": "namedtuple immutable, tuple-compatible aur sasta hai — fixed record ke liye. dataclass mutable ya frozen ho sakta hai, defaults/validation ke saath zyada readable hai, par tuple unpack nahi hota."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Beginner drill 1: what does single_item do in a Tuples workflow?",
+        "a": "Ek item ka tuple banane ke liye trailing comma zaroori hai.",
+        "explain": "Ek item ka tuple banane ke liye trailing comma zaroori hai. Snippet chala kar output se confirm karo.",
+        "code": "single = (5,)\nprint(single, len(single))\nprint(type((5)).__name__)",
+        "output": "",
+        "tip": "Tuples me single_item ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 2: what does unpack do in a Tuples workflow?",
+        "a": "Unpacking tuple ke items ko alag names par bind karti hai.",
+        "explain": "Unpacking tuple ke items ko alag names par bind karti hai. Snippet chala kar output se confirm karo.",
+        "code": "point = (3, 4)\nx, y = point\nprint(x, y)",
+        "output": "",
+        "tip": "Tuples me unpack ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 3: what does star_unpack do in a Tuples workflow?",
+        "a": "Star-unpacking beech ke items ki list banati hai.",
+        "explain": "Star-unpacking beech ke items ki list banati hai. Snippet chala kar output se confirm karo.",
+        "code": "data = (1, 2, 3, 4)\nfirst, *middle, last = data\nprint(first, middle, last)",
+        "output": "",
+        "tip": "Tuples me star_unpack ka behaviour edge cases par test karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Intermediate drill 1: what does swap do in a Tuples workflow?",
+        "a": "Right side pehle tuple ki tarah evaluate hoti hai, isliye swap bina temp ke hota hai.",
+        "explain": "Right side pehle tuple ki tarah evaluate hoti hai, isliye swap bina temp ke hota hai. Snippet chala kar output se confirm karo.",
+        "code": "a, b = 1, 2\na, b = b, a\nprint(a, b)",
+        "output": "",
+        "tip": "Tuples me swap ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 2: what does count_index do in a Tuples workflow?",
+        "a": "count occurrences ginta hai aur index pehla position deta hai.",
+        "explain": "count occurrences ginta hai aur index pehla position deta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Tuples me count_index ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 3: what does slicing do in a Tuples workflow?",
+        "a": "Slicing tuple par naya tuple deti hai, original waisa hi rehta hai.",
+        "explain": "Slicing tuple par naya tuple deti hai, original waisa hi rehta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Tuples me slicing ka behaviour edge cases par test karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced drill 1: what does namedtuple do in a Tuples workflow?",
+        "a": "namedtuple field names ke saath tuple record deta hai.",
+        "explain": "namedtuple field names ke saath tuple record deta hai. Snippet chala kar output se confirm karo.",
+        "code": "from collections import namedtuple\nPoint = namedtuple('Point', 'x y')\np = Point(3, 4)\nprint(p.x, p.y, p[0])\nprint(p)",
+        "output": "",
+        "tip": "Tuples me namedtuple ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 2: what does create do in a Tuples workflow?",
+        "a": "Parentheses ke andar comma-separated values tuple banati hain.",
+        "explain": "Parentheses ke andar comma-separated values tuple banati hain. Snippet chala kar output se confirm karo.",
+        "tip": "Tuples me create ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 3: what does single_item do in a Tuples workflow?",
+        "a": "Ek item ka tuple banane ke liye trailing comma zaroori hai.",
+        "explain": "Ek item ka tuple banane ke liye trailing comma zaroori hai. Snippet chala kar output se confirm karo.",
+        "tip": "Tuples me single_item ka behaviour edge cases par test karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview drill 1: what does unpack do in a Tuples workflow?",
+        "a": "Unpacking tuple ke items ko alag names par bind karti hai.",
+        "explain": "Unpacking tuple ke items ko alag names par bind karti hai. Snippet chala kar output se confirm karo.",
+        "tip": "Tuples me unpack ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 2: what does star_unpack do in a Tuples workflow?",
+        "a": "Star-unpacking beech ke items ki list banati hai.",
+        "explain": "Star-unpacking beech ke items ki list banati hai. Snippet chala kar output se confirm karo.",
+        "tip": "Tuples me star_unpack ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 3: what does swap do in a Tuples workflow?",
+        "a": "Right side pehle tuple ki tarah evaluate hoti hai, isliye swap bina temp ke hota hai.",
+        "explain": "Right side pehle tuple ki tarah evaluate hoti hai, isliye swap bina temp ke hota hai. Snippet chala kar output se confirm karo.",
+        "tip": "Tuples me swap ka behaviour edge cases par test karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Realworld drill 1: what does count_index do in a Tuples workflow?",
+        "a": "count occurrences ginta hai aur index pehla position deta hai.",
+        "explain": "count occurrences ginta hai aur index pehla position deta hai. Snippet chala kar output se confirm karo.",
+        "code": "letters = ('a', 'b', 'a')\nprint(letters.count('a'), letters.index('b'))",
+        "output": "",
+        "tip": "Tuples me count_index ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 2: what does slicing do in a Tuples workflow?",
+        "a": "Slicing tuple par naya tuple deti hai, original waisa hi rehta hai.",
+        "explain": "Slicing tuple par naya tuple deti hai, original waisa hi rehta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Tuples me slicing ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 3: what does namedtuple do in a Tuples workflow?",
+        "a": "namedtuple field names ke saath tuple record deta hai.",
+        "explain": "namedtuple field names ke saath tuple record deta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Tuples me namedtuple ka behaviour edge cases par test karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 1: implement create and print the result.",
+      "build": "Parentheses ke andar comma-separated values tuple banati hain. Ek chhota runnable example likho jo output print kare.",
+      "input": "create ke liye sample data snippet me diya hai",
+      "expected": "Printed output create ka result dikhata hai",
+      "hint": "Solution ka core create hai; output ko readable rakho.",
+      "concept": "Tuples · create",
+      "solution": "point = (3, 4)\nprint(point, type(point).__name__)",
+      "output": "",
+      "explanation": "Parentheses ke andar comma-separated values tuple banati hain. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to create ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 2: implement single_item and print the result.",
+      "build": "Ek item ka tuple banane ke liye trailing comma zaroori hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "single_item ke liye sample data snippet me diya hai",
+      "expected": "Printed output single_item ka result dikhata hai",
+      "hint": "Solution ka core single_item hai; output ko readable rakho.",
+      "concept": "Tuples · single_item",
+      "solution": "single = (5,)\nprint(single, len(single))\nprint(type((5)).__name__)",
+      "output": "",
+      "explanation": "Ek item ka tuple banane ke liye trailing comma zaroori hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to single_item ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 3: implement unpack and print the result.",
+      "build": "Unpacking tuple ke items ko alag names par bind karti hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "unpack ke liye sample data snippet me diya hai",
+      "expected": "Printed output unpack ka result dikhata hai",
+      "hint": "Solution ka core unpack hai; output ko readable rakho.",
+      "concept": "Tuples · unpack",
+      "solution": "point = (3, 4)\nx, y = point\nprint(x, y)",
+      "output": "",
+      "explanation": "Unpacking tuple ke items ko alag names par bind karti hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to unpack ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 4: implement star_unpack and print the result.",
+      "build": "Star-unpacking beech ke items ki list banati hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "star_unpack ke liye sample data snippet me diya hai",
+      "expected": "Printed output star_unpack ka result dikhata hai",
+      "hint": "Solution ka core star_unpack hai; output ko readable rakho.",
+      "concept": "Tuples · star_unpack",
+      "solution": "data = (1, 2, 3, 4)\nfirst, *middle, last = data\nprint(first, middle, last)",
+      "output": "",
+      "explanation": "Star-unpacking beech ke items ki list banati hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to star_unpack ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 5: implement swap and print the result.",
+      "build": "Right side pehle tuple ki tarah evaluate hoti hai, isliye swap bina temp ke hota hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "swap ke liye sample data snippet me diya hai",
+      "expected": "Printed output swap ka result dikhata hai",
+      "hint": "Solution ka core swap hai; output ko readable rakho.",
+      "concept": "Tuples · swap",
+      "solution": "a, b = 1, 2\na, b = b, a\nprint(a, b)",
+      "output": "",
+      "explanation": "Right side pehle tuple ki tarah evaluate hoti hai, isliye swap bina temp ke hota hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to swap ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 6: implement count_index and print the result.",
+      "build": "count occurrences ginta hai aur index pehla position deta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "count_index ke liye sample data snippet me diya hai",
+      "expected": "Printed output count_index ka result dikhata hai",
+      "hint": "Solution ka core count_index hai; output ko readable rakho.",
+      "concept": "Tuples · count_index",
+      "solution": "letters = ('a', 'b', 'a')\nprint(letters.count('a'), letters.index('b'))",
+      "output": "",
+      "explanation": "count occurrences ginta hai aur index pehla position deta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to count_index ka approach kaise badlega?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "scores = [10, 20]\nprint(scores[5])",
+      "error": "IndexError: list index out of range",
+      "why": "List me sirf 0 aur 1 index hain; 5 par kuch nahi. Ye Tuples ke workflow me bhi wahi galti hai.",
+      "fix": "Index se pehle length check karo ya safe getter use karo.",
+      "correct": "scores = [10, 20]\nprint(scores[1] if len(scores) > 1 else None)",
+      "output": "",
+      "lesson": "IndexError off-by-one aur empty collection ka signal hai."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "raise",
+      "broken": "profile = {'name': 'Asha'}\nprint(profile['score'])",
+      "error": "KeyError: 'score'",
+      "why": "Dict me score key exist nahi karti; [] missing key par KeyError deta hai. Ye Tuples ke workflow me bhi wahi galti hai.",
+      "fix": "get() se default do ya key ki presence check karo.",
+      "correct": "profile = {'name': 'Asha'}\nprint(profile.get('score', 'not recorded'))",
+      "output": "",
+      "lesson": "KeyError expected-missing field ka case hai — get/default se handle karo."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "raise",
+      "broken": "raw = '12.5'\nprint(int(raw))",
+      "error": "ValueError: invalid literal for int() with base 10: '12.5'",
+      "why": "int() sirf poore number ka string parse karta hai. Ye Tuples ke workflow me bhi wahi galti hai.",
+      "fix": "Pehle float() phir int() karo, ya Decimal use karo.",
+      "correct": "raw = '12.5'\nprint(int(float(raw)))",
+      "output": "",
+      "lesson": "ValueError format ka issue hai, type ka nahi."
+    },
+    {
+      "difficulty": "expert",
+      "mode": "raise",
+      "broken": "text = 'hello'\nprint(text.append('!'))",
+      "error": "AttributeError: 'str' object has no attribute 'append'",
+      "why": "String immutable hai; append list ka method hai. Ye Tuples ke workflow me bhi wahi galti hai.",
+      "fix": "String concatenation ya join use karo.",
+      "correct": "text = 'hello'\nprint(text + '!')",
+      "output": "",
+      "lesson": "AttributeError galat type par method call ka signal hai."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Quick drill: create ka ek minimal example likho aur output predict karo.",
+      "hint": "Tuples ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Coding round: single_item aur unpack ko ek function me combine karo.",
+      "hint": "Tuples ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Advanced: Tuples ka chhota pipeline banao jisme star_unpack, swap aur validation ho.",
+      "hint": "Tuples ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview: Tuples ke 3 trade-offs whiteboard par likho aur count_index se example do.",
+      "hint": "Tuples ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Build: Tuples ka mini project banao — input, processing, output aur README.",
+      "hint": "Tuples ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Tuples Starter Lab",
+      "problem": "Tuples ke basics ko ek chhote runnable program me jodna.",
+      "objective": "create aur single_item ka demo jo output print kare.",
+      "code": "point = (3, 4)\nprint(point, type(point).__name__)\nsingle = (5,)\nprint(single, len(single))\nprint(type((5)).__name__)",
+      "explanation": "Parentheses ke andar comma-separated values tuple banati hain. Ek item ka tuple banane ke liye trailing comma zaroori hai. Dono snippets ek hi file me chalte hain.",
+      "testing": "create ke empty aur normal input par output check karo.",
+      "errors": "Galat type ya missing value par Python exception dega — Version 2 me validation add hoti hai.",
+      "realWorld": "Tuples ke production code me yahi chhote steps repeated hote hain.",
+      "resume": "Tuples starter lab: create aur single_item ka runnable demo.",
+      "features": [
+        "create ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Tuples",
+        "create"
+      ],
+      "structure": "s10_project_1/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "create ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "count_index ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Tuples Starter Lab interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Tuples Starter Lab interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Tuples Starter Lab interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Tuples Starter Lab ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Tuples Data Pipeline",
+      "problem": "Raw input ko validate karke Tuples ke useful output me badalna.",
+      "objective": "unpack, star_unpack aur swap se chhota pipeline banao.",
+      "code": "point = (3, 4)\nx, y = point\nprint(x, y)\ndata = (1, 2, 3, 4)\nfirst, *middle, last = data\nprint(first, middle, last)\na, b = 1, 2\na, b = b, a\nprint(a, b)",
+      "explanation": "Unpacking tuple ke items ko alag names par bind karti hai. Star-unpacking beech ke items ki list banati hai. Right side pehle tuple ki tarah evaluate hoti hai, isliye swap bina temp ke hota hai. Pipeline ke steps alag-alag testable hain.",
+      "testing": "Ek valid aur ek invalid input se pipeline chalao; dono ka behaviour note karo.",
+      "errors": "Invalid input par crash ke bajaye clear error/message do — Version 3 me error shape add hota hai.",
+      "realWorld": "Yahi load → transform → report pattern Tuples ke dashboards aur services me hota hai.",
+      "resume": "Tuples pipeline: validation aur unpack/star_unpack ke saath end-to-end demo.",
+      "features": [
+        "single_item ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Tuples",
+        "single_item"
+      ],
+      "structure": "s10_project_2/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "single_item ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "slicing ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Tuples Data Pipeline interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Tuples Data Pipeline interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Tuples Data Pipeline interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Tuples Data Pipeline ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "Tuples Capstone",
+      "problem": "Ek believable Tuples use case jo end-to-end chale aur explain ho sake.",
+      "objective": "namedtuple ko unpack karke aur attribute se padhkar grouped summary banayi ja sakti hai. Isse project interview me trade-offs ke saath present karo.",
+      "code": "from collections import namedtuple\n\nReading = namedtuple('Reading', 'sensor value')\nreadings = [Reading('temp', 21.5), Reading('temp', 22.0), Reading('humidity', 45)]\n\nfor reading in readings:\n    sensor, value = reading\n    print(f'{sensor:<9} {value:>6}')\n\ntemps = [r.value for r in readings if r.sensor == 'temp']\nprint('avg temp:', sum(temps) / len(temps))",
+      "explanation": "namedtuple ko unpack karke aur attribute se padhkar grouped summary banayi ja sakti hai.",
+      "testing": "Expected output ko haath se verify karo, phir edge case (empty/missing) add karo.",
+      "errors": "Failure modes document karo: missing data, bad type aur duplicate records.",
+      "realWorld": "Ye capstone resume aur interview dono me ek concrete Tuples story deta hai.",
+      "resume": "Tuples capstone: namedtuple ko unpack karke aur attribute se padhkar grouped summary banayi ja sakti hai.",
+      "features": [
+        "unpack ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Tuples",
+        "unpack"
+      ],
+      "structure": "s10_project_3/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "unpack ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "namedtuple ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Tuples Capstone interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Tuples Capstone interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Tuples Capstone interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Tuples Capstone ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      {
+        "q": "Understanding 1.1: why does Tuples Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.2: why does Tuples Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.3: why does Tuples Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.1: why does Tuples Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.2: why does Tuples Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.3: why does Tuples Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.1: why does Tuples Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.2: why does Tuples Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.3: why does Tuples Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      }
+    ],
+    "coding": [
+      {
+        "q": "Coding 1.1: extend Tuples Starter Lab with one more create step.",
+        "a": "Parentheses ke andar comma-separated values tuple banati hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.2: extend Tuples Starter Lab with one more single_item step.",
+        "a": "Ek item ka tuple banane ke liye trailing comma zaroori hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.3: extend Tuples Starter Lab with one more unpack step.",
+        "a": "Unpacking tuple ke items ko alag names par bind karti hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.1: extend Tuples Data Pipeline with one more create step.",
+        "a": "Parentheses ke andar comma-separated values tuple banati hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.2: extend Tuples Data Pipeline with one more single_item step.",
+        "a": "Ek item ka tuple banane ke liye trailing comma zaroori hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.3: extend Tuples Data Pipeline with one more unpack step.",
+        "a": "Unpacking tuple ke items ko alag names par bind karti hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.1: extend Tuples Capstone with one more create step.",
+        "a": "Parentheses ke andar comma-separated values tuple banati hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.2: extend Tuples Capstone with one more single_item step.",
+        "a": "Ek item ka tuple banane ke liye trailing comma zaroori hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.3: extend Tuples Capstone with one more unpack step.",
+        "a": "Unpacking tuple ke items ko alag names par bind karti hai. Naya step add karke output compare karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced 1.1: how would Tuples Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.2: how would Tuples Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.3: how would Tuples Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.1: how would Tuples Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.2: how would Tuples Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.3: how would Tuples Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.1: how would Tuples Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.2: how would Tuples Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.3: how would Tuples Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview 1.1: defend one trade-off in Tuples Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.2: defend one trade-off in Tuples Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.3: defend one trade-off in Tuples Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.1: defend one trade-off in Tuples Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.2: defend one trade-off in Tuples Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.3: defend one trade-off in Tuples Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.1: defend one trade-off in Tuples Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.2: defend one trade-off in Tuples Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.3: defend one trade-off in Tuples Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      }
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Practical 1: validate Tuples data in 15 minutes.",
+      "a": "Steps likho: input, create, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 2: transform Tuples data in 15 minutes.",
+      "a": "Steps likho: input, single_item, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 3: aggregate Tuples data in 15 minutes.",
+      "a": "Steps likho: input, unpack, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 4: present Tuples data in 15 minutes.",
+      "a": "Steps likho: input, star_unpack, expected output; phir code chala kar dikhao."
+    }
+  ],
+  "revision": [
+    "Tuples: revise create — Parentheses ke andar comma-separated values tuple banati hain.",
+    "Tuples: revise single_item — Ek item ka tuple banane ke liye trailing comma zaroori hai.",
+    "Tuples: revise unpack — Unpacking tuple ke items ko alag names par bind karti hai.",
+    "Tuples: revise star_unpack — Star-unpacking beech ke items ki list banati hai.",
+    "Tuples: revise swap — Right side pehle tuple ki tarah evaluate hoti hai, isliye swap bina temp ke hota hai."
+  ]
+}

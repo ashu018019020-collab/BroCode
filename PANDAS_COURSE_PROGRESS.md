@@ -72,6 +72,18 @@ npm run pandas-course                  # dry run only
 `sitemap:write` is required after adding the route (done); `ai:index:write` is not yet wired to this
 course — the assistant index still covers NumPy only.
 
+## Supported runtimes
+
+| Surface | Python | pandas | NumPy | Notes |
+|---|---|---|---|---|
+| Browser / Pyodide | 3.12.1 | 2.2.0 | 1.26.4 | Pinned by `public/pyodide/pyodide-lock.json`; the offline runtime learners use. |
+| Local generator and guard | 3.12–3.15 | 2.2–3.0 | 1.26–2.5 | Verified here on Python 3.15.2 / pandas 3.0.6 / NumPy 2.5.5; runs `pandas-course:write`. |
+
+The debug guard treats each authored `error` as a semantic lesson, not a runtime pin. It requires
+the same exception class (with `re.error`/`re.PatternError` treated as one class) and the same
+distinctive anchors — quoted names, dates, numeric ranges — plus a token-overlap floor. A patch
+release may reword an error without forcing a content edit; a different failure reason still fails.
+
 ## Not done (stated, not hidden)
 
 1. **Question volume is still below the brief's 50-per-section target.** The brief asks for 7,000+

@@ -1,0 +1,717 @@
+{
+  "section": "s23",
+  "topic": "Agentic AI + LangChain + n8n",
+  "authored": true,
+  "intro": "Agent ek LLM ke around loop hai: socho, tool chuno, result dekho, phir agla step. Is section me tool registry, action parsing, deterministic loop, retries, guardrails aur step logging pure Python me banaye jate hain — frameworks inhi patterns ko package karte hain.",
+  "theory": [
+    "Tool ek function hai jiska naam, description aur input schema hota hai. Model description padhkar tool chunta hai, isliye description hi contract hai.",
+    "Agent loop typically: model se action lo, tool chalao, observation wapas prompt me do, repeat — max steps ke saath, warna infinite loop.",
+    "Actions ko structured format me parse karo (JSON/function call). Free text parse karna brittle hai, isliye validation aur fallback zaroori hai.",
+    "Guardrails: allowed tools ki list, destructive actions se pehle confirmation, input validation aur step/time budget.",
+    "Observability ke bina agent debug nahi hota: har step ka input, tool, output aur latency log karo. Retries sirf transient failures par karo."
+  ],
+  "syntax": [
+    "tools = {\n    \"add\": lambda a, b: a + b,\n    \"lookup\": lambda key: DATA.get(key, \"not found\"),\n}\nresult = tools[name](**arguments)",
+    "from langchain.agents import AgentExecutor, create_react_agent\nfrom langchain.tools import tool\n\n@tool\ndef add(a: int, b: int) -> int:\n    \"\"\"Add two numbers.\"\"\"\n    return a + b",
+    "for step in range(MAX_STEPS):\n    action = model.decide(state)\n    observation = run_tool(action)\n    state[\"history\"].append((action, observation))"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "ALLOWED = {'lookup', 'add'}\naction = 'delete_all'\nprint('allowed' if action in ALLOWED else 'blocked')",
+      "output": "",
+      "explain": [
+        "Allowlist destructive ya unknown tools ko block karti hai.",
+        "Output ko print se verify karo.",
+        "Ye Agentic AI + LangChain + n8n ka basic building block hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "steps = [('lookup', 'ok'), ('add', 'ok')]\nfor index, (tool, status) in enumerate(steps, start=1):\n    print(f'step {index}: {tool} -> {status}')",
+      "output": "",
+      "explain": [
+        "Har step ka log agent behaviour ko debuggable banata hai.",
+        "Ek step aur jodne se behaviour kaise badalta hai, dekho.",
+        "Input badal kar edge case test karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "import json\n\nTOOLS = {\n    'lookup_customer': lambda cid: {'id': cid, 'name': 'Asha'},\n    'open_ticket': lambda cid, issue: f'ticket-{cid}-{issue[:4]}',\n}\n\nplan = [\n    {'tool': 'lookup_customer', 'args': {'cid': 7}},\n    {'tool': 'open_ticket', 'args': {'cid': 7, 'issue': 'refund delay'}},\n]\n\nhistory = []\nfor step in plan:\n    action = json.loads(json.dumps(step))\n    if action['tool'] not in TOOLS:\n        history.append(('blocked', action['tool']))\n        continue\n    observation = TOOLS[action['tool']](**action['args'])\n    history.append((action['tool'], observation))\n\nprint(history)\nprint('steps used:', len(history), '/', len(plan))",
+      "output": "",
+      "explain": [
+        "Tool allowlist, dispatch aur step history — ek chhota auditable agent loop.",
+        "Ye snippet end-to-end flow dikhata hai.",
+        "Output ko project/interview me evidence ki tarah use karo."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Support agents tool se order status/refund status dekhte hain; destructive refund action se pehle human approval rakhi jati hai.",
+    "n8n/LangChain workflows me retries aur idempotency keys duplicate side effects rokhte hain.",
+    "Agent cost tokens aur tool calls se badhta hai, isliye step budget aur caching production me mandatory hain."
+  ],
+  "interview": [
+    {
+      "q": "Agent aur simple LLM call me fark kya hai?",
+      "a": "Simple call ek prompt ka ek response hai. Agent loop me model tool chunta hai, result dekhta hai aur agla step decide karta hai — isliye state, budget aur guardrails chahiye."
+    },
+    {
+      "q": "Agent ko infinite loop se kaise rokte hain?",
+      "a": "Max steps, per-tool timeout, cost/token budget aur repeated action detection. Loop ke har iteration par budget check hona chahiye."
+    },
+    {
+      "q": "Tool description itni important kyun hai?",
+      "a": "Model description ke basis par tool select karta hai. Ambiguous description galat tool chunwa deti hai; clear input schema aur examples selection accuracy badhate hain."
+    },
+    {
+      "q": "Destructive tool ke liye kya pattern use karoge?",
+      "a": "Human-in-the-loop approval, dry-run mode, allowlist aur idempotency key. Agent ko direct delete/refund permission nahi deni chahiye."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Beginner drill 1: what does guardrail do in a Agentic AI + LangChain + n8n workflow?",
+        "a": "Allowlist destructive ya unknown tools ko block karti hai.",
+        "explain": "Allowlist destructive ya unknown tools ko block karti hai. Snippet chala kar output se confirm karo.",
+        "code": "ALLOWED = {'lookup', 'add'}\naction = 'delete_all'\nprint('allowed' if action in ALLOWED else 'blocked')",
+        "output": "",
+        "tip": "Agentic AI + LangChain + n8n me guardrail ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 2: what does step_log do in a Agentic AI + LangChain + n8n workflow?",
+        "a": "Har step ka log agent behaviour ko debuggable banata hai.",
+        "explain": "Har step ka log agent behaviour ko debuggable banata hai. Snippet chala kar output se confirm karo.",
+        "code": "steps = [('lookup', 'ok'), ('add', 'ok')]\nfor index, (tool, status) in enumerate(steps, start=1):\n    print(f'step {index}: {tool} -> {status}')",
+        "output": "",
+        "tip": "Agentic AI + LangChain + n8n me step_log ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 3: what does memoize do in a Agentic AI + LangChain + n8n workflow?",
+        "a": "Repeated tool calls ko cache karna cost aur latency dono bachata hai.",
+        "explain": "Repeated tool calls ko cache karna cost aur latency dono bachata hai. Snippet chala kar output se confirm karo.",
+        "code": "cache = {}\ndef lookup(key):\n    if key not in cache:\n        cache[key] = f'value-{key}'\n    return cache[key]\n\nprint(lookup('a'), lookup('a'), len(cache))",
+        "output": "",
+        "tip": "Agentic AI + LangChain + n8n me memoize ka behaviour edge cases par test karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Intermediate drill 1: what does tool_registry do in a Agentic AI + LangChain + n8n workflow?",
+        "a": "Tool registry naam se callable map karta hai — agent isi ko dekhta hai.",
+        "explain": "Tool registry naam se callable map karta hai — agent isi ko dekhta hai. Snippet chala kar output se confirm karo.",
+        "code": "tools = {'add': lambda a, b: a + b, 'double': lambda x: x * 2}\nprint(sorted(tools), tools['add'](2, 3))",
+        "output": "",
+        "tip": "Agentic AI + LangChain + n8n me tool_registry ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 2: what does dispatch do in a Agentic AI + LangChain + n8n workflow?",
+        "a": "Dispatch function unknown tools ko reject karta hai aur arguments bind karta hai.",
+        "explain": "Dispatch function unknown tools ko reject karta hai aur arguments bind karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Agentic AI + LangChain + n8n me dispatch ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 3: what does parse_action do in a Agentic AI + LangChain + n8n workflow?",
+        "a": "Structured action JSON parse karke tool aur arguments alag milte hain.",
+        "explain": "Structured action JSON parse karke tool aur arguments alag milte hain. Snippet chala kar output se confirm karo.",
+        "tip": "Agentic AI + LangChain + n8n me parse_action ka behaviour edge cases par test karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced drill 1: what does agent_loop do in a Agentic AI + LangChain + n8n workflow?",
+        "a": "Deterministic plan par loop chalana agent loop ka skeleton hai.",
+        "explain": "Deterministic plan par loop chalana agent loop ka skeleton hai. Snippet chala kar output se confirm karo.",
+        "code": "plan = [('add', {'a': 2, 'b': 3}), ('double', {'x': 10})]\ntools = {'add': lambda a, b: a + b, 'double': lambda x: x * 2}\nstate = []\nfor name, args in plan:\n    result = tools[name](**args)\n    state.append((name, result))\nprint(state)",
+        "output": "",
+        "tip": "Agentic AI + LangChain + n8n me agent_loop ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 2: what does retry do in a Agentic AI + LangChain + n8n workflow?",
+        "a": "Bounded retry transient failure ke baad dobara koshish karta hai.",
+        "explain": "Bounded retry transient failure ke baad dobara koshish karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Agentic AI + LangChain + n8n me retry ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 3: what does guardrail do in a Agentic AI + LangChain + n8n workflow?",
+        "a": "Allowlist destructive ya unknown tools ko block karti hai.",
+        "explain": "Allowlist destructive ya unknown tools ko block karti hai. Snippet chala kar output se confirm karo.",
+        "tip": "Agentic AI + LangChain + n8n me guardrail ka behaviour edge cases par test karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview drill 1: what does step_log do in a Agentic AI + LangChain + n8n workflow?",
+        "a": "Har step ka log agent behaviour ko debuggable banata hai.",
+        "explain": "Har step ka log agent behaviour ko debuggable banata hai. Snippet chala kar output se confirm karo.",
+        "tip": "Agentic AI + LangChain + n8n me step_log ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 2: what does memoize do in a Agentic AI + LangChain + n8n workflow?",
+        "a": "Repeated tool calls ko cache karna cost aur latency dono bachata hai.",
+        "explain": "Repeated tool calls ko cache karna cost aur latency dono bachata hai. Snippet chala kar output se confirm karo.",
+        "tip": "Agentic AI + LangChain + n8n me memoize ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 3: what does tool_registry do in a Agentic AI + LangChain + n8n workflow?",
+        "a": "Tool registry naam se callable map karta hai — agent isi ko dekhta hai.",
+        "explain": "Tool registry naam se callable map karta hai — agent isi ko dekhta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Agentic AI + LangChain + n8n me tool_registry ka behaviour edge cases par test karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Realworld drill 1: what does dispatch do in a Agentic AI + LangChain + n8n workflow?",
+        "a": "Dispatch function unknown tools ko reject karta hai aur arguments bind karta hai.",
+        "explain": "Dispatch function unknown tools ko reject karta hai aur arguments bind karta hai. Snippet chala kar output se confirm karo.",
+        "code": "def run_tool(name, **kwargs):\n    tools = {'add': lambda a, b: a + b}\n    if name not in tools:\n        raise KeyError(f'unknown tool: {name}')\n    return tools[name](**kwargs)\n\nprint(run_tool('add', a=2, b=5))",
+        "output": "",
+        "tip": "Agentic AI + LangChain + n8n me dispatch ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 2: what does parse_action do in a Agentic AI + LangChain + n8n workflow?",
+        "a": "Structured action JSON parse karke tool aur arguments alag milte hain.",
+        "explain": "Structured action JSON parse karke tool aur arguments alag milte hain. Snippet chala kar output se confirm karo.",
+        "tip": "Agentic AI + LangChain + n8n me parse_action ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 3: what does agent_loop do in a Agentic AI + LangChain + n8n workflow?",
+        "a": "Deterministic plan par loop chalana agent loop ka skeleton hai.",
+        "explain": "Deterministic plan par loop chalana agent loop ka skeleton hai. Snippet chala kar output se confirm karo.",
+        "tip": "Agentic AI + LangChain + n8n me agent_loop ka behaviour edge cases par test karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 1: implement tool_registry and print the result.",
+      "build": "Tool registry naam se callable map karta hai — agent isi ko dekhta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "tool_registry ke liye sample data snippet me diya hai",
+      "expected": "Printed output tool_registry ka result dikhata hai",
+      "hint": "Solution ka core tool_registry hai; output ko readable rakho.",
+      "concept": "Agentic AI + LangChain + n8n · tool_registry",
+      "solution": "tools = {'add': lambda a, b: a + b, 'double': lambda x: x * 2}\nprint(sorted(tools), tools['add'](2, 3))",
+      "output": "",
+      "explanation": "Tool registry naam se callable map karta hai — agent isi ko dekhta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to tool_registry ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 2: implement dispatch and print the result.",
+      "build": "Dispatch function unknown tools ko reject karta hai aur arguments bind karta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "dispatch ke liye sample data snippet me diya hai",
+      "expected": "Printed output dispatch ka result dikhata hai",
+      "hint": "Solution ka core dispatch hai; output ko readable rakho.",
+      "concept": "Agentic AI + LangChain + n8n · dispatch",
+      "solution": "def run_tool(name, **kwargs):\n    tools = {'add': lambda a, b: a + b}\n    if name not in tools:\n        raise KeyError(f'unknown tool: {name}')\n    return tools[name](**kwargs)\n\nprint(run_tool('add', a=2, b=5))",
+      "output": "",
+      "explanation": "Dispatch function unknown tools ko reject karta hai aur arguments bind karta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to dispatch ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 3: implement parse_action and print the result.",
+      "build": "Structured action JSON parse karke tool aur arguments alag milte hain. Ek chhota runnable example likho jo output print kare.",
+      "input": "parse_action ke liye sample data snippet me diya hai",
+      "expected": "Printed output parse_action ka result dikhata hai",
+      "hint": "Solution ka core parse_action hai; output ko readable rakho.",
+      "concept": "Agentic AI + LangChain + n8n · parse_action",
+      "solution": "import json\n\nraw = '{\"tool\": \"add\", \"args\": {\"a\": 2, \"b\": 3}}'\naction = json.loads(raw)\nprint(action['tool'], action['args'])",
+      "output": "",
+      "explanation": "Structured action JSON parse karke tool aur arguments alag milte hain. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to parse_action ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 4: implement agent_loop and print the result.",
+      "build": "Deterministic plan par loop chalana agent loop ka skeleton hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "agent_loop ke liye sample data snippet me diya hai",
+      "expected": "Printed output agent_loop ka result dikhata hai",
+      "hint": "Solution ka core agent_loop hai; output ko readable rakho.",
+      "concept": "Agentic AI + LangChain + n8n · agent_loop",
+      "solution": "plan = [('add', {'a': 2, 'b': 3}), ('double', {'x': 10})]\ntools = {'add': lambda a, b: a + b, 'double': lambda x: x * 2}\nstate = []\nfor name, args in plan:\n    result = tools[name](**args)\n    state.append((name, result))\nprint(state)",
+      "output": "",
+      "explanation": "Deterministic plan par loop chalana agent loop ka skeleton hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to agent_loop ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 5: implement retry and print the result.",
+      "build": "Bounded retry transient failure ke baad dobara koshish karta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "retry ke liye sample data snippet me diya hai",
+      "expected": "Printed output retry ka result dikhata hai",
+      "hint": "Solution ka core retry hai; output ko readable rakho.",
+      "concept": "Agentic AI + LangChain + n8n · retry",
+      "solution": "attempts = 0\nwhile attempts < 3:\n    attempts += 1\n    if attempts == 2:\n        print('succeeded on attempt', attempts)\n        break",
+      "output": "",
+      "explanation": "Bounded retry transient failure ke baad dobara koshish karta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to retry ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 6: implement guardrail and print the result.",
+      "build": "Allowlist destructive ya unknown tools ko block karti hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "guardrail ke liye sample data snippet me diya hai",
+      "expected": "Printed output guardrail ka result dikhata hai",
+      "hint": "Solution ka core guardrail hai; output ko readable rakho.",
+      "concept": "Agentic AI + LangChain + n8n · guardrail",
+      "solution": "ALLOWED = {'lookup', 'add'}\naction = 'delete_all'\nprint('allowed' if action in ALLOWED else 'blocked')",
+      "output": "",
+      "explanation": "Allowlist destructive ya unknown tools ko block karti hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to guardrail ka approach kaise badlega?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "text = 'hello'\nprint(text.append('!'))",
+      "error": "AttributeError: 'str' object has no attribute 'append'",
+      "why": "String immutable hai; append list ka method hai. Ye Agentic AI + LangChain + n8n ke workflow me bhi wahi galti hai.",
+      "fix": "String concatenation ya join use karo.",
+      "correct": "text = 'hello'\nprint(text + '!')",
+      "output": "",
+      "lesson": "AttributeError galat type par method call ka signal hai."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "raise",
+      "broken": "total = 10\nprint(totl + 1)",
+      "error": "NameError: name 'totl' is not defined",
+      "why": "Naam ki spelling galat hai; Python namespace me wo naam nahi milta. Ye Agentic AI + LangChain + n8n ke workflow me bhi wahi galti hai.",
+      "fix": "Variable ka naam theek karo.",
+      "correct": "total = 10\nprint(total + 1)",
+      "output": "",
+      "lesson": "NameError typo ya missing assignment batata hai."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "logic",
+      "broken": "items = [3, 1, 2]\nprint(items.sort())",
+      "error": "Logic error — sort() None return karta hai, list print nahi hoti",
+      "why": "sort() in-place hai aur None deta hai, isliye print None dikhata hai. Ye Agentic AI + LangChain + n8n ke workflow me bhi wahi galti hai.",
+      "fix": "sorted() use karo ya pehle sort phir list print karo.",
+      "correct": "items = [3, 1, 2]\nitems.sort()\nprint(items)",
+      "output": "",
+      "lesson": "Mutating methods ka return value None hota hai — usse assign/print mat karo."
+    },
+    {
+      "difficulty": "expert",
+      "mode": "logic",
+      "broken": "prices = [100, 200]\ntotal = 0\nfor p in prices:\n    total = p\nprint(total)",
+      "error": "Logic error — total 200 aata hai, sum 300 hona chahiye",
+      "why": "Assignment purani value replace karta hai; accumulator chahiye. Ye Agentic AI + LangChain + n8n ke workflow me bhi wahi galti hai.",
+      "fix": "total += p use karo ya sum(prices).",
+      "correct": "prices = [100, 200]\ntotal = 0\nfor p in prices:\n    total += p\nprint(total)",
+      "output": "",
+      "lesson": "Logic bugs exception nahi dete — chhote sample par expected value likho."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Quick drill: tool_registry ka ek minimal example likho aur output predict karo.",
+      "hint": "Agentic AI + LangChain + n8n ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Coding round: dispatch aur parse_action ko ek function me combine karo.",
+      "hint": "Agentic AI + LangChain + n8n ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Advanced: Agentic AI + LangChain + n8n ka chhota pipeline banao jisme agent_loop, retry aur validation ho.",
+      "hint": "Agentic AI + LangChain + n8n ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview: Agentic AI + LangChain + n8n ke 3 trade-offs whiteboard par likho aur guardrail se example do.",
+      "hint": "Agentic AI + LangChain + n8n ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Build: Agentic AI + LangChain + n8n ka mini project banao — input, processing, output aur README.",
+      "hint": "Agentic AI + LangChain + n8n ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Agentic AI + LangChain + n8n Starter Lab",
+      "problem": "Agentic AI + LangChain + n8n ke basics ko ek chhote runnable program me jodna.",
+      "objective": "tool_registry aur dispatch ka demo jo output print kare.",
+      "code": "tools = {'add': lambda a, b: a + b, 'double': lambda x: x * 2}\nprint(sorted(tools), tools['add'](2, 3))\ndef run_tool(name, **kwargs):\n    tools = {'add': lambda a, b: a + b}\n    if name not in tools:\n        raise KeyError(f'unknown tool: {name}')\n    return tools[name](**kwargs)\n\nprint(run_tool('add', a=2, b=5))",
+      "explanation": "Tool registry naam se callable map karta hai — agent isi ko dekhta hai. Dispatch function unknown tools ko reject karta hai aur arguments bind karta hai. Dono snippets ek hi file me chalte hain.",
+      "testing": "tool_registry ke empty aur normal input par output check karo.",
+      "errors": "Galat type ya missing value par Python exception dega — Version 2 me validation add hoti hai.",
+      "realWorld": "Agentic AI + LangChain + n8n ke production code me yahi chhote steps repeated hote hain.",
+      "resume": "Agentic AI + LangChain + n8n starter lab: tool_registry aur dispatch ka runnable demo.",
+      "features": [
+        "tool_registry ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Agentic AI + LangChain + n8n",
+        "tool_registry"
+      ],
+      "structure": "s23_project_1/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "tool_registry ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "guardrail ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Agentic AI + LangChain + n8n Starter Lab interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Agentic AI + LangChain + n8n Starter Lab interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Agentic AI + LangChain + n8n Starter Lab interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Agentic AI + LangChain + n8n Starter Lab ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Agentic AI + LangChain + n8n Data Pipeline",
+      "problem": "Raw input ko validate karke Agentic AI + LangChain + n8n ke useful output me badalna.",
+      "objective": "parse_action, agent_loop aur retry se chhota pipeline banao.",
+      "code": "import json\n\nraw = '{\"tool\": \"add\", \"args\": {\"a\": 2, \"b\": 3}}'\naction = json.loads(raw)\nprint(action['tool'], action['args'])\nplan = [('add', {'a': 2, 'b': 3}), ('double', {'x': 10})]\ntools = {'add': lambda a, b: a + b, 'double': lambda x: x * 2}\nstate = []\nfor name, args in plan:\n    result = tools[name](**args)\n    state.append((name, result))\nprint(state)\nattempts = 0\nwhile attempts < 3:\n    attempts += 1\n    if attempts == 2:\n        print('succeeded on attempt', attempts)\n        break",
+      "explanation": "Structured action JSON parse karke tool aur arguments alag milte hain. Deterministic plan par loop chalana agent loop ka skeleton hai. Bounded retry transient failure ke baad dobara koshish karta hai. Pipeline ke steps alag-alag testable hain.",
+      "testing": "Ek valid aur ek invalid input se pipeline chalao; dono ka behaviour note karo.",
+      "errors": "Invalid input par crash ke bajaye clear error/message do — Version 3 me error shape add hota hai.",
+      "realWorld": "Yahi load → transform → report pattern Agentic AI + LangChain + n8n ke dashboards aur services me hota hai.",
+      "resume": "Agentic AI + LangChain + n8n pipeline: validation aur parse_action/agent_loop ke saath end-to-end demo.",
+      "features": [
+        "dispatch ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Agentic AI + LangChain + n8n",
+        "dispatch"
+      ],
+      "structure": "s23_project_2/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "dispatch ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "step_log ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Agentic AI + LangChain + n8n Data Pipeline interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Agentic AI + LangChain + n8n Data Pipeline interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Agentic AI + LangChain + n8n Data Pipeline interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Agentic AI + LangChain + n8n Data Pipeline ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "Agentic AI + LangChain + n8n Capstone",
+      "problem": "Ek believable Agentic AI + LangChain + n8n use case jo end-to-end chale aur explain ho sake.",
+      "objective": "Tool allowlist, dispatch aur step history — ek chhota auditable agent loop. Isse project interview me trade-offs ke saath present karo.",
+      "code": "import json\n\nTOOLS = {\n    'lookup_customer': lambda cid: {'id': cid, 'name': 'Asha'},\n    'open_ticket': lambda cid, issue: f'ticket-{cid}-{issue[:4]}',\n}\n\nplan = [\n    {'tool': 'lookup_customer', 'args': {'cid': 7}},\n    {'tool': 'open_ticket', 'args': {'cid': 7, 'issue': 'refund delay'}},\n]\n\nhistory = []\nfor step in plan:\n    action = json.loads(json.dumps(step))\n    if action['tool'] not in TOOLS:\n        history.append(('blocked', action['tool']))\n        continue\n    observation = TOOLS[action['tool']](**action['args'])\n    history.append((action['tool'], observation))\n\nprint(history)\nprint('steps used:', len(history), '/', len(plan))",
+      "explanation": "Tool allowlist, dispatch aur step history — ek chhota auditable agent loop.",
+      "testing": "Expected output ko haath se verify karo, phir edge case (empty/missing) add karo.",
+      "errors": "Failure modes document karo: missing data, bad type aur duplicate records.",
+      "realWorld": "Ye capstone resume aur interview dono me ek concrete Agentic AI + LangChain + n8n story deta hai.",
+      "resume": "Agentic AI + LangChain + n8n capstone: Tool allowlist, dispatch aur step history — ek chhota auditable agent loop.",
+      "features": [
+        "parse_action ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Agentic AI + LangChain + n8n",
+        "parse_action"
+      ],
+      "structure": "s23_project_3/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "parse_action ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "memoize ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Agentic AI + LangChain + n8n Capstone interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Agentic AI + LangChain + n8n Capstone interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Agentic AI + LangChain + n8n Capstone interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Agentic AI + LangChain + n8n Capstone ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      {
+        "q": "Understanding 1.1: why does Agentic AI + LangChain + n8n Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.2: why does Agentic AI + LangChain + n8n Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.3: why does Agentic AI + LangChain + n8n Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.1: why does Agentic AI + LangChain + n8n Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.2: why does Agentic AI + LangChain + n8n Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.3: why does Agentic AI + LangChain + n8n Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.1: why does Agentic AI + LangChain + n8n Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.2: why does Agentic AI + LangChain + n8n Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.3: why does Agentic AI + LangChain + n8n Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      }
+    ],
+    "coding": [
+      {
+        "q": "Coding 1.1: extend Agentic AI + LangChain + n8n Starter Lab with one more tool_registry step.",
+        "a": "Tool registry naam se callable map karta hai — agent isi ko dekhta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.2: extend Agentic AI + LangChain + n8n Starter Lab with one more dispatch step.",
+        "a": "Dispatch function unknown tools ko reject karta hai aur arguments bind karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.3: extend Agentic AI + LangChain + n8n Starter Lab with one more parse_action step.",
+        "a": "Structured action JSON parse karke tool aur arguments alag milte hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.1: extend Agentic AI + LangChain + n8n Data Pipeline with one more tool_registry step.",
+        "a": "Tool registry naam se callable map karta hai — agent isi ko dekhta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.2: extend Agentic AI + LangChain + n8n Data Pipeline with one more dispatch step.",
+        "a": "Dispatch function unknown tools ko reject karta hai aur arguments bind karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.3: extend Agentic AI + LangChain + n8n Data Pipeline with one more parse_action step.",
+        "a": "Structured action JSON parse karke tool aur arguments alag milte hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.1: extend Agentic AI + LangChain + n8n Capstone with one more tool_registry step.",
+        "a": "Tool registry naam se callable map karta hai — agent isi ko dekhta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.2: extend Agentic AI + LangChain + n8n Capstone with one more dispatch step.",
+        "a": "Dispatch function unknown tools ko reject karta hai aur arguments bind karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.3: extend Agentic AI + LangChain + n8n Capstone with one more parse_action step.",
+        "a": "Structured action JSON parse karke tool aur arguments alag milte hain. Naya step add karke output compare karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced 1.1: how would Agentic AI + LangChain + n8n Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.2: how would Agentic AI + LangChain + n8n Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.3: how would Agentic AI + LangChain + n8n Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.1: how would Agentic AI + LangChain + n8n Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.2: how would Agentic AI + LangChain + n8n Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.3: how would Agentic AI + LangChain + n8n Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.1: how would Agentic AI + LangChain + n8n Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.2: how would Agentic AI + LangChain + n8n Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.3: how would Agentic AI + LangChain + n8n Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview 1.1: defend one trade-off in Agentic AI + LangChain + n8n Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.2: defend one trade-off in Agentic AI + LangChain + n8n Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.3: defend one trade-off in Agentic AI + LangChain + n8n Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.1: defend one trade-off in Agentic AI + LangChain + n8n Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.2: defend one trade-off in Agentic AI + LangChain + n8n Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.3: defend one trade-off in Agentic AI + LangChain + n8n Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.1: defend one trade-off in Agentic AI + LangChain + n8n Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.2: defend one trade-off in Agentic AI + LangChain + n8n Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.3: defend one trade-off in Agentic AI + LangChain + n8n Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      }
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Practical 1: validate Agentic AI + LangChain + n8n data in 15 minutes.",
+      "a": "Steps likho: input, tool_registry, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 2: transform Agentic AI + LangChain + n8n data in 15 minutes.",
+      "a": "Steps likho: input, dispatch, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 3: aggregate Agentic AI + LangChain + n8n data in 15 minutes.",
+      "a": "Steps likho: input, parse_action, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 4: present Agentic AI + LangChain + n8n data in 15 minutes.",
+      "a": "Steps likho: input, agent_loop, expected output; phir code chala kar dikhao."
+    }
+  ],
+  "revision": [
+    "Agentic AI + LangChain + n8n: revise tool_registry — Tool registry naam se callable map karta hai — agent isi ko dekhta hai.",
+    "Agentic AI + LangChain + n8n: revise dispatch — Dispatch function unknown tools ko reject karta hai aur arguments bind karta hai.",
+    "Agentic AI + LangChain + n8n: revise parse_action — Structured action JSON parse karke tool aur arguments alag milte hain.",
+    "Agentic AI + LangChain + n8n: revise agent_loop — Deterministic plan par loop chalana agent loop ka skeleton hai.",
+    "Agentic AI + LangChain + n8n: revise retry — Bounded retry transient failure ke baad dobara koshish karta hai."
+  ]
+}

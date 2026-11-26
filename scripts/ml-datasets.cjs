@@ -27,6 +27,8 @@ const WRITE = process.argv.includes('--write');
 const CHECK = process.argv.includes('check');
 
 const sha256 = (text) => crypto.createHash('sha256').update(text).digest('hex');
+/** A Windows checkout writes CRLF; generated content is compared by text, not by its line endings. */
+const normalizeEol = (text) => String(text).replace(/\r\n?/g, '\n');
 const fail = (problems) => {
   console.error(`ml-datasets: ${problems.length} problem(s)`);
   for (const problem of problems) console.error(`  · ${problem}`);
@@ -178,12 +180,12 @@ function main() {
 
   if (CHECK) {
     const stale = [];
-    if (!fs.existsSync(TS) || fs.readFileSync(TS, 'utf8') !== ts) stale.push('src/core/data/mlDatasets.ts');
+    if (!fs.existsSync(TS) || normalizeEol(fs.readFileSync(TS, 'utf8')) !== normalizeEol(ts)) stale.push('src/core/data/mlDatasets.ts');
     const manifestPath = path.join(OUT, 'manifest.json');
     if (!fs.existsSync(manifestPath) || comparableManifest(fs.readFileSync(manifestPath, 'utf8')) !== comparableManifest(manifest)) stale.push('public/datasets/ml/manifest.json');
     for (const dataset of output) {
       const dest = path.join(OUT, dataset.file);
-      if (!fs.existsSync(dest) || fs.readFileSync(dest, 'utf8') !== dataset.csv) stale.push(`public/datasets/ml/${dataset.file}`);
+      if (!fs.existsSync(dest) || normalizeEol(fs.readFileSync(dest, 'utf8')) !== normalizeEol(dataset.csv)) stale.push(`public/datasets/ml/${dataset.file}`);
     }
     if (stale.length) fail(stale.map((file) => `${file} is stale — run npm run ml:datasets:write`));
     console.log(`ml-datasets: valid — ${output.length} canonical datasets, generated copies match`);

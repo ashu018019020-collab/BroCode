@@ -80,6 +80,9 @@ function comparableManifest(text) {
   }
 }
 
+/** A Windows checkout writes CRLF; generated content is compared by text, not by its line endings. */
+const normalizeEol = (text) => String(text).replace(/\r\n?/g, '\n');
+
 function main() {
   const notebooks = load();
   if (!notebooks.length) fail(['no packs in content/colab-ml']);
@@ -116,7 +119,7 @@ function main() {
     if (!fs.existsSync(manifestPath) || comparableManifest(fs.readFileSync(manifestPath, 'utf8')) !== comparableManifest(payload)) stale.push('public/colab-ml/manifest.json');
     for (const { file, nb } of notebooks) {
       const dest = path.join(OUT, file);
-      if (!fs.existsSync(dest) || fs.readFileSync(dest, 'utf8') !== JSON.stringify(nb, null, 1) + '\n') stale.push(`public/colab-ml/${file}`);
+      if (!fs.existsSync(dest) || normalizeEol(fs.readFileSync(dest, 'utf8')) !== normalizeEol(JSON.stringify(nb, null, 1) + '\n')) stale.push(`public/colab-ml/${file}`);
     }
     if (stale.length) fail(stale.map((file) => `${file} is stale — run npm run ml:colab:write`));
     console.log(`ml-colab: valid — ${notebooks.length} packs, published copies match`);

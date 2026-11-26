@@ -520,16 +520,16 @@
     {
      "title": "Reading a missing column in the city table",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"k1a\", \"k1b\", \"k1c\"], \"sales\": [1,2,3], \"cost\": [10,20,30], \"region\": [\"t1a\", \"t1b\", \"t1c\"]})\ns = df[\"sales\"]\nprint(df[\"city_total\"])",
-     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"k1a\", \"k1b\", \"k1c\"], \"sales\": [1,2,3], \"cost\": [10,20,30], \"region\": [\"t1a\", \"t1b\", \"t1c\"]})\ns = df[\"sales\"]\nprint(df[\"city\"])",
+     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"k1a\", \"k1b\", \"k1c\"], \"sales\": [1,2,3], \"cost\": [10,20,30], \"region\": [\"t1a\", \"t1b\", \"t1c\"]})\ns = df[\"sales\"]\nprint(df[\"city\"].tolist())",
      "error": "KeyError: 'city_total'",
-     "fixedOutput": "0    k1a\n1    k1b\n2    k1c\nName: city, dtype: str"
+     "fixedOutput": "['k1a', 'k1b', 'k1c']"
     },
     {
      "title": "Adding text to a number column in the city table",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"k1a\", \"k1b\", \"k1c\"], \"sales\": [1,2,3], \"cost\": [10,20,30], \"region\": [\"t1a\", \"t1b\", \"t1c\"]})\ns = df[\"sales\"]\nprint(df[\"sales\"] + \"region\")",
-     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"k1a\", \"k1b\", \"k1c\"], \"sales\": [1,2,3], \"cost\": [10,20,30], \"region\": [\"t1a\", \"t1b\", \"t1c\"]})\ns = df[\"sales\"]\nprint(df[\"sales\"].astype(str) + \"region\")",
+     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"k1a\", \"k1b\", \"k1c\"], \"sales\": [1,2,3], \"cost\": [10,20,30], \"region\": [\"t1a\", \"t1b\", \"t1c\"]})\ns = df[\"sales\"]\nprint((df[\"sales\"].astype(str) + \"region\").tolist())",
      "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U6')) -> None",
-     "fixedOutput": "0    1region\n1    2region\n2    3region\nName: sales, dtype: str"
+     "fixedOutput": "['1region', '2region', '3region']"
     },
     {
      "title": "drop with a column on axis 0 in the city table",
@@ -1349,8 +1349,8 @@
       "title": "Reading a missing column in the city table",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"k1a\", \"k1b\", \"k1c\"], \"sales\": [1,2,3], \"cost\": [10,20,30], \"region\": [\"t1a\", \"t1b\", \"t1c\"]})\ns = df[\"sales\"]\nprint(df[\"city_total\"])",
       "error": "KeyError: 'city_total'",
-      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"k1a\", \"k1b\", \"k1c\"], \"sales\": [1,2,3], \"cost\": [10,20,30], \"region\": [\"t1a\", \"t1b\", \"t1c\"]})\ns = df[\"sales\"]\nprint(df[\"city\"])",
-      "expected": "0    k1a\n1    k1b\n2    k1c\nName: city, dtype: str",
+      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"k1a\", \"k1b\", \"k1c\"], \"sales\": [1,2,3], \"cost\": [10,20,30], \"region\": [\"t1a\", \"t1b\", \"t1c\"]})\ns = df[\"sales\"]\nprint(df[\"city\"].tolist())",
+      "expected": "['k1a', 'k1b', 'k1c']",
       "difficulty": "hard"
      },
      {
@@ -1358,8 +1358,8 @@
       "title": "Adding text to a number column in the city table",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"k1a\", \"k1b\", \"k1c\"], \"sales\": [1,2,3], \"cost\": [10,20,30], \"region\": [\"t1a\", \"t1b\", \"t1c\"]})\ns = df[\"sales\"]\nprint(df[\"sales\"] + \"region\")",
       "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U6')) -> None",
-      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"k1a\", \"k1b\", \"k1c\"], \"sales\": [1,2,3], \"cost\": [10,20,30], \"region\": [\"t1a\", \"t1b\", \"t1c\"]})\ns = df[\"sales\"]\nprint(df[\"sales\"].astype(str) + \"region\")",
-      "expected": "0    1region\n1    2region\n2    3region\nName: sales, dtype: str",
+      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"k1a\", \"k1b\", \"k1c\"], \"sales\": [1,2,3], \"cost\": [10,20,30], \"region\": [\"t1a\", \"t1b\", \"t1c\"]})\ns = df[\"sales\"]\nprint((df[\"sales\"].astype(str) + \"region\").tolist())",
+      "expected": "['1region', '2region', '3region']",
       "difficulty": "easy"
      },
      {
@@ -3637,8 +3637,8 @@
     {
      "title": "dtypes are the contract",
      "body": "A numeric column stored as text breaks every mean. `dtypes` shows the truth, and `object` or `str` on a number column is the warning sign.",
-     "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\nprint(df.dtypes.astype(str).tolist())",
-     "output": "['int64', 'str', 'float64']"
+     "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\ndf[\"name\"] = df[\"name\"].astype(object)\nprint(df.dtypes.astype(str).tolist())",
+     "output": "['int64', 'object', 'float64']"
     },
     {
      "title": "describe summarises every numeric column",
@@ -3718,15 +3718,15 @@
      "title": "Selecting missing columns with a list in the team table",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"team\": [\"k3a\", \"k3b\", \"k3c\"], \"score\": [3,4,5], \"minutes\": [30,60,90], \"coach\": [\"t3a\", \"t3b\", \"t3c\"]})\ns = df[\"score\"]\nprint(df[[\"team_total\"]].shape)",
      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"team\": [\"k3a\", \"k3b\", \"k3c\"], \"score\": [3,4,5], \"minutes\": [30,60,90], \"coach\": [\"t3a\", \"t3b\", \"t3c\"]})\ns = df[\"score\"]\nprint(df[[\"team\"]].shape)",
-     "error": "KeyError: \"None of [Index(['team_total'], dtype='str')] are in the [columns]\"",
+     "error": "KeyError: None of [Index(['team_total'])] are in the [columns]",
      "fixedOutput": "(3, 1)"
     },
     {
      "title": "Adding a number to a text column in the team table",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"team\": [\"k3a\", \"k3b\", \"k3c\"], \"score\": [3,4,5], \"minutes\": [30,60,90], \"coach\": [\"t3a\", \"t3b\", \"t3c\"]})\ns = df[\"score\"]\nprint(df[\"coach\"] + 1)",
-     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"team\": [\"k3a\", \"k3b\", \"k3c\"], \"score\": [3,4,5], \"minutes\": [30,60,90], \"coach\": [\"t3a\", \"t3b\", \"t3c\"]})\ns = df[\"score\"]\nprint(df[\"coach\"] + \"1\")",
+     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"team\": [\"k3a\", \"k3b\", \"k3c\"], \"score\": [3,4,5], \"minutes\": [30,60,90], \"coach\": [\"t3a\", \"t3b\", \"t3c\"]})\ns = df[\"score\"]\nprint((df[\"coach\"] + \"1\").tolist())",
      "error": "TypeError: can only concatenate str (not \"int\") to str",
-     "fixedOutput": "0    t3a1\n1    t3b1\n2    t3c1\nName: coach, dtype: str"
+     "fixedOutput": "['t3a1', 't3b1', 't3c1']"
     },
     {
      "title": "mean with axis 2 in the team table",
@@ -3898,8 +3898,8 @@
     {
      "title": "Types as text",
      "statement": "Print each column's dtype as a string.",
-     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})\nprint(df.dtypes.astype(str).tolist())",
-     "expected": "['int64', 'float64', 'str']",
+     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})\ndf[\"c\"] = df[\"c\"].astype(object)\nprint(df.dtypes.astype(str).tolist())",
+     "expected": "['int64', 'float64', 'object']",
      "setup": "import pandas as pd",
      "fixture": "df = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})",
      "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})\n\n# write the result the task asks for and print it\n",
@@ -4106,8 +4106,8 @@
       "id": "p03:learn:2",
       "title": "dtypes are the contract",
       "body": "A numeric column stored as text breaks every mean. `dtypes` shows the truth, and `object` or `str` on a number column is the warning sign.",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\nprint(df.dtypes.astype(str).tolist())",
-      "output": "['int64', 'str', 'float64']",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\ndf[\"name\"] = df[\"name\"].astype(object)\nprint(df.dtypes.astype(str).tolist())",
+      "output": "['int64', 'object', 'float64']",
       "difficulty": "hard"
      },
      {
@@ -4177,8 +4177,8 @@
      {
       "id": "p03:interview:2",
       "q": "What does this dtypes are the contract snippet print, and why?",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\nprint(df.dtypes.astype(str).tolist())",
-      "answer": "['int64', 'str', 'float64']",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\ndf[\"name\"] = df[\"name\"].astype(object)\nprint(df.dtypes.astype(str).tolist())",
+      "answer": "['int64', 'object', 'float64']",
       "difficulty": "medium"
      },
      {
@@ -4377,8 +4377,8 @@
       "setup": "import pandas as pd",
       "fixture": "df = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})",
       "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})\n\n# write the result the task asks for and print it\n",
-      "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})\nprint(df.dtypes.astype(str).tolist())",
-      "expected": "['int64', 'float64', 'str']",
+      "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})\ndf[\"c\"] = df[\"c\"].astype(object)\nprint(df.dtypes.astype(str).tolist())",
+      "expected": "['int64', 'float64', 'object']",
       "difficulty": "medium"
      },
      {
@@ -4448,8 +4448,8 @@
      {
       "id": "p03:logic:2",
       "q": "Predict the exact output of this dtypes are the contract code before you run it.",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\nprint(df.dtypes.astype(str).tolist())",
-      "answer": "['int64', 'str', 'float64']",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\ndf[\"name\"] = df[\"name\"].astype(object)\nprint(df.dtypes.astype(str).tolist())",
+      "answer": "['int64', 'object', 'float64']",
       "difficulty": "hard"
      },
      {
@@ -4545,7 +4545,7 @@
       "id": "p03:debug:5",
       "title": "Selecting missing columns with a list in the team table",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"team\": [\"k3a\", \"k3b\", \"k3c\"], \"score\": [3,4,5], \"minutes\": [30,60,90], \"coach\": [\"t3a\", \"t3b\", \"t3c\"]})\ns = df[\"score\"]\nprint(df[[\"team_total\"]].shape)",
-      "error": "KeyError: \"None of [Index(['team_total'], dtype='str')] are in the [columns]\"",
+      "error": "KeyError: None of [Index(['team_total'])] are in the [columns]",
       "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"team\": [\"k3a\", \"k3b\", \"k3c\"], \"score\": [3,4,5], \"minutes\": [30,60,90], \"coach\": [\"t3a\", \"t3b\", \"t3c\"]})\ns = df[\"score\"]\nprint(df[[\"team\"]].shape)",
       "expected": "(3, 1)",
       "difficulty": "hard"
@@ -4555,8 +4555,8 @@
       "title": "Adding a number to a text column in the team table",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"team\": [\"k3a\", \"k3b\", \"k3c\"], \"score\": [3,4,5], \"minutes\": [30,60,90], \"coach\": [\"t3a\", \"t3b\", \"t3c\"]})\ns = df[\"score\"]\nprint(df[\"coach\"] + 1)",
       "error": "TypeError: can only concatenate str (not \"int\") to str",
-      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"team\": [\"k3a\", \"k3b\", \"k3c\"], \"score\": [3,4,5], \"minutes\": [30,60,90], \"coach\": [\"t3a\", \"t3b\", \"t3c\"]})\ns = df[\"score\"]\nprint(df[\"coach\"] + \"1\")",
-      "expected": "0    t3a1\n1    t3b1\n2    t3c1\nName: coach, dtype: str",
+      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"team\": [\"k3a\", \"k3b\", \"k3c\"], \"score\": [3,4,5], \"minutes\": [30,60,90], \"coach\": [\"t3a\", \"t3b\", \"t3c\"]})\ns = df[\"score\"]\nprint((df[\"coach\"] + \"1\").tolist())",
+      "expected": "['t3a1', 't3b1', 't3c1']",
       "difficulty": "easy"
      },
      {
@@ -4662,8 +4662,8 @@
       "id": "p03:practice:2",
       "title": "Rebuild from memory: dtypes are the contract",
       "task": "A numeric column stored as text breaks every mean. `dtypes` shows the truth, and `object` or `str` on a number column is the warning sign.",
-      "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\nprint(df.dtypes.astype(str).tolist())",
-      "expected": "['int64', 'str', 'float64']",
+      "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\ndf[\"name\"] = df[\"name\"].astype(object)\nprint(df.dtypes.astype(str).tolist())",
+      "expected": "['int64', 'object', 'float64']",
       "difficulty": "hard"
      },
      {
@@ -4774,7 +4774,7 @@
       "options": [
        "(3, 2) 6 2",
        "[1, 2]\n[3, 4]",
-       "['int64', 'str', 'float64']"
+       "['int64', 'object', 'float64']"
       ],
       "difficulty": "easy"
      },
@@ -4796,7 +4796,7 @@
       "answer": "(3, 2) 6 2",
       "options": [
        "[1, 2]\n[3, 4]",
-       "['int64', 'str', 'float64']",
+       "['int64', 'object', 'float64']",
        "(3, 2) 6 2"
       ],
       "difficulty": "medium"
@@ -4815,12 +4815,12 @@
      {
       "id": "p03:checkpoint:4",
       "q": "Checkpoint: predict the output of this code about dtypes are the contract.",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\nprint(df.dtypes.astype(str).tolist())",
-      "answer": "['int64', 'str', 'float64']",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\ndf[\"name\"] = df[\"name\"].astype(object)\nprint(df.dtypes.astype(str).tolist())",
+      "answer": "['int64', 'object', 'float64']",
       "options": [
        "[1, 2]\n[3, 4]",
        "(3, 2) 6 2",
-       "['int64', 'str', 'float64']"
+       "['int64', 'object', 'float64']"
       ],
       "difficulty": "hard"
      },
@@ -4830,7 +4830,7 @@
       "answer": "A numeric column stored as text breaks every mean. `dtypes` shows the truth, and `object` or `str` on a number column is the warning sign.",
       "rubric": [
        "Names the operation, not just the output: dtypes are the contract.",
-       "Mentions the concrete values or shape involved (['int64', 'str', 'float64']).",
+       "Mentions the concrete values or shape involved (['int64', 'object', 'float64']).",
        "Explains why the dtype, axis or index is what it is, not only what the code prints."
       ],
       "difficulty": "medium"
@@ -5109,9 +5109,9 @@
       "id": "p03:checkpoint:tf2",
       "format": "truefalse",
       "q": "True or false: this dtypes are the contract code prints exactly the output below.",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\nprint(df.dtypes.astype(str).tolist())",
-      "claim": "['int64', 'str', 'float64']",
-      "expected": "['int64', 'str', 'float64']",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\ndf[\"name\"] = df[\"name\"].astype(object)\nprint(df.dtypes.astype(str).tolist())",
+      "claim": "['int64', 'object', 'float64']",
+      "expected": "['int64', 'object', 'float64']",
       "answer": "True",
       "options": [
        "True",
@@ -5171,10 +5171,10 @@
       "id": "p03:checkpoint:blank2",
       "format": "blank",
       "q": "Fill in the blank so this dtypes are the contract code prints the verified output below.",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [___, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\nprint(df.dtypes.astype(str).tolist())",
-      "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\nprint(df.dtypes.astype(str).tolist())",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [___, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\ndf[\"name\"] = df[\"name\"].astype(object)\nprint(df.dtypes.astype(str).tolist())",
+      "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"name\": [\"a\", \"b\"], \"fee\": [10.5, 20.0]})\ndf[\"name\"] = df[\"name\"].astype(object)\nprint(df.dtypes.astype(str).tolist())",
       "answer": "1",
-      "expected": "['int64', 'str', 'float64']",
+      "expected": "['int64', 'object', 'float64']",
       "difficulty": "hard"
      },
      {
@@ -6871,8 +6871,8 @@
     {
      "title": "astype on one column only",
      "body": "A per-column conversion keeps the rest of the frame untouched: build a dict or use `astype` on the Series, so a numeric column does not turn the whole frame into text.",
-     "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [\"1\", \"2\"], \"name\": [\"a\", \"b\"]})\ndf[\"id\"] = df[\"id\"].astype(int)\nprint(df.dtypes.astype(str).tolist())",
-     "output": "['int64', 'str']"
+     "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [\"1\", \"2\"], \"name\": pd.Series([\"a\", \"b\"], dtype=object)})\ndf[\"id\"] = df[\"id\"].astype(\"int64\")\nprint(df.dtypes.astype(str).tolist())",
+     "output": "['int64', 'object']"
     }
    ],
    "debug": [
@@ -6908,9 +6908,9 @@
     {
      "title": "df.columns is a property, not a method",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [\"k5a\", \"k5b\", \"k5c\"], \"qty\": [5,6,7], \"price\": [50,100,150], \"grade\": [\"t5a\", \"t5b\", \"t5c\"]})\ns = df[\"qty\"]\nprint(df.columns())",
-     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [\"k5a\", \"k5b\", \"k5c\"], \"qty\": [5,6,7], \"price\": [50,100,150], \"grade\": [\"t5a\", \"t5b\", \"t5c\"]})\ns = df[\"qty\"]\nprint(df.columns)",
+     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [\"k5a\", \"k5b\", \"k5c\"], \"qty\": [5,6,7], \"price\": [50,100,150], \"grade\": [\"t5a\", \"t5b\", \"t5c\"]})\ns = df[\"qty\"]\nprint(df.columns.tolist())",
      "error": "TypeError: 'Index' object is not callable",
-     "fixedOutput": "Index(['code', 'qty', 'price', 'grade'], dtype='str')"
+     "fixedOutput": "['code', 'qty', 'price', 'grade']"
     },
     {
      "title": "Sorting by a missing column in the code table",
@@ -6922,9 +6922,9 @@
     {
      "title": "Casting text to datetime in the code table",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [\"k5a\", \"k5b\", \"k5c\"], \"qty\": [5,6,7], \"price\": [50,100,150], \"grade\": [\"t5a\", \"t5b\", \"t5c\"]})\ns = df[\"qty\"]\nprint(df[\"grade\"].astype(\"datetime64[ns]\"))",
-     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [\"k5a\", \"k5b\", \"k5c\"], \"qty\": [5,6,7], \"price\": [50,100,150], \"grade\": [\"t5a\", \"t5b\", \"t5c\"]})\ns = df[\"qty\"]\nprint(pd.to_datetime(df[\"grade\"], errors=\"coerce\"))",
+     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [\"k5a\", \"k5b\", \"k5c\"], \"qty\": [5,6,7], \"price\": [50,100,150], \"grade\": [\"t5a\", \"t5b\", \"t5c\"]})\ns = df[\"qty\"]\nprint(pd.to_datetime(df[\"grade\"], errors=\"coerce\").isna().any())",
      "error": "pandas.errors.OutOfBoundsDatetime: Out of bounds nanosecond timestamp: t5a",
-     "fixedOutput": "0   1-01-01 05:00:00\n1                NaT\n2                NaT\nName: grade, dtype: datetime64[us]"
+     "fixedOutput": "True"
     },
     {
      "title": "sort_index with axis 2 in the code table",
@@ -7352,8 +7352,8 @@
       "id": "p05:learn:8",
       "title": "astype on one column only",
       "body": "A per-column conversion keeps the rest of the frame untouched: build a dict or use `astype` on the Series, so a numeric column does not turn the whole frame into text.",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [\"1\", \"2\"], \"name\": [\"a\", \"b\"]})\ndf[\"id\"] = df[\"id\"].astype(int)\nprint(df.dtypes.astype(str).tolist())",
-      "output": "['int64', 'str']",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [\"1\", \"2\"], \"name\": pd.Series([\"a\", \"b\"], dtype=object)})\ndf[\"id\"] = df[\"id\"].astype(\"int64\")\nprint(df.dtypes.astype(str).tolist())",
+      "output": "['int64', 'object']",
       "difficulty": "hard"
      }
     ],
@@ -7417,8 +7417,8 @@
      {
       "id": "p05:interview:8",
       "q": "What does this astype on one column only snippet print, and why?",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [\"1\", \"2\"], \"name\": [\"a\", \"b\"]})\ndf[\"id\"] = df[\"id\"].astype(int)\nprint(df.dtypes.astype(str).tolist())",
-      "answer": "['int64', 'str']",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [\"1\", \"2\"], \"name\": pd.Series([\"a\", \"b\"], dtype=object)})\ndf[\"id\"] = df[\"id\"].astype(\"int64\")\nprint(df.dtypes.astype(str).tolist())",
+      "answer": "['int64', 'object']",
       "difficulty": "hard"
      },
      {
@@ -7688,8 +7688,8 @@
      {
       "id": "p05:logic:8",
       "q": "Predict the exact output of this astype on one column only code before you run it.",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [\"1\", \"2\"], \"name\": [\"a\", \"b\"]})\ndf[\"id\"] = df[\"id\"].astype(int)\nprint(df.dtypes.astype(str).tolist())",
-      "answer": "['int64', 'str']",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [\"1\", \"2\"], \"name\": pd.Series([\"a\", \"b\"], dtype=object)})\ndf[\"id\"] = df[\"id\"].astype(\"int64\")\nprint(df.dtypes.astype(str).tolist())",
+      "answer": "['int64', 'object']",
       "difficulty": "hard"
      }
     ],
@@ -7735,8 +7735,8 @@
       "title": "df.columns is a property, not a method",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [\"k5a\", \"k5b\", \"k5c\"], \"qty\": [5,6,7], \"price\": [50,100,150], \"grade\": [\"t5a\", \"t5b\", \"t5c\"]})\ns = df[\"qty\"]\nprint(df.columns())",
       "error": "TypeError: 'Index' object is not callable",
-      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [\"k5a\", \"k5b\", \"k5c\"], \"qty\": [5,6,7], \"price\": [50,100,150], \"grade\": [\"t5a\", \"t5b\", \"t5c\"]})\ns = df[\"qty\"]\nprint(df.columns)",
-      "expected": "Index(['code', 'qty', 'price', 'grade'], dtype='str')",
+      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [\"k5a\", \"k5b\", \"k5c\"], \"qty\": [5,6,7], \"price\": [50,100,150], \"grade\": [\"t5a\", \"t5b\", \"t5c\"]})\ns = df[\"qty\"]\nprint(df.columns.tolist())",
+      "expected": "['code', 'qty', 'price', 'grade']",
       "difficulty": "medium"
      },
      {
@@ -7753,8 +7753,8 @@
       "title": "Casting text to datetime in the code table",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [\"k5a\", \"k5b\", \"k5c\"], \"qty\": [5,6,7], \"price\": [50,100,150], \"grade\": [\"t5a\", \"t5b\", \"t5c\"]})\ns = df[\"qty\"]\nprint(df[\"grade\"].astype(\"datetime64[ns]\"))",
       "error": "pandas.errors.OutOfBoundsDatetime: Out of bounds nanosecond timestamp: t5a",
-      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [\"k5a\", \"k5b\", \"k5c\"], \"qty\": [5,6,7], \"price\": [50,100,150], \"grade\": [\"t5a\", \"t5b\", \"t5c\"]})\ns = df[\"qty\"]\nprint(pd.to_datetime(df[\"grade\"], errors=\"coerce\"))",
-      "expected": "0   1-01-01 05:00:00\n1                NaT\n2                NaT\nName: grade, dtype: datetime64[us]",
+      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [\"k5a\", \"k5b\", \"k5c\"], \"qty\": [5,6,7], \"price\": [50,100,150], \"grade\": [\"t5a\", \"t5b\", \"t5c\"]})\ns = df[\"qty\"]\nprint(pd.to_datetime(df[\"grade\"], errors=\"coerce\").isna().any())",
+      "expected": "True",
       "difficulty": "easy"
      },
      {
@@ -7908,8 +7908,8 @@
       "id": "p05:practice:8",
       "title": "Rebuild from memory: astype on one column only",
       "task": "A per-column conversion keeps the rest of the frame untouched: build a dict or use `astype` on the Series, so a numeric column does not turn the whole frame into text.",
-      "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [\"1\", \"2\"], \"name\": [\"a\", \"b\"]})\ndf[\"id\"] = df[\"id\"].astype(int)\nprint(df.dtypes.astype(str).tolist())",
-      "expected": "['int64', 'str']",
+      "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [\"1\", \"2\"], \"name\": pd.Series([\"a\", \"b\"], dtype=object)})\ndf[\"id\"] = df[\"id\"].astype(\"int64\")\nprint(df.dtypes.astype(str).tolist())",
+      "expected": "['int64', 'object']",
       "difficulty": "hard"
      }
     ],
@@ -8151,11 +8151,11 @@
      {
       "id": "p05:checkpoint:16",
       "q": "Checkpoint: predict the output of this code about astype on one column only.",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [\"1\", \"2\"], \"name\": [\"a\", \"b\"]})\ndf[\"id\"] = df[\"id\"].astype(int)\nprint(df.dtypes.astype(str).tolist())",
-      "answer": "['int64', 'str']",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [\"1\", \"2\"], \"name\": pd.Series([\"a\", \"b\"], dtype=object)})\ndf[\"id\"] = df[\"id\"].astype(\"int64\")\nprint(df.dtypes.astype(str).tolist())",
+      "answer": "['int64', 'object']",
       "options": [
        "int64\nfloat64",
-       "['int64', 'str']",
+       "['int64', 'object']",
        "1\n[10.0, 0.0, 30.0]"
       ],
       "difficulty": "hard"
@@ -8166,7 +8166,7 @@
       "answer": "A per-column conversion keeps the rest of the frame untouched: build a dict or use `astype` on the Series, so a numeric column does not turn the whole frame into text.",
       "rubric": [
        "Names the operation, not just the output: astype on one column only.",
-       "Mentions the concrete values or shape involved (['int64', 'str']).",
+       "Mentions the concrete values or shape involved (['int64', 'object']).",
        "Explains why the dtype, axis or index is what it is, not only what the code prints."
       ],
       "difficulty": "medium"
@@ -10134,9 +10134,9 @@
     {
      "title": "Adding a number to uppercase text in the dept table",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"dept\": [\"k7a\", \"k7b\", \"k7c\"], \"score\": [7,8,9], \"rank\": [70,140,210], \"name\": [\"t7a\", \"t7b\", \"t7c\"]})\ns = df[\"score\"]\nprint(df[\"name\"].str.upper() + 1)",
-     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"dept\": [\"k7a\", \"k7b\", \"k7c\"], \"score\": [7,8,9], \"rank\": [70,140,210], \"name\": [\"t7a\", \"t7b\", \"t7c\"]})\ns = df[\"score\"]\nprint(df[\"name\"].str.upper() + \"1\")",
+     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"dept\": [\"k7a\", \"k7b\", \"k7c\"], \"score\": [7,8,9], \"rank\": [70,140,210], \"name\": [\"t7a\", \"t7b\", \"t7c\"]})\ns = df[\"score\"]\nprint((df[\"name\"].str.upper() + \"1\").tolist())",
      "error": "TypeError: can only concatenate str (not \"int\") to str",
-     "fixedOutput": "0    T7A1\n1    T7B1\n2    T7C1\nName: name, dtype: str"
+     "fixedOutput": "['T7A1', 'T7B1', 'T7C1']"
     },
     {
      "title": "cumsum with axis 3 in the dept table",
@@ -10968,8 +10968,8 @@
       "title": "Adding a number to uppercase text in the dept table",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"dept\": [\"k7a\", \"k7b\", \"k7c\"], \"score\": [7,8,9], \"rank\": [70,140,210], \"name\": [\"t7a\", \"t7b\", \"t7c\"]})\ns = df[\"score\"]\nprint(df[\"name\"].str.upper() + 1)",
       "error": "TypeError: can only concatenate str (not \"int\") to str",
-      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"dept\": [\"k7a\", \"k7b\", \"k7c\"], \"score\": [7,8,9], \"rank\": [70,140,210], \"name\": [\"t7a\", \"t7b\", \"t7c\"]})\ns = df[\"score\"]\nprint(df[\"name\"].str.upper() + \"1\")",
-      "expected": "0    T7A1\n1    T7B1\n2    T7C1\nName: name, dtype: str",
+      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"dept\": [\"k7a\", \"k7b\", \"k7c\"], \"score\": [7,8,9], \"rank\": [70,140,210], \"name\": [\"t7a\", \"t7b\", \"t7c\"]})\ns = df[\"score\"]\nprint((df[\"name\"].str.upper() + \"1\").tolist())",
+      "expected": "['T7A1', 'T7B1', 'T7C1']",
       "difficulty": "hard"
      },
      {
@@ -11719,9 +11719,9 @@
     {
      "title": "df.dtypes is a property, not a method",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"status\": [\"k8a\", \"k8b\", \"k8c\"], \"amount\": [8,9,10], \"fill\": [80,160,240], \"city\": [\"t8a\", \"t8b\", \"t8c\"]})\ns = df[\"amount\"]\nprint(df.dtypes())",
-     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"status\": [\"k8a\", \"k8b\", \"k8c\"], \"amount\": [8,9,10], \"fill\": [80,160,240], \"city\": [\"t8a\", \"t8b\", \"t8c\"]})\ns = df[\"amount\"]\nprint(df.dtypes)",
+     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"status\": [\"k8a\", \"k8b\", \"k8c\"], \"amount\": [8,9,10], \"fill\": [80,160,240], \"city\": [\"t8a\", \"t8b\", \"t8c\"]})\ns = df[\"amount\"]\nprint(df[[\"amount\", \"fill\"]].dtypes.astype(str).tolist())",
      "error": "TypeError: 'Series' object is not callable",
-     "fixedOutput": "status      str\namount    int64\nfill      int64\ncity        str\ndtype: object"
+     "fixedOutput": "['int64', 'int64']"
     },
     {
      "title": "Pivoting on a missing value column in the status table",
@@ -11733,9 +11733,9 @@
     {
      "title": "Adding text to text lengths in the status table",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"status\": [\"k8a\", \"k8b\", \"k8c\"], \"amount\": [8,9,10], \"fill\": [80,160,240], \"city\": [\"t8a\", \"t8b\", \"t8c\"]})\ns = df[\"amount\"]\nprint(df[\"city\"].str.len() + \"x\")",
-     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"status\": [\"k8a\", \"k8b\", \"k8c\"], \"amount\": [8,9,10], \"fill\": [80,160,240], \"city\": [\"t8a\", \"t8b\", \"t8c\"]})\ns = df[\"amount\"]\nprint(df[\"city\"].str.len().astype(str) + \"x\")",
+     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"status\": [\"k8a\", \"k8b\", \"k8c\"], \"amount\": [8,9,10], \"fill\": [80,160,240], \"city\": [\"t8a\", \"t8b\", \"t8c\"]})\ns = df[\"amount\"]\nprint((df[\"city\"].str.len().astype(str) + \"x\").tolist())",
      "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
-     "fixedOutput": "0    3x\n1    3x\n2    3x\nName: city, dtype: str"
+     "fixedOutput": "['3x', '3x', '3x']"
     },
     {
      "title": "diff with axis 2 in the status table",
@@ -12549,8 +12549,8 @@
       "title": "df.dtypes is a property, not a method",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"status\": [\"k8a\", \"k8b\", \"k8c\"], \"amount\": [8,9,10], \"fill\": [80,160,240], \"city\": [\"t8a\", \"t8b\", \"t8c\"]})\ns = df[\"amount\"]\nprint(df.dtypes())",
       "error": "TypeError: 'Series' object is not callable",
-      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"status\": [\"k8a\", \"k8b\", \"k8c\"], \"amount\": [8,9,10], \"fill\": [80,160,240], \"city\": [\"t8a\", \"t8b\", \"t8c\"]})\ns = df[\"amount\"]\nprint(df.dtypes)",
-      "expected": "status      str\namount    int64\nfill      int64\ncity        str\ndtype: object",
+      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"status\": [\"k8a\", \"k8b\", \"k8c\"], \"amount\": [8,9,10], \"fill\": [80,160,240], \"city\": [\"t8a\", \"t8b\", \"t8c\"]})\ns = df[\"amount\"]\nprint(df[[\"amount\", \"fill\"]].dtypes.astype(str).tolist())",
+      "expected": "['int64', 'int64']",
       "difficulty": "easy"
      },
      {
@@ -12567,8 +12567,8 @@
       "title": "Adding text to text lengths in the status table",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"status\": [\"k8a\", \"k8b\", \"k8c\"], \"amount\": [8,9,10], \"fill\": [80,160,240], \"city\": [\"t8a\", \"t8b\", \"t8c\"]})\ns = df[\"amount\"]\nprint(df[\"city\"].str.len() + \"x\")",
       "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
-      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"status\": [\"k8a\", \"k8b\", \"k8c\"], \"amount\": [8,9,10], \"fill\": [80,160,240], \"city\": [\"t8a\", \"t8b\", \"t8c\"]})\ns = df[\"amount\"]\nprint(df[\"city\"].str.len().astype(str) + \"x\")",
-      "expected": "0    3x\n1    3x\n2    3x\nName: city, dtype: str",
+      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"status\": [\"k8a\", \"k8b\", \"k8c\"], \"amount\": [8,9,10], \"fill\": [80,160,240], \"city\": [\"t8a\", \"t8b\", \"t8c\"]})\ns = df[\"amount\"]\nprint((df[\"city\"].str.len().astype(str) + \"x\").tolist())",
+      "expected": "['3x', '3x', '3x']",
       "difficulty": "hard"
      },
      {
@@ -13363,7 +13363,7 @@
      "title": "Deduplicating on a column that does not exist",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1]})\nprint(df.drop_duplicates(subset=[\"key\"]).shape)",
      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1]})\nprint(df.drop_duplicates(subset=[\"id\"]).shape)",
-     "error": "KeyError: Index(['key'], dtype='str')",
+     "error": "KeyError: Index(['key'])",
      "fixedOutput": "(1, 1)"
     },
     {
@@ -14203,7 +14203,7 @@
       "id": "p09:debug:12",
       "title": "Deduplicating on a column that does not exist",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1]})\nprint(df.drop_duplicates(subset=[\"key\"]).shape)",
-      "error": "KeyError: Index(['key'], dtype='str')",
+      "error": "KeyError: Index(['key'])",
       "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1]})\nprint(df.drop_duplicates(subset=[\"id\"]).shape)",
       "expected": "(1, 1)",
       "difficulty": "easy"
@@ -14920,16 +14920,16 @@
     {
      "title": "df.axes is a property, not a method",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"prefix\": [\"k10a\", \"k10b\", \"k10c\"], \"length\": [10,11,12], \"count\": [100,200,300], \"text\": [\"t10a\", \"t10b\", \"t10c\"]})\ns = df[\"length\"]\nprint(df.axes())",
-     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"prefix\": [\"k10a\", \"k10b\", \"k10c\"], \"length\": [10,11,12], \"count\": [100,200,300], \"text\": [\"t10a\", \"t10b\", \"t10c\"]})\ns = df[\"length\"]\nprint(df.axes)",
+     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"prefix\": [\"k10a\", \"k10b\", \"k10c\"], \"length\": [10,11,12], \"count\": [100,200,300], \"text\": [\"t10a\", \"t10b\", \"t10c\"]})\ns = df[\"length\"]\nprint([axis.tolist() for axis in df.axes])",
      "error": "TypeError: 'list' object is not callable",
-     "fixedOutput": "[RangeIndex(start=0, stop=3, step=1), Index(['prefix', 'length', 'count', 'text'], dtype='str')]"
+     "fixedOutput": "[[0, 1, 2], ['prefix', 'length', 'count', 'text']]"
     },
     {
      "title": "Popping a missing column in the prefix table",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"prefix\": [\"k10a\", \"k10b\", \"k10c\"], \"length\": [10,11,12], \"count\": [100,200,300], \"text\": [\"t10a\", \"t10b\", \"t10c\"]})\ns = df[\"length\"]\nprint(df.pop(\"prefix_total\"))",
-     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"prefix\": [\"k10a\", \"k10b\", \"k10c\"], \"length\": [10,11,12], \"count\": [100,200,300], \"text\": [\"t10a\", \"t10b\", \"t10c\"]})\ns = df[\"length\"]\nprint(df.pop(\"prefix\"))",
+     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"prefix\": [\"k10a\", \"k10b\", \"k10c\"], \"length\": [10,11,12], \"count\": [100,200,300], \"text\": [\"t10a\", \"t10b\", \"t10c\"]})\ns = df[\"length\"]\nprint(df.pop(\"prefix\").tolist())",
      "error": "KeyError: 'prefix_total'",
-     "fixedOutput": "0    k10a\n1    k10b\n2    k10c\nName: prefix, dtype: str"
+     "fixedOutput": "['k10a', 'k10b', 'k10c']"
     },
     {
      "title": "Subtracting text from a number in the prefix table",
@@ -15751,8 +15751,8 @@
       "title": "df.axes is a property, not a method",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"prefix\": [\"k10a\", \"k10b\", \"k10c\"], \"length\": [10,11,12], \"count\": [100,200,300], \"text\": [\"t10a\", \"t10b\", \"t10c\"]})\ns = df[\"length\"]\nprint(df.axes())",
       "error": "TypeError: 'list' object is not callable",
-      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"prefix\": [\"k10a\", \"k10b\", \"k10c\"], \"length\": [10,11,12], \"count\": [100,200,300], \"text\": [\"t10a\", \"t10b\", \"t10c\"]})\ns = df[\"length\"]\nprint(df.axes)",
-      "expected": "[RangeIndex(start=0, stop=3, step=1), Index(['prefix', 'length', 'count', 'text'], dtype='str')]",
+      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"prefix\": [\"k10a\", \"k10b\", \"k10c\"], \"length\": [10,11,12], \"count\": [100,200,300], \"text\": [\"t10a\", \"t10b\", \"t10c\"]})\ns = df[\"length\"]\nprint([axis.tolist() for axis in df.axes])",
+      "expected": "[[0, 1, 2], ['prefix', 'length', 'count', 'text']]",
       "difficulty": "easy"
      },
      {
@@ -15760,8 +15760,8 @@
       "title": "Popping a missing column in the prefix table",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"prefix\": [\"k10a\", \"k10b\", \"k10c\"], \"length\": [10,11,12], \"count\": [100,200,300], \"text\": [\"t10a\", \"t10b\", \"t10c\"]})\ns = df[\"length\"]\nprint(df.pop(\"prefix_total\"))",
       "error": "KeyError: 'prefix_total'",
-      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"prefix\": [\"k10a\", \"k10b\", \"k10c\"], \"length\": [10,11,12], \"count\": [100,200,300], \"text\": [\"t10a\", \"t10b\", \"t10c\"]})\ns = df[\"length\"]\nprint(df.pop(\"prefix\"))",
-      "expected": "0    k10a\n1    k10b\n2    k10c\nName: prefix, dtype: str",
+      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"prefix\": [\"k10a\", \"k10b\", \"k10c\"], \"length\": [10,11,12], \"count\": [100,200,300], \"text\": [\"t10a\", \"t10b\", \"t10c\"]})\ns = df[\"length\"]\nprint(df.pop(\"prefix\").tolist())",
+      "expected": "['k10a', 'k10b', 'k10c']",
       "difficulty": "medium"
      },
      {
@@ -16432,7 +16432,7 @@
     {
      "title": "to_csv without the index",
      "body": "By default the index is written as an unnamed first column. `index=False` is what stops a round trip from growing a column each time.",
-     "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False).strip().split(\"\\n\"))",
+     "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip().splitlines())",
      "output": "['a', '1', '2']"
     },
     {
@@ -16498,7 +16498,7 @@
     {
      "title": "to_csv given an integer as a destination",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(1))",
-     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False).strip())",
+     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip())",
      "error": "ValueError: Invalid file path or buffer object type: <class 'int'>",
      "fixedOutput": "a\n1"
     },
@@ -16511,8 +16511,8 @@
     },
     {
      "title": "A headerless export read as if it had names",
-     "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False, header=False).strip())",
-     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False).strip())",
+     "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False, header=False, lineterminator=\"\\n\").strip())",
+     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip())",
      "error": "Wrong output: 1 — with header=False the file has no column name, so a later read invents one.",
      "fixedOutput": "a\n1",
      "brokenOutput": "1"
@@ -16633,11 +16633,11 @@
     {
      "title": "Keep the zip as text",
      "statement": "Read the zip column as text and print its value and dtype.",
-     "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": str})\nprint(df[\"zip\"].tolist(), df[\"zip\"].dtype)",
-     "expected": "['012345'] str",
+     "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": object})\nprint(df[\"zip\"].tolist(), df[\"zip\"].dtype)",
+     "expected": "['012345'] object",
      "setup": "import pandas as pd\nfrom io import StringIO",
-     "fixture": "df = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": str})",
-     "starter": "import pandas as pd\nfrom io import StringIO\ndf = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": str})\n\n# write the result the task asks for and print it\n",
+     "fixture": "df = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": object})",
+     "starter": "import pandas as pd\nfrom io import StringIO\ndf = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": object})\n\n# write the result the task asks for and print it\n",
      "requires": "__getitem__()"
     },
     {
@@ -16703,11 +16703,11 @@
     {
      "title": "Read a column as text",
      "statement": "Read the id column as text and print its dtype.",
-     "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": str})\nprint(df[\"id\"].dtype)",
-     "expected": "str",
+     "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": object})\nprint(df[\"id\"].dtype)",
+     "expected": "object",
      "setup": "import pandas as pd\nfrom io import StringIO",
-     "fixture": "df = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": str})",
-     "starter": "import pandas as pd\nfrom io import StringIO\ndf = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": str})\n\n# write the result the task asks for and print it\n",
+     "fixture": "df = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": object})",
+     "starter": "import pandas as pd\nfrom io import StringIO\ndf = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": object})\n\n# write the result the task asks for and print it\n",
      "requires": "__getitem__()"
     },
     {
@@ -16881,7 +16881,7 @@
       "id": "p11:learn:2",
       "title": "to_csv without the index",
       "body": "By default the index is written as an unnamed first column. `index=False` is what stops a round trip from growing a column each time.",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False).strip().split(\"\\n\"))",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip().splitlines())",
       "output": "['a', '1', '2']",
       "difficulty": "hard"
      },
@@ -16952,7 +16952,7 @@
      {
       "id": "p11:interview:2",
       "q": "What does this to_csv without the index snippet print, and why?",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False).strip().split(\"\\n\"))",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip().splitlines())",
       "answer": "['a', '1', '2']",
       "difficulty": "medium"
      },
@@ -17078,10 +17078,10 @@
       "statement": "Read the zip column as text and print its value and dtype.",
       "kind": "task",
       "setup": "import pandas as pd\nfrom io import StringIO",
-      "fixture": "df = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": str})",
-      "starter": "import pandas as pd\nfrom io import StringIO\ndf = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": str})\n\n# write the result the task asks for and print it\n",
-      "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": str})\nprint(df[\"zip\"].tolist(), df[\"zip\"].dtype)",
-      "expected": "['012345'] str",
+      "fixture": "df = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": object})",
+      "starter": "import pandas as pd\nfrom io import StringIO\ndf = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": object})\n\n# write the result the task asks for and print it\n",
+      "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": object})\nprint(df[\"zip\"].tolist(), df[\"zip\"].dtype)",
+      "expected": "['012345'] object",
       "difficulty": "medium"
      },
      {
@@ -17162,10 +17162,10 @@
       "statement": "Read the id column as text and print its dtype.",
       "kind": "task",
       "setup": "import pandas as pd\nfrom io import StringIO",
-      "fixture": "df = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": str})",
-      "starter": "import pandas as pd\nfrom io import StringIO\ndf = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": str})\n\n# write the result the task asks for and print it\n",
-      "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": str})\nprint(df[\"id\"].dtype)",
-      "expected": "str",
+      "fixture": "df = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": object})",
+      "starter": "import pandas as pd\nfrom io import StringIO\ndf = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": object})\n\n# write the result the task asks for and print it\n",
+      "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": object})\nprint(df[\"id\"].dtype)",
+      "expected": "object",
       "difficulty": "hard"
      },
      {
@@ -17223,7 +17223,7 @@
      {
       "id": "p11:logic:2",
       "q": "Predict the exact output of this to_csv without the index code before you run it.",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False).strip().split(\"\\n\"))",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip().splitlines())",
       "answer": "['a', '1', '2']",
       "difficulty": "hard"
      },
@@ -17303,7 +17303,7 @@
       "title": "to_csv given an integer as a destination",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(1))",
       "error": "ValueError: Invalid file path or buffer object type: <class 'int'>",
-      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False).strip())",
+      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip())",
       "expected": "a\n1",
       "difficulty": "easy"
      },
@@ -17319,9 +17319,9 @@
      {
       "id": "p11:debug:5",
       "title": "A headerless export read as if it had names",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False, header=False).strip())",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False, header=False, lineterminator=\"\\n\").strip())",
       "error": "Wrong output: 1 — with header=False the file has no column name, so a later read invents one.",
-      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False).strip())",
+      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip())",
       "expected": "a\n1",
       "difficulty": "hard"
      },
@@ -17437,7 +17437,7 @@
       "id": "p11:practice:2",
       "title": "Rebuild from memory: to_csv without the index",
       "task": "By default the index is written as an unnamed first column. `index=False` is what stops a round trip from growing a column each time.",
-      "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False).strip().split(\"\\n\"))",
+      "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip().splitlines())",
       "expected": "['a', '1', '2']",
       "difficulty": "hard"
      },
@@ -17590,7 +17590,7 @@
      {
       "id": "p11:checkpoint:4",
       "q": "Checkpoint: predict the output of this code about to_csv without the index.",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False).strip().split(\"\\n\"))",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip().splitlines())",
       "answer": "['a', '1', '2']",
       "options": [
        "['a', '1', '2']",
@@ -17858,7 +17858,7 @@
       "id": "p11:checkpoint:tf2",
       "format": "truefalse",
       "q": "True or false: this to_csv without the index code prints exactly the output below.",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False).strip().split(\"\\n\"))",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip().splitlines())",
       "claim": "['a', '1', '2']",
       "expected": "['a', '1', '2']",
       "answer": "True",
@@ -17920,8 +17920,8 @@
       "id": "p11:checkpoint:blank2",
       "format": "blank",
       "q": "Fill in the blank so this to_csv without the index code prints the verified output below.",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [___, 2]})\nprint(df.to_csv(index=False).strip().split(\"\\n\"))",
-      "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False).strip().split(\"\\n\"))",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [___, 2]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip().splitlines())",
+      "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip().splitlines())",
       "answer": "1",
       "expected": "['a', '1', '2']",
       "difficulty": "hard"
@@ -18044,7 +18044,7 @@
      "title": "A join with overlapping non-key columns",
      "broken": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]}, index=[1])\nb = pd.DataFrame({\"x\": [2]}, index=[1])\nprint(a.join(b).shape)",
      "fix": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]}, index=[1])\nb = pd.DataFrame({\"y\": [2]}, index=[1])\nprint(a.join(b).shape)",
-     "error": "ValueError: columns overlap but no suffix specified: Index(['x'], dtype='str')",
+     "error": "ValueError: columns overlap but no suffix specified: Index(['x'])",
      "fixedOutput": "(1, 2)"
     },
     {
@@ -18845,7 +18845,7 @@
       "id": "p12:debug:2",
       "title": "A join with overlapping non-key columns",
       "code": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]}, index=[1])\nb = pd.DataFrame({\"x\": [2]}, index=[1])\nprint(a.join(b).shape)",
-      "error": "ValueError: columns overlap but no suffix specified: Index(['x'], dtype='str')",
+      "error": "ValueError: columns overlap but no suffix specified: Index(['x'])",
       "fix": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]}, index=[1])\nb = pd.DataFrame({\"y\": [2]}, index=[1])\nprint(a.join(b).shape)",
       "expected": "(1, 2)",
       "difficulty": "hard"
@@ -19587,11 +19587,11 @@
     },
     {
      "title": "Aggregating text with a numeric function",
-     "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"name\": [\"Aman\"]})\nprint(df.groupby(\"city\")[\"name\"].sum())",
+     "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"name\": [\"Aman\"]})\nprint(df.groupby(\"city\")[\"name\"].sum().tolist())",
      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"name\": [\"Aman\"]})\nprint(df.groupby(\"city\")[\"name\"].count().tolist())",
      "error": "Wrong output: Aman — sum concatenated the text values instead of counting rows.",
      "fixedOutput": "[1]",
-     "brokenOutput": "city\nPune    Aman\nName: name, dtype: str"
+     "brokenOutput": "['Aman']"
     },
     {
      "title": "An aggregation on a column that is not there",
@@ -20388,7 +20388,7 @@
      {
       "id": "p13:debug:1",
       "title": "Aggregating text with a numeric function",
-      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"name\": [\"Aman\"]})\nprint(df.groupby(\"city\")[\"name\"].sum())",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"name\": [\"Aman\"]})\nprint(df.groupby(\"city\")[\"name\"].sum().tolist())",
       "error": "Wrong output: Aman — sum concatenated the text values instead of counting rows.",
       "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"name\": [\"Aman\"]})\nprint(df.groupby(\"city\")[\"name\"].count().tolist())",
       "expected": "[1]",
@@ -25849,9 +25849,9 @@
     {
      "title": "Using .str on a number column in the label table",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"label\": [\"k17a\", \"k17b\", \"k17c\"], \"value\": [17,18,19], \"weight\": [170,340,510], \"group\": [\"t17a\", \"t17b\", \"t17c\"]})\ns = df[\"value\"]\nprint(df[\"value\"].str.upper())",
-     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"label\": [\"k17a\", \"k17b\", \"k17c\"], \"value\": [17,18,19], \"weight\": [170,340,510], \"group\": [\"t17a\", \"t17b\", \"t17c\"]})\ns = df[\"value\"]\nprint(df[\"value\"].astype(str).str.upper())",
+     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"label\": [\"k17a\", \"k17b\", \"k17c\"], \"value\": [17,18,19], \"weight\": [170,340,510], \"group\": [\"t17a\", \"t17b\", \"t17c\"]})\ns = df[\"value\"]\nprint(df[\"value\"].astype(str).str.upper().tolist())",
      "error": "AttributeError: Can only use .str accessor with string values, not integer. Did you mean: 'std'?",
-     "fixedOutput": "0    17\n1    18\n2    19\nName: value, dtype: str"
+     "fixedOutput": "['17', '18', '19']"
     },
     {
      "title": "rank with axis 2 in the label table",
@@ -26663,8 +26663,8 @@
       "title": "Using .str on a number column in the label table",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"label\": [\"k17a\", \"k17b\", \"k17c\"], \"value\": [17,18,19], \"weight\": [170,340,510], \"group\": [\"t17a\", \"t17b\", \"t17c\"]})\ns = df[\"value\"]\nprint(df[\"value\"].str.upper())",
       "error": "AttributeError: Can only use .str accessor with string values, not integer. Did you mean: 'std'?",
-      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"label\": [\"k17a\", \"k17b\", \"k17c\"], \"value\": [17,18,19], \"weight\": [170,340,510], \"group\": [\"t17a\", \"t17b\", \"t17c\"]})\ns = df[\"value\"]\nprint(df[\"value\"].astype(str).str.upper())",
-      "expected": "0    17\n1    18\n2    19\nName: value, dtype: str",
+      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"label\": [\"k17a\", \"k17b\", \"k17c\"], \"value\": [17,18,19], \"weight\": [170,340,510], \"group\": [\"t17a\", \"t17b\", \"t17c\"]})\ns = df[\"value\"]\nprint(df[\"value\"].astype(str).str.upper().tolist())",
+      "expected": "['17', '18', '19']",
       "difficulty": "hard"
      },
      {
@@ -27397,7 +27397,7 @@
      "title": "Selecting missing columns with loc in the type table",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"type\": [\"k18a\", \"k18b\", \"k18c\"], \"value\": [18,19,20], \"bytes\": [180,360,540], \"id\": [\"t18a\", \"t18b\", \"t18c\"]})\ns = df[\"value\"]\nprint(df.loc[:, [\"type_total\"]].shape)",
      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"type\": [\"k18a\", \"k18b\", \"k18c\"], \"value\": [18,19,20], \"bytes\": [180,360,540], \"id\": [\"t18a\", \"t18b\", \"t18c\"]})\ns = df[\"value\"]\nprint(df.loc[:, [\"type\"]].shape)",
-     "error": "KeyError: \"None of [Index(['type_total'], dtype='str')] are in the [columns]\"",
+     "error": "KeyError: None of [Index(['type_total'])] are in the [columns]",
      "fixedOutput": "(3, 1)"
     },
     {
@@ -27410,9 +27410,9 @@
     {
      "title": "idxmax with axis 2 in the type table",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"type\": [\"k18a\", \"k18b\", \"k18c\"], \"value\": [18,19,20], \"bytes\": [180,360,540], \"id\": [\"t18a\", \"t18b\", \"t18c\"]})\ns = df[\"value\"]\nprint(df[[\"value\", \"bytes\"]].idxmax(axis=2))",
-     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"type\": [\"k18a\", \"k18b\", \"k18c\"], \"value\": [18,19,20], \"bytes\": [180,360,540], \"id\": [\"t18a\", \"t18b\", \"t18c\"]})\ns = df[\"value\"]\nprint(df[[\"value\", \"bytes\"]].idxmax(axis=1))",
+     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"type\": [\"k18a\", \"k18b\", \"k18c\"], \"value\": [18,19,20], \"bytes\": [180,360,540], \"id\": [\"t18a\", \"t18b\", \"t18c\"]})\ns = df[\"value\"]\nprint(df[[\"value\", \"bytes\"]].idxmax(axis=1).tolist())",
      "error": "ValueError: No axis named 2 for object type DataFrame",
-     "fixedOutput": "0    bytes\n1    bytes\n2    bytes\ndtype: str"
+     "fixedOutput": "['bytes', 'bytes', 'bytes']"
     },
     {
      "title": "eval names a column that is not there",
@@ -28207,7 +28207,7 @@
       "id": "p18:debug:7",
       "title": "Selecting missing columns with loc in the type table",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"type\": [\"k18a\", \"k18b\", \"k18c\"], \"value\": [18,19,20], \"bytes\": [180,360,540], \"id\": [\"t18a\", \"t18b\", \"t18c\"]})\ns = df[\"value\"]\nprint(df.loc[:, [\"type_total\"]].shape)",
-      "error": "KeyError: \"None of [Index(['type_total'], dtype='str')] are in the [columns]\"",
+      "error": "KeyError: None of [Index(['type_total'])] are in the [columns]",
       "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"type\": [\"k18a\", \"k18b\", \"k18c\"], \"value\": [18,19,20], \"bytes\": [180,360,540], \"id\": [\"t18a\", \"t18b\", \"t18c\"]})\ns = df[\"value\"]\nprint(df.loc[:, [\"type\"]].shape)",
       "expected": "(3, 1)",
       "difficulty": "medium"
@@ -28226,8 +28226,8 @@
       "title": "idxmax with axis 2 in the type table",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"type\": [\"k18a\", \"k18b\", \"k18c\"], \"value\": [18,19,20], \"bytes\": [180,360,540], \"id\": [\"t18a\", \"t18b\", \"t18c\"]})\ns = df[\"value\"]\nprint(df[[\"value\", \"bytes\"]].idxmax(axis=2))",
       "error": "ValueError: No axis named 2 for object type DataFrame",
-      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"type\": [\"k18a\", \"k18b\", \"k18c\"], \"value\": [18,19,20], \"bytes\": [180,360,540], \"id\": [\"t18a\", \"t18b\", \"t18c\"]})\ns = df[\"value\"]\nprint(df[[\"value\", \"bytes\"]].idxmax(axis=1))",
-      "expected": "0    bytes\n1    bytes\n2    bytes\ndtype: str",
+      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"type\": [\"k18a\", \"k18b\", \"k18c\"], \"value\": [18,19,20], \"bytes\": [180,360,540], \"id\": [\"t18a\", \"t18b\", \"t18c\"]})\ns = df[\"value\"]\nprint(df[[\"value\", \"bytes\"]].idxmax(axis=1).tolist())",
+      "expected": "['bytes', 'bytes', 'bytes']",
       "difficulty": "easy"
      },
      {
@@ -28955,9 +28955,9 @@
     {
      "title": "Using .str.zfill on a number column in the class table",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"class\": [\"k19a\", \"k19b\", \"k19c\"], \"target\": [19,20,21], \"weight\": [190,380,570], \"feature\": [\"t19a\", \"t19b\", \"t19c\"]})\ns = df[\"target\"]\nprint(df[\"target\"].str.zfill(2))",
-     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"class\": [\"k19a\", \"k19b\", \"k19c\"], \"target\": [19,20,21], \"weight\": [190,380,570], \"feature\": [\"t19a\", \"t19b\", \"t19c\"]})\ns = df[\"target\"]\nprint(df[\"target\"].astype(str).str.zfill(2))",
+     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"class\": [\"k19a\", \"k19b\", \"k19c\"], \"target\": [19,20,21], \"weight\": [190,380,570], \"feature\": [\"t19a\", \"t19b\", \"t19c\"]})\ns = df[\"target\"]\nprint(df[\"target\"].astype(str).str.zfill(2).tolist())",
      "error": "AttributeError: Can only use .str accessor with string values, not integer. Did you mean: 'std'?",
-     "fixedOutput": "0    19\n1    20\n2    21\nName: target, dtype: str"
+     "fixedOutput": "['19', '20', '21']"
     },
     {
      "title": "quantile with axis 2 in the class table",
@@ -29770,8 +29770,8 @@
       "title": "Using .str.zfill on a number column in the class table",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"class\": [\"k19a\", \"k19b\", \"k19c\"], \"target\": [19,20,21], \"weight\": [190,380,570], \"feature\": [\"t19a\", \"t19b\", \"t19c\"]})\ns = df[\"target\"]\nprint(df[\"target\"].str.zfill(2))",
       "error": "AttributeError: Can only use .str accessor with string values, not integer. Did you mean: 'std'?",
-      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"class\": [\"k19a\", \"k19b\", \"k19c\"], \"target\": [19,20,21], \"weight\": [190,380,570], \"feature\": [\"t19a\", \"t19b\", \"t19c\"]})\ns = df[\"target\"]\nprint(df[\"target\"].astype(str).str.zfill(2))",
-      "expected": "0    19\n1    20\n2    21\nName: target, dtype: str",
+      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"class\": [\"k19a\", \"k19b\", \"k19c\"], \"target\": [19,20,21], \"weight\": [190,380,570], \"feature\": [\"t19a\", \"t19b\", \"t19c\"]})\ns = df[\"target\"]\nprint(df[\"target\"].astype(str).str.zfill(2).tolist())",
+      "expected": "['19', '20', '21']",
       "difficulty": "hard"
      },
      {
@@ -30510,9 +30510,9 @@
     {
      "title": "Adding text and numeric columns in the cohort table",
      "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"cohort\": [\"k20a\", \"k20b\", \"k20c\"], \"passed\": [20,21,22], \"attempts\": [200,400,600], \"user\": [\"t20a\", \"t20b\", \"t20c\"]})\ns = df[\"passed\"]\nprint(df[\"user\"] + df[\"passed\"])",
-     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"cohort\": [\"k20a\", \"k20b\", \"k20c\"], \"passed\": [20,21,22], \"attempts\": [200,400,600], \"user\": [\"t20a\", \"t20b\", \"t20c\"]})\ns = df[\"passed\"]\nprint(df[\"user\"] + df[\"passed\"].astype(str))",
+     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"cohort\": [\"k20a\", \"k20b\", \"k20c\"], \"passed\": [20,21,22], \"attempts\": [200,400,600], \"user\": [\"t20a\", \"t20b\", \"t20c\"]})\ns = df[\"passed\"]\nprint((df[\"user\"] + df[\"passed\"].astype(str)).tolist())",
      "error": "TypeError: can only concatenate str (not \"int\") to str",
-     "fixedOutput": "0    t20a20\n1    t20b21\n2    t20c22\ndtype: str"
+     "fixedOutput": "['t20a20', 't20b21', 't20c22']"
     },
     {
      "title": "median with axis 2 in the cohort table",
@@ -31325,8 +31325,8 @@
       "title": "Adding text and numeric columns in the cohort table",
       "code": "import pandas as pd\n\ndf = pd.DataFrame({\"cohort\": [\"k20a\", \"k20b\", \"k20c\"], \"passed\": [20,21,22], \"attempts\": [200,400,600], \"user\": [\"t20a\", \"t20b\", \"t20c\"]})\ns = df[\"passed\"]\nprint(df[\"user\"] + df[\"passed\"])",
       "error": "TypeError: can only concatenate str (not \"int\") to str",
-      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"cohort\": [\"k20a\", \"k20b\", \"k20c\"], \"passed\": [20,21,22], \"attempts\": [200,400,600], \"user\": [\"t20a\", \"t20b\", \"t20c\"]})\ns = df[\"passed\"]\nprint(df[\"user\"] + df[\"passed\"].astype(str))",
-      "expected": "0    t20a20\n1    t20b21\n2    t20c22\ndtype: str",
+      "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"cohort\": [\"k20a\", \"k20b\", \"k20c\"], \"passed\": [20,21,22], \"attempts\": [200,400,600], \"user\": [\"t20a\", \"t20b\", \"t20c\"]})\ns = df[\"passed\"]\nprint((df[\"user\"] + df[\"passed\"].astype(str)).tolist())",
+      "expected": "['t20a20', 't20b21', 't20c22']",
       "difficulty": "hard"
      },
      {

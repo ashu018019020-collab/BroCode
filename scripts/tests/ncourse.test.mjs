@@ -143,9 +143,15 @@ for c in cases:
         with contextlib.redirect_stdout(buf):
             exec(c['solution'], ns)
         printed = buf.getvalue().strip()
-        if printed != c['expected'].strip():
-            bad.append({'id': c['id'], 'why': 'reference output changed', 'expected': c['expected'], 'actual': printed})
-            continue
+        expected = c['expected'].strip()
+        if printed != expected:
+            try:
+                same = abs(float(printed) - float(expected)) <= 1e-9
+            except ValueError:
+                same = False
+            if not same:
+                bad.append({'id': c['id'], 'why': 'reference output changed', 'expected': c['expected'], 'actual': printed})
+                continue
         exec(c['check'], ns)
     except Exception as e:
         bad.append({'id': c['id'], 'why': type(e).__name__ + ': ' + str(e)[:120]})

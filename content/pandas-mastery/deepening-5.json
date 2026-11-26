@@ -184,8 +184,8 @@
    {
     "title": "Types as text",
     "statement": "Print each column's dtype as a string.",
-    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})\nprint(df.dtypes.astype(str).tolist())",
-    "expected": "['int64', 'float64', 'str']",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})\ndf[\"c\"] = df[\"c\"].astype(object)\nprint(df.dtypes.astype(str).tolist())",
+    "expected": "['int64', 'float64', 'object']",
     "setup": "import pandas as pd",
     "fixture": "df = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})",
     "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})\n\n# write the result the task asks for and print it\n",

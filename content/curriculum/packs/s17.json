@@ -1,0 +1,717 @@
+{
+  "section": "s17",
+  "topic": "NumPy for AI & Data Science",
+  "authored": true,
+  "intro": "NumPy ka core ek hi idea hai: data ek contiguous array me ho aur operation poore array par C speed me chale. Is section me array banana, shape/axis samajhna, vectorized arithmetic, boolean masks aur broadcasting practice hoti hai — yahi base aage pandas aur ML ka hai.",
+  "theory": [
+    "ndarray ka ek dtype aur ek shape hota hai. Same dtype hone se memory compact rehti hai aur operations fast hoti hain.",
+    "Vectorized operation poore array par ek saath chalta hai; Python loop se likhna slow hai aur aksar unnecessary hota hai.",
+    "Axis ka matlab hai \"kis direction me collapse karna hai\": axis=0 rows ke across (column result), axis=1 columns ke across (row result).",
+    "Boolean mask ek same-shape array hai; `arr[mask]` sirf True positions deta hai. `&`, `|`, `~` use karo, `and`/`or` nahi.",
+    "Broadcasting chhote shape ko bade shape ke saath align karta hai bina copy ke — isliye (n,1) aur (1,m) ka combination (n,m) ban jata hai."
+  ],
+  "syntax": [
+    "import numpy as np\n\narr = np.array([1, 2, 3], dtype=np.int64)\nprint(arr.shape, arr.dtype)\nzeros = np.zeros((2, 3))\nrange_arr = np.arange(6).reshape(2, 3)",
+    "arr + 10\narr * arr\narr.mean(), arr.sum(axis=0)\narr[arr > 1]\nnp.where(arr > 1, arr, 0)",
+    "a = np.array([[1], [2], [3]])\nb = np.array([[10, 20]])\nprint((a + b).shape)   # (3, 2)\nprint(a @ b)"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "import numpy as np\n\narr = np.array([[1, 2, 3], [4, 5, 6]])\nprint(arr + np.array([10, 20, 30]))",
+      "output": "",
+      "explain": [
+        "Chhota vector har row par broadcast ho jata hai.",
+        "Output ko print se verify karo.",
+        "Ye NumPy for AI & Data Science ka basic building block hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "import numpy as np\n\narr = np.arange(12).reshape(3, 4)\nprint(arr[1:, 1:3])\nprint(arr[:, 0])",
+      "output": "",
+      "explain": [
+        "Slicing rows aur columns dono par ek saath lagti hai.",
+        "Ek step aur jodne se behaviour kaise badalta hai, dekho.",
+        "Input badal kar edge case test karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "import numpy as np\n\nraw = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])\nmean = raw.mean(axis=0)\nstd = raw.std(axis=0)\nnormalized = (raw - mean) / std\nprint(np.round(normalized, 2))\nprint('column means:', np.round(normalized.mean(axis=0), 2))",
+      "output": "",
+      "explain": [
+        "Column-wise mean/std se har feature ko zero-mean, unit-variance banaya jata hai — ML preprocessing ka standard step.",
+        "Ye snippet end-to-end flow dikhata hai.",
+        "Output ko project/interview me evidence ki tarah use karo."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Feature matrices ML me (samples, features) shape me hote hain; axis galat hone se normalization har row ki jagah har column par lag jata hai.",
+    "Image data (height, width, channels) hota hai; slicing aur masks se regions select kiye jate hain bina loop ke.",
+    "Distance/cosine calculations vectorized hote hain, isliye recommendation aur retrieval systems NumPy par khade hote hain."
+  ],
+  "interview": [
+    {
+      "q": "NumPy array list se fast kyun hai?",
+      "a": "NumPy contiguous typed memory aur C-level loops use karta hai; Python list har element ka object aur type check rakhti hai. Vectorized operations interpreter overhead hata dete hain."
+    },
+    {
+      "q": "axis=0 aur axis=1 me confusion kaise door karein?",
+      "a": "Axis wo dimension hai jo collapse hota hai. axis=0 ka matlab har column ka aggregate (rows collapse), axis=1 ka matlab har row ka aggregate (columns collapse)."
+    },
+    {
+      "q": "Broadcasting ka rule kya hai?",
+      "a": "Right se shapes align hoti hain; dimensions equal hon ya ek 1 ho. 1 ko doosri dimension tak stretch kiya jata hai, bina data copy kiye."
+    },
+    {
+      "q": "View aur copy me fark batao.",
+      "a": "Slice aksar view deta hai — original badalne par view badalta hai. `.copy()` explicit copy deta hai. Masks/fancy indexing copy dete hain."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Beginner drill 1: what does matmul do in a NumPy for AI & Data Science workflow?",
+        "a": "@ matrix multiplication karta hai; identity matrix se same matrix milta hai.",
+        "explain": "@ matrix multiplication karta hai; identity matrix se same matrix milta hai. Snippet chala kar output se confirm karo.",
+        "code": "import numpy as np\n\na = np.array([[1, 2], [3, 4]])\nb = np.array([[1, 0], [0, 1]])\nprint(a @ b)",
+        "output": "",
+        "tip": "NumPy for AI & Data Science me matmul ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 2: what does array_shape do in a NumPy for AI & Data Science workflow?",
+        "a": "Shape dimensions batata hai, dtype stored type.",
+        "explain": "Shape dimensions batata hai, dtype stored type. Snippet chala kar output se confirm karo.",
+        "code": "import numpy as np\n\narr = np.array([[1, 2, 3], [4, 5, 6]])\nprint(arr.shape, arr.ndim, arr.dtype)",
+        "output": "",
+        "tip": "NumPy for AI & Data Science me array_shape ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 3: what does arange_reshape do in a NumPy for AI & Data Science workflow?",
+        "a": "arange sequence banata hai aur reshape usse matrix shape deta hai.",
+        "explain": "arange sequence banata hai aur reshape usse matrix shape deta hai. Snippet chala kar output se confirm karo.",
+        "code": "import numpy as np\n\narr = np.arange(6).reshape(2, 3)\nprint(arr)",
+        "output": "",
+        "tip": "NumPy for AI & Data Science me arange_reshape ka behaviour edge cases par test karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Intermediate drill 1: what does vector_arithmetic do in a NumPy for AI & Data Science workflow?",
+        "a": "Arithmetic poore array par element-wise chalti hai, loop ki zaroorat nahi.",
+        "explain": "Arithmetic poore array par element-wise chalti hai, loop ki zaroorat nahi. Snippet chala kar output se confirm karo.",
+        "code": "import numpy as np\n\narr = np.array([1, 2, 3])\nprint(arr * 10)\nprint(arr + arr)",
+        "output": "",
+        "tip": "NumPy for AI & Data Science me vector_arithmetic ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 2: what does boolean_mask do in a NumPy for AI & Data Science workflow?",
+        "a": "Boolean mask sirf matching positions select karta hai.",
+        "explain": "Boolean mask sirf matching positions select karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "NumPy for AI & Data Science me boolean_mask ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 3: what does axis_aggregation do in a NumPy for AI & Data Science workflow?",
+        "a": "axis=0 columns par collapse karta hai, axis=1 rows par.",
+        "explain": "axis=0 columns par collapse karta hai, axis=1 rows par. Snippet chala kar output se confirm karo.",
+        "tip": "NumPy for AI & Data Science me axis_aggregation ka behaviour edge cases par test karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced drill 1: what does broadcasting do in a NumPy for AI & Data Science workflow?",
+        "a": "Chhota vector har row par broadcast ho jata hai.",
+        "explain": "Chhota vector har row par broadcast ho jata hai. Snippet chala kar output se confirm karo.",
+        "code": "import numpy as np\n\narr = np.array([[1, 2, 3], [4, 5, 6]])\nprint(arr + np.array([10, 20, 30]))",
+        "output": "",
+        "tip": "NumPy for AI & Data Science me broadcasting ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 2: what does slicing do in a NumPy for AI & Data Science workflow?",
+        "a": "Slicing rows aur columns dono par ek saath lagti hai.",
+        "explain": "Slicing rows aur columns dono par ek saath lagti hai. Snippet chala kar output se confirm karo.",
+        "tip": "NumPy for AI & Data Science me slicing ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 3: what does matmul do in a NumPy for AI & Data Science workflow?",
+        "a": "@ matrix multiplication karta hai; identity matrix se same matrix milta hai.",
+        "explain": "@ matrix multiplication karta hai; identity matrix se same matrix milta hai. Snippet chala kar output se confirm karo.",
+        "tip": "NumPy for AI & Data Science me matmul ka behaviour edge cases par test karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview drill 1: what does array_shape do in a NumPy for AI & Data Science workflow?",
+        "a": "Shape dimensions batata hai, dtype stored type.",
+        "explain": "Shape dimensions batata hai, dtype stored type. Snippet chala kar output se confirm karo.",
+        "tip": "NumPy for AI & Data Science me array_shape ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 2: what does arange_reshape do in a NumPy for AI & Data Science workflow?",
+        "a": "arange sequence banata hai aur reshape usse matrix shape deta hai.",
+        "explain": "arange sequence banata hai aur reshape usse matrix shape deta hai. Snippet chala kar output se confirm karo.",
+        "tip": "NumPy for AI & Data Science me arange_reshape ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 3: what does vector_arithmetic do in a NumPy for AI & Data Science workflow?",
+        "a": "Arithmetic poore array par element-wise chalti hai, loop ki zaroorat nahi.",
+        "explain": "Arithmetic poore array par element-wise chalti hai, loop ki zaroorat nahi. Snippet chala kar output se confirm karo.",
+        "tip": "NumPy for AI & Data Science me vector_arithmetic ka behaviour edge cases par test karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Realworld drill 1: what does boolean_mask do in a NumPy for AI & Data Science workflow?",
+        "a": "Boolean mask sirf matching positions select karta hai.",
+        "explain": "Boolean mask sirf matching positions select karta hai. Snippet chala kar output se confirm karo.",
+        "code": "import numpy as np\n\narr = np.array([5, 12, 8, 20])\nprint(arr[arr > 9])\nprint(arr[arr % 2 == 0])",
+        "output": "",
+        "tip": "NumPy for AI & Data Science me boolean_mask ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 2: what does axis_aggregation do in a NumPy for AI & Data Science workflow?",
+        "a": "axis=0 columns par collapse karta hai, axis=1 rows par.",
+        "explain": "axis=0 columns par collapse karta hai, axis=1 rows par. Snippet chala kar output se confirm karo.",
+        "tip": "NumPy for AI & Data Science me axis_aggregation ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 3: what does broadcasting do in a NumPy for AI & Data Science workflow?",
+        "a": "Chhota vector har row par broadcast ho jata hai.",
+        "explain": "Chhota vector har row par broadcast ho jata hai. Snippet chala kar output se confirm karo.",
+        "tip": "NumPy for AI & Data Science me broadcasting ka behaviour edge cases par test karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 1: implement array_shape and print the result.",
+      "build": "Shape dimensions batata hai, dtype stored type. Ek chhota runnable example likho jo output print kare.",
+      "input": "array_shape ke liye sample data snippet me diya hai",
+      "expected": "Printed output array_shape ka result dikhata hai",
+      "hint": "Solution ka core array_shape hai; output ko readable rakho.",
+      "concept": "NumPy for AI & Data Science · array_shape",
+      "solution": "import numpy as np\n\narr = np.array([[1, 2, 3], [4, 5, 6]])\nprint(arr.shape, arr.ndim, arr.dtype)",
+      "output": "",
+      "explanation": "Shape dimensions batata hai, dtype stored type. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to array_shape ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 2: implement arange_reshape and print the result.",
+      "build": "arange sequence banata hai aur reshape usse matrix shape deta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "arange_reshape ke liye sample data snippet me diya hai",
+      "expected": "Printed output arange_reshape ka result dikhata hai",
+      "hint": "Solution ka core arange_reshape hai; output ko readable rakho.",
+      "concept": "NumPy for AI & Data Science · arange_reshape",
+      "solution": "import numpy as np\n\narr = np.arange(6).reshape(2, 3)\nprint(arr)",
+      "output": "",
+      "explanation": "arange sequence banata hai aur reshape usse matrix shape deta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to arange_reshape ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 3: implement vector_arithmetic and print the result.",
+      "build": "Arithmetic poore array par element-wise chalti hai, loop ki zaroorat nahi. Ek chhota runnable example likho jo output print kare.",
+      "input": "vector_arithmetic ke liye sample data snippet me diya hai",
+      "expected": "Printed output vector_arithmetic ka result dikhata hai",
+      "hint": "Solution ka core vector_arithmetic hai; output ko readable rakho.",
+      "concept": "NumPy for AI & Data Science · vector_arithmetic",
+      "solution": "import numpy as np\n\narr = np.array([1, 2, 3])\nprint(arr * 10)\nprint(arr + arr)",
+      "output": "",
+      "explanation": "Arithmetic poore array par element-wise chalti hai, loop ki zaroorat nahi. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to vector_arithmetic ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 4: implement boolean_mask and print the result.",
+      "build": "Boolean mask sirf matching positions select karta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "boolean_mask ke liye sample data snippet me diya hai",
+      "expected": "Printed output boolean_mask ka result dikhata hai",
+      "hint": "Solution ka core boolean_mask hai; output ko readable rakho.",
+      "concept": "NumPy for AI & Data Science · boolean_mask",
+      "solution": "import numpy as np\n\narr = np.array([5, 12, 8, 20])\nprint(arr[arr > 9])\nprint(arr[arr % 2 == 0])",
+      "output": "",
+      "explanation": "Boolean mask sirf matching positions select karta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to boolean_mask ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 5: implement axis_aggregation and print the result.",
+      "build": "axis=0 columns par collapse karta hai, axis=1 rows par. Ek chhota runnable example likho jo output print kare.",
+      "input": "axis_aggregation ke liye sample data snippet me diya hai",
+      "expected": "Printed output axis_aggregation ka result dikhata hai",
+      "hint": "Solution ka core axis_aggregation hai; output ko readable rakho.",
+      "concept": "NumPy for AI & Data Science · axis_aggregation",
+      "solution": "import numpy as np\n\narr = np.array([[1, 2], [3, 4]])\nprint(arr.sum(axis=0))\nprint(arr.sum(axis=1))\nprint(round(float(arr.mean()), 2))",
+      "output": "",
+      "explanation": "axis=0 columns par collapse karta hai, axis=1 rows par. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to axis_aggregation ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 6: implement broadcasting and print the result.",
+      "build": "Chhota vector har row par broadcast ho jata hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "broadcasting ke liye sample data snippet me diya hai",
+      "expected": "Printed output broadcasting ka result dikhata hai",
+      "hint": "Solution ka core broadcasting hai; output ko readable rakho.",
+      "concept": "NumPy for AI & Data Science · broadcasting",
+      "solution": "import numpy as np\n\narr = np.array([[1, 2, 3], [4, 5, 6]])\nprint(arr + np.array([10, 20, 30]))",
+      "output": "",
+      "explanation": "Chhota vector har row par broadcast ho jata hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to broadcasting ka approach kaise badlega?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "logic",
+      "broken": "prices = [100, 200]\ntotal = 0\nfor p in prices:\n    total = p\nprint(total)",
+      "error": "Logic error — total 200 aata hai, sum 300 hona chahiye",
+      "why": "Assignment purani value replace karta hai; accumulator chahiye. Ye NumPy for AI & Data Science ke workflow me bhi wahi galti hai.",
+      "fix": "total += p use karo ya sum(prices).",
+      "correct": "prices = [100, 200]\ntotal = 0\nfor p in prices:\n    total += p\nprint(total)",
+      "output": "",
+      "lesson": "Logic bugs exception nahi dete — chhote sample par expected value likho."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "items = [1, 2, 3]\nprint(items[0:1])",
+      "error": "Logic error — pehla do items chahiye the, sirf pehla aaya",
+      "why": "Slice ka end exclusive hota hai; 0:1 sirf index 0 deta hai. Ye NumPy for AI & Data Science ke workflow me bhi wahi galti hai.",
+      "fix": "End index ko +1 karo: 0:2.",
+      "correct": "items = [1, 2, 3]\nprint(items[0:2])",
+      "output": "",
+      "lesson": "Slice boundaries exclusive hoti hain — range jaisa hi rule."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "raise",
+      "broken": "name = 'Asha'\nprint('Hello ' + 2024)",
+      "error": "TypeError: can only concatenate str (not \"int\") to str",
+      "why": "String concatenation ko dono taraf str chahiye; Python implicit conversion nahi karta. Ye NumPy for AI & Data Science ke workflow me bhi wahi galti hai.",
+      "fix": "f-string ya str() se explicit conversion karo.",
+      "correct": "name = 'Asha'\nprint(f'Hello {2024}')",
+      "output": "",
+      "lesson": "TypeError type mismatch batata hai — conversion explicit karo."
+    },
+    {
+      "difficulty": "expert",
+      "mode": "raise",
+      "broken": "scores = [10, 20]\nprint(scores[5])",
+      "error": "IndexError: list index out of range",
+      "why": "List me sirf 0 aur 1 index hain; 5 par kuch nahi. Ye NumPy for AI & Data Science ke workflow me bhi wahi galti hai.",
+      "fix": "Index se pehle length check karo ya safe getter use karo.",
+      "correct": "scores = [10, 20]\nprint(scores[1] if len(scores) > 1 else None)",
+      "output": "",
+      "lesson": "IndexError off-by-one aur empty collection ka signal hai."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Quick drill: array_shape ka ek minimal example likho aur output predict karo.",
+      "hint": "NumPy for AI & Data Science ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Coding round: arange_reshape aur vector_arithmetic ko ek function me combine karo.",
+      "hint": "NumPy for AI & Data Science ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Advanced: NumPy for AI & Data Science ka chhota pipeline banao jisme boolean_mask, axis_aggregation aur validation ho.",
+      "hint": "NumPy for AI & Data Science ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview: NumPy for AI & Data Science ke 3 trade-offs whiteboard par likho aur broadcasting se example do.",
+      "hint": "NumPy for AI & Data Science ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Build: NumPy for AI & Data Science ka mini project banao — input, processing, output aur README.",
+      "hint": "NumPy for AI & Data Science ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "NumPy for AI & Data Science Starter Lab",
+      "problem": "NumPy for AI & Data Science ke basics ko ek chhote runnable program me jodna.",
+      "objective": "array_shape aur arange_reshape ka demo jo output print kare.",
+      "code": "import numpy as np\n\narr = np.array([[1, 2, 3], [4, 5, 6]])\nprint(arr.shape, arr.ndim, arr.dtype)\nimport numpy as np\n\narr = np.arange(6).reshape(2, 3)\nprint(arr)",
+      "explanation": "Shape dimensions batata hai, dtype stored type. arange sequence banata hai aur reshape usse matrix shape deta hai. Dono snippets ek hi file me chalte hain.",
+      "testing": "array_shape ke empty aur normal input par output check karo.",
+      "errors": "Galat type ya missing value par Python exception dega — Version 2 me validation add hoti hai.",
+      "realWorld": "NumPy for AI & Data Science ke production code me yahi chhote steps repeated hote hain.",
+      "resume": "NumPy for AI & Data Science starter lab: array_shape aur arange_reshape ka runnable demo.",
+      "features": [
+        "array_shape ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "NumPy for AI & Data Science",
+        "array_shape"
+      ],
+      "structure": "s17_project_1/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "array_shape ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "broadcasting ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "NumPy for AI & Data Science Starter Lab interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "NumPy for AI & Data Science Starter Lab interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "NumPy for AI & Data Science Starter Lab interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "NumPy for AI & Data Science Starter Lab ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "NumPy for AI & Data Science Data Pipeline",
+      "problem": "Raw input ko validate karke NumPy for AI & Data Science ke useful output me badalna.",
+      "objective": "vector_arithmetic, boolean_mask aur axis_aggregation se chhota pipeline banao.",
+      "code": "import numpy as np\n\narr = np.array([1, 2, 3])\nprint(arr * 10)\nprint(arr + arr)\nimport numpy as np\n\narr = np.array([5, 12, 8, 20])\nprint(arr[arr > 9])\nprint(arr[arr % 2 == 0])\nimport numpy as np\n\narr = np.array([[1, 2], [3, 4]])\nprint(arr.sum(axis=0))\nprint(arr.sum(axis=1))\nprint(round(float(arr.mean()), 2))",
+      "explanation": "Arithmetic poore array par element-wise chalti hai, loop ki zaroorat nahi. Boolean mask sirf matching positions select karta hai. axis=0 columns par collapse karta hai, axis=1 rows par. Pipeline ke steps alag-alag testable hain.",
+      "testing": "Ek valid aur ek invalid input se pipeline chalao; dono ka behaviour note karo.",
+      "errors": "Invalid input par crash ke bajaye clear error/message do — Version 3 me error shape add hota hai.",
+      "realWorld": "Yahi load → transform → report pattern NumPy for AI & Data Science ke dashboards aur services me hota hai.",
+      "resume": "NumPy for AI & Data Science pipeline: validation aur vector_arithmetic/boolean_mask ke saath end-to-end demo.",
+      "features": [
+        "arange_reshape ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "NumPy for AI & Data Science",
+        "arange_reshape"
+      ],
+      "structure": "s17_project_2/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "arange_reshape ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "slicing ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "NumPy for AI & Data Science Data Pipeline interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "NumPy for AI & Data Science Data Pipeline interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "NumPy for AI & Data Science Data Pipeline interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "NumPy for AI & Data Science Data Pipeline ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "NumPy for AI & Data Science Capstone",
+      "problem": "Ek believable NumPy for AI & Data Science use case jo end-to-end chale aur explain ho sake.",
+      "objective": "Column-wise mean/std se har feature ko zero-mean, unit-variance banaya jata hai — ML preprocessing ka standard step. Isse project interview me trade-offs ke saath present karo.",
+      "code": "import numpy as np\n\nraw = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])\nmean = raw.mean(axis=0)\nstd = raw.std(axis=0)\nnormalized = (raw - mean) / std\nprint(np.round(normalized, 2))\nprint('column means:', np.round(normalized.mean(axis=0), 2))",
+      "explanation": "Column-wise mean/std se har feature ko zero-mean, unit-variance banaya jata hai — ML preprocessing ka standard step.",
+      "testing": "Expected output ko haath se verify karo, phir edge case (empty/missing) add karo.",
+      "errors": "Failure modes document karo: missing data, bad type aur duplicate records.",
+      "realWorld": "Ye capstone resume aur interview dono me ek concrete NumPy for AI & Data Science story deta hai.",
+      "resume": "NumPy for AI & Data Science capstone: Column-wise mean/std se har feature ko zero-mean, unit-variance banaya jata hai — ML preprocessing ka standard step.",
+      "features": [
+        "vector_arithmetic ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "NumPy for AI & Data Science",
+        "vector_arithmetic"
+      ],
+      "structure": "s17_project_3/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "vector_arithmetic ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "matmul ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "NumPy for AI & Data Science Capstone interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "NumPy for AI & Data Science Capstone interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "NumPy for AI & Data Science Capstone interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "NumPy for AI & Data Science Capstone ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      {
+        "q": "Understanding 1.1: why does NumPy for AI & Data Science Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.2: why does NumPy for AI & Data Science Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.3: why does NumPy for AI & Data Science Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.1: why does NumPy for AI & Data Science Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.2: why does NumPy for AI & Data Science Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.3: why does NumPy for AI & Data Science Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.1: why does NumPy for AI & Data Science Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.2: why does NumPy for AI & Data Science Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.3: why does NumPy for AI & Data Science Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      }
+    ],
+    "coding": [
+      {
+        "q": "Coding 1.1: extend NumPy for AI & Data Science Starter Lab with one more array_shape step.",
+        "a": "Shape dimensions batata hai, dtype stored type. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.2: extend NumPy for AI & Data Science Starter Lab with one more arange_reshape step.",
+        "a": "arange sequence banata hai aur reshape usse matrix shape deta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.3: extend NumPy for AI & Data Science Starter Lab with one more vector_arithmetic step.",
+        "a": "Arithmetic poore array par element-wise chalti hai, loop ki zaroorat nahi. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.1: extend NumPy for AI & Data Science Data Pipeline with one more array_shape step.",
+        "a": "Shape dimensions batata hai, dtype stored type. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.2: extend NumPy for AI & Data Science Data Pipeline with one more arange_reshape step.",
+        "a": "arange sequence banata hai aur reshape usse matrix shape deta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.3: extend NumPy for AI & Data Science Data Pipeline with one more vector_arithmetic step.",
+        "a": "Arithmetic poore array par element-wise chalti hai, loop ki zaroorat nahi. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.1: extend NumPy for AI & Data Science Capstone with one more array_shape step.",
+        "a": "Shape dimensions batata hai, dtype stored type. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.2: extend NumPy for AI & Data Science Capstone with one more arange_reshape step.",
+        "a": "arange sequence banata hai aur reshape usse matrix shape deta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.3: extend NumPy for AI & Data Science Capstone with one more vector_arithmetic step.",
+        "a": "Arithmetic poore array par element-wise chalti hai, loop ki zaroorat nahi. Naya step add karke output compare karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced 1.1: how would NumPy for AI & Data Science Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.2: how would NumPy for AI & Data Science Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.3: how would NumPy for AI & Data Science Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.1: how would NumPy for AI & Data Science Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.2: how would NumPy for AI & Data Science Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.3: how would NumPy for AI & Data Science Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.1: how would NumPy for AI & Data Science Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.2: how would NumPy for AI & Data Science Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.3: how would NumPy for AI & Data Science Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview 1.1: defend one trade-off in NumPy for AI & Data Science Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.2: defend one trade-off in NumPy for AI & Data Science Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.3: defend one trade-off in NumPy for AI & Data Science Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.1: defend one trade-off in NumPy for AI & Data Science Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.2: defend one trade-off in NumPy for AI & Data Science Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.3: defend one trade-off in NumPy for AI & Data Science Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.1: defend one trade-off in NumPy for AI & Data Science Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.2: defend one trade-off in NumPy for AI & Data Science Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.3: defend one trade-off in NumPy for AI & Data Science Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      }
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Practical 1: validate NumPy for AI & Data Science data in 15 minutes.",
+      "a": "Steps likho: input, array_shape, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 2: transform NumPy for AI & Data Science data in 15 minutes.",
+      "a": "Steps likho: input, arange_reshape, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 3: aggregate NumPy for AI & Data Science data in 15 minutes.",
+      "a": "Steps likho: input, vector_arithmetic, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 4: present NumPy for AI & Data Science data in 15 minutes.",
+      "a": "Steps likho: input, boolean_mask, expected output; phir code chala kar dikhao."
+    }
+  ],
+  "revision": [
+    "NumPy for AI & Data Science: revise array_shape — Shape dimensions batata hai, dtype stored type.",
+    "NumPy for AI & Data Science: revise arange_reshape — arange sequence banata hai aur reshape usse matrix shape deta hai.",
+    "NumPy for AI & Data Science: revise vector_arithmetic — Arithmetic poore array par element-wise chalti hai, loop ki zaroorat nahi.",
+    "NumPy for AI & Data Science: revise boolean_mask — Boolean mask sirf matching positions select karta hai.",
+    "NumPy for AI & Data Science: revise axis_aggregation — axis=0 columns par collapse karta hai, axis=1 rows par."
+  ]
+}

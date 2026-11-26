@@ -1,0 +1,717 @@
+{
+  "section": "s19",
+  "topic": "SQL + Databases",
+  "authored": true,
+  "intro": "SQL database se baat karne ki language hai, aur Python ka sqlite3 module bina server ke wahi SQL chalane deta hai. Is section me table banana, CRUD, WHERE/ORDER BY, aggregate, JOIN aur parameterized queries practice hote hain.",
+  "theory": [
+    "Relational table rows aur columns me data rakhti hai; primary key row ko uniquely identify karti hai aur foreign key doosri table se link banati hai.",
+    "SELECT columns FROM table WHERE condition ORDER BY column LIMIT n — SQL ka reading order isi tarah likha jata hai, execution order thoda alag hota hai.",
+    "Aggregate functions COUNT/SUM/AVG/MIN/MAX group ke upar kaam karte hain; GROUP BY ke saath non-aggregated columns group key me hone chahiye.",
+    "JOIN do tables ko key par jodta hai: INNER sirf matches, LEFT saare left rows plus matches. JOIN ke baad duplicate keys row count badha sakti hain.",
+    "Parameterized query (`?` placeholder + tuple) SQL injection rokta hai aur values ko safely quote karta hai. String concatenation kabhi nahi."
+  ],
+  "syntax": [
+    "import sqlite3\n\nconn = sqlite3.connect(\":memory:\")\nconn.execute(\"CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, city TEXT)\")\nconn.execute(\"INSERT INTO users (name, city) VALUES (?, ?)\", (\"Asha\", \"pune\"))\nconn.commit()",
+    "cur = conn.execute(\"SELECT name, city FROM users WHERE city = ? ORDER BY name\", (\"pune\",))\nfor row in cur:\n    print(row)",
+    "SELECT city, COUNT(*) AS users, AVG(score) AS avg_score\nFROM users\nGROUP BY city\nHAVING COUNT(*) > 1\nORDER BY avg_score DESC;"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE users (id INTEGER, name TEXT)')\nconn.execute('CREATE TABLE orders (user_id INTEGER, amount INTEGER)')\nconn.executemany('INSERT INTO users VALUES (?, ?)', [(1, 'Asha'), (2, 'Ravi')])\nconn.executemany('INSERT INTO orders VALUES (?, ?)', [(1, 100), (1, 50)])\nprint(conn.execute('SELECT users.name, SUM(orders.amount) FROM users JOIN orders ON users.id = orders.user_id GROUP BY users.name').fetchall())",
+      "output": "",
+      "explain": [
+        "JOIN users aur orders ko key par jodta hai, phir GROUP BY total deta hai.",
+        "Output ko print se verify karo.",
+        "Ye SQL + Databases ka basic building block hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE users (name TEXT, city TEXT)')\nconn.execute('INSERT INTO users VALUES (?, ?)', ('Asha', 'pune'))\nconn.execute('UPDATE users SET city = ? WHERE name = ?', ('mumbai', 'Asha'))\nprint(conn.execute('SELECT city FROM users').fetchone())",
+      "output": "",
+      "explain": [
+        "UPDATE matching rows ki values badalta hai; WHERE bhoolne se saari rows badal jati hain.",
+        "Ek step aur jodne se behaviour kaise badalta hai, dekho.",
+        "Input badal kar edge case test karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.executescript('''\nCREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, amount INTEGER);\nINSERT INTO customers (name) VALUES ('Asha'), ('Ravi');\nINSERT INTO orders (customer_id, amount) VALUES (1, 100), (1, 50);\n''')\nrows = conn.execute('''\nSELECT customers.name, COALESCE(SUM(orders.amount), 0) AS total\nFROM customers\nLEFT JOIN orders ON customers.id = orders.customer_id\nGROUP BY customers.id\nORDER BY total DESC\n''').fetchall()\nprint(rows)",
+      "output": "",
+      "explain": [
+        "LEFT JOIN + COALESCE se un customers ka 0 total bhi aata hai jinke koi order nahi.",
+        "Ye snippet end-to-end flow dikhata hai.",
+        "Output ko project/interview me evidence ki tarah use karo."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Application ka data users/orders/payments tables me hota hai; reports JOIN + GROUP BY se banti hain.",
+    "Analytics me \"per city per day\" numbers GROUP BY se aate hain, aur filters WHERE me lagte hain — dono ko mix karna common bug hai.",
+    "Har write query parameterized honi chahiye; user input ko SQL string me jodna injection ka sabse bada source hai."
+  ],
+  "interview": [
+    {
+      "q": "WHERE aur HAVING me fark batao.",
+      "a": "WHERE individual rows ko filter karta hai GROUP BY se pehle; HAVING groups ko filter karta hai aggregate ke baad. Aggregate condition HAVING me likhi jati hai."
+    },
+    {
+      "q": "INNER JOIN aur LEFT JOIN me kya chunenge?",
+      "a": "INNER sirf matching rows deta hai; LEFT left table ki saari rows deta hai aur match na hone par NULL. \"Kaun missing hai\" dhoondhne ke liye LEFT + IS NULL use hota hai."
+    },
+    {
+      "q": "SQL injection kaise rokete hain?",
+      "a": "Parameterized queries se — `?` placeholder aur values tuple/list me. String concatenation se user input SQL ban jata hai, jo injection ka source hai."
+    },
+    {
+      "q": "Index kya karta hai aur kab nuksan deta hai?",
+      "a": "Index lookup ko fast karta hai (B-tree), par har write par maintain hota hai aur disk leta hai. WHERE/JOIN columns par index; bahut zyada indexes write slow kar dete hain."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Beginner drill 1: what does where_param do in a SQL + Databases workflow?",
+        "a": "WHERE filter lagata hai aur ? placeholder values ko safely bind karta hai.",
+        "explain": "WHERE filter lagata hai aur ? placeholder values ko safely bind karta hai. Snippet chala kar output se confirm karo.",
+        "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE users (name TEXT, city TEXT)')\nconn.execute('INSERT INTO users VALUES (?, ?)', ('Asha', 'pune'))\nrows = conn.execute('SELECT name FROM users WHERE city = ?', ('pune',)).fetchall()\nprint(rows)",
+        "output": "",
+        "tip": "SQL + Databases me where_param ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 2: what does order_limit do in a SQL + Databases workflow?",
+        "a": "ORDER BY sorting karta hai aur LIMIT top N rows deta hai.",
+        "explain": "ORDER BY sorting karta hai aur LIMIT top N rows deta hai. Snippet chala kar output se confirm karo.",
+        "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE scores (name TEXT, score INTEGER)')\nconn.executemany('INSERT INTO scores VALUES (?, ?)', [('A', 91), ('B', 78), ('C', 85)])\nprint(conn.execute('SELECT name, score FROM scores ORDER BY score DESC LIMIT 2').fetchall())",
+        "output": "",
+        "tip": "SQL + Databases me order_limit ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 3: what does aggregate do in a SQL + Databases workflow?",
+        "a": "COUNT/AVG/MAX aggregate functions poore result set ka summary dete hain.",
+        "explain": "COUNT/AVG/MAX aggregate functions poore result set ka summary dete hain. Snippet chala kar output se confirm karo.",
+        "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE scores (score INTEGER)')\nconn.executemany('INSERT INTO scores VALUES (?)', [(91,), (78,), (85,)])\nprint(conn.execute('SELECT COUNT(*), AVG(score), MAX(score) FROM scores').fetchone())",
+        "output": "",
+        "tip": "SQL + Databases me aggregate ka behaviour edge cases par test karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Intermediate drill 1: what does group_by do in a SQL + Databases workflow?",
+        "a": "GROUP BY har city ka total nikalta hai.",
+        "explain": "GROUP BY har city ka total nikalta hai. Snippet chala kar output se confirm karo.",
+        "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE orders (city TEXT, amount INTEGER)')\nconn.executemany('INSERT INTO orders VALUES (?, ?)', [('pune', 100), ('pune', 50), ('delhi', 200)])\nprint(conn.execute('SELECT city, SUM(amount) FROM orders GROUP BY city ORDER BY city').fetchall())",
+        "output": "",
+        "tip": "SQL + Databases me group_by ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 2: what does join do in a SQL + Databases workflow?",
+        "a": "JOIN users aur orders ko key par jodta hai, phir GROUP BY total deta hai.",
+        "explain": "JOIN users aur orders ko key par jodta hai, phir GROUP BY total deta hai. Snippet chala kar output se confirm karo.",
+        "tip": "SQL + Databases me join ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 3: what does update do in a SQL + Databases workflow?",
+        "a": "UPDATE matching rows ki values badalta hai; WHERE bhoolne se saari rows badal jati hain.",
+        "explain": "UPDATE matching rows ki values badalta hai; WHERE bhoolne se saari rows badal jati hain. Snippet chala kar output se confirm karo.",
+        "tip": "SQL + Databases me update ka behaviour edge cases par test karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced drill 1: what does delete do in a SQL + Databases workflow?",
+        "a": "DELETE WHERE specific rows hatata hai; table clear karne ke liye bhi WHERE chahiye.",
+        "explain": "DELETE WHERE specific rows hatata hai; table clear karne ke liye bhi WHERE chahiye. Snippet chala kar output se confirm karo.",
+        "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE logs (level TEXT)')\nconn.executemany('INSERT INTO logs VALUES (?)', [('info',), ('error',), ('info',)])\nconn.execute('DELETE FROM logs WHERE level = ?', ('info',))\nprint(conn.execute('SELECT COUNT(*) FROM logs').fetchone())",
+        "output": "",
+        "tip": "SQL + Databases me delete ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 2: what does create_insert_select do in a SQL + Databases workflow?",
+        "a": "CREATE, INSERT aur SELECT milkar basic table workflow banate hain.",
+        "explain": "CREATE, INSERT aur SELECT milkar basic table workflow banate hain. Snippet chala kar output se confirm karo.",
+        "tip": "SQL + Databases me create_insert_select ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 3: what does where_param do in a SQL + Databases workflow?",
+        "a": "WHERE filter lagata hai aur ? placeholder values ko safely bind karta hai.",
+        "explain": "WHERE filter lagata hai aur ? placeholder values ko safely bind karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "SQL + Databases me where_param ka behaviour edge cases par test karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview drill 1: what does order_limit do in a SQL + Databases workflow?",
+        "a": "ORDER BY sorting karta hai aur LIMIT top N rows deta hai.",
+        "explain": "ORDER BY sorting karta hai aur LIMIT top N rows deta hai. Snippet chala kar output se confirm karo.",
+        "tip": "SQL + Databases me order_limit ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 2: what does aggregate do in a SQL + Databases workflow?",
+        "a": "COUNT/AVG/MAX aggregate functions poore result set ka summary dete hain.",
+        "explain": "COUNT/AVG/MAX aggregate functions poore result set ka summary dete hain. Snippet chala kar output se confirm karo.",
+        "tip": "SQL + Databases me aggregate ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 3: what does group_by do in a SQL + Databases workflow?",
+        "a": "GROUP BY har city ka total nikalta hai.",
+        "explain": "GROUP BY har city ka total nikalta hai. Snippet chala kar output se confirm karo.",
+        "tip": "SQL + Databases me group_by ka behaviour edge cases par test karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Realworld drill 1: what does join do in a SQL + Databases workflow?",
+        "a": "JOIN users aur orders ko key par jodta hai, phir GROUP BY total deta hai.",
+        "explain": "JOIN users aur orders ko key par jodta hai, phir GROUP BY total deta hai. Snippet chala kar output se confirm karo.",
+        "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE users (id INTEGER, name TEXT)')\nconn.execute('CREATE TABLE orders (user_id INTEGER, amount INTEGER)')\nconn.executemany('INSERT INTO users VALUES (?, ?)', [(1, 'Asha'), (2, 'Ravi')])\nconn.executemany('INSERT INTO orders VALUES (?, ?)', [(1, 100), (1, 50)])\nprint(conn.execute('SELECT users.name, SUM(orders.amount) FROM users JOIN orders ON users.id = orders.user_id GROUP BY users.name').fetchall())",
+        "output": "",
+        "tip": "SQL + Databases me join ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 2: what does update do in a SQL + Databases workflow?",
+        "a": "UPDATE matching rows ki values badalta hai; WHERE bhoolne se saari rows badal jati hain.",
+        "explain": "UPDATE matching rows ki values badalta hai; WHERE bhoolne se saari rows badal jati hain. Snippet chala kar output se confirm karo.",
+        "tip": "SQL + Databases me update ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 3: what does delete do in a SQL + Databases workflow?",
+        "a": "DELETE WHERE specific rows hatata hai; table clear karne ke liye bhi WHERE chahiye.",
+        "explain": "DELETE WHERE specific rows hatata hai; table clear karne ke liye bhi WHERE chahiye. Snippet chala kar output se confirm karo.",
+        "tip": "SQL + Databases me delete ka behaviour edge cases par test karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 1: implement create_insert_select and print the result.",
+      "build": "CREATE, INSERT aur SELECT milkar basic table workflow banate hain. Ek chhota runnable example likho jo output print kare.",
+      "input": "create_insert_select ke liye sample data snippet me diya hai",
+      "expected": "Printed output create_insert_select ka result dikhata hai",
+      "hint": "Solution ka core create_insert_select hai; output ko readable rakho.",
+      "concept": "SQL + Databases · create_insert_select",
+      "solution": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, city TEXT)')\nconn.executemany('INSERT INTO users (name, city) VALUES (?, ?)', [('Asha', 'pune'), ('Ravi', 'delhi')])\nprint(conn.execute('SELECT id, name FROM users ORDER BY id').fetchall())",
+      "output": "",
+      "explanation": "CREATE, INSERT aur SELECT milkar basic table workflow banate hain. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to create_insert_select ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 2: implement where_param and print the result.",
+      "build": "WHERE filter lagata hai aur ? placeholder values ko safely bind karta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "where_param ke liye sample data snippet me diya hai",
+      "expected": "Printed output where_param ka result dikhata hai",
+      "hint": "Solution ka core where_param hai; output ko readable rakho.",
+      "concept": "SQL + Databases · where_param",
+      "solution": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE users (name TEXT, city TEXT)')\nconn.execute('INSERT INTO users VALUES (?, ?)', ('Asha', 'pune'))\nrows = conn.execute('SELECT name FROM users WHERE city = ?', ('pune',)).fetchall()\nprint(rows)",
+      "output": "",
+      "explanation": "WHERE filter lagata hai aur ? placeholder values ko safely bind karta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to where_param ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 3: implement order_limit and print the result.",
+      "build": "ORDER BY sorting karta hai aur LIMIT top N rows deta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "order_limit ke liye sample data snippet me diya hai",
+      "expected": "Printed output order_limit ka result dikhata hai",
+      "hint": "Solution ka core order_limit hai; output ko readable rakho.",
+      "concept": "SQL + Databases · order_limit",
+      "solution": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE scores (name TEXT, score INTEGER)')\nconn.executemany('INSERT INTO scores VALUES (?, ?)', [('A', 91), ('B', 78), ('C', 85)])\nprint(conn.execute('SELECT name, score FROM scores ORDER BY score DESC LIMIT 2').fetchall())",
+      "output": "",
+      "explanation": "ORDER BY sorting karta hai aur LIMIT top N rows deta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to order_limit ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 4: implement aggregate and print the result.",
+      "build": "COUNT/AVG/MAX aggregate functions poore result set ka summary dete hain. Ek chhota runnable example likho jo output print kare.",
+      "input": "aggregate ke liye sample data snippet me diya hai",
+      "expected": "Printed output aggregate ka result dikhata hai",
+      "hint": "Solution ka core aggregate hai; output ko readable rakho.",
+      "concept": "SQL + Databases · aggregate",
+      "solution": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE scores (score INTEGER)')\nconn.executemany('INSERT INTO scores VALUES (?)', [(91,), (78,), (85,)])\nprint(conn.execute('SELECT COUNT(*), AVG(score), MAX(score) FROM scores').fetchone())",
+      "output": "",
+      "explanation": "COUNT/AVG/MAX aggregate functions poore result set ka summary dete hain. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to aggregate ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 5: implement group_by and print the result.",
+      "build": "GROUP BY har city ka total nikalta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "group_by ke liye sample data snippet me diya hai",
+      "expected": "Printed output group_by ka result dikhata hai",
+      "hint": "Solution ka core group_by hai; output ko readable rakho.",
+      "concept": "SQL + Databases · group_by",
+      "solution": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE orders (city TEXT, amount INTEGER)')\nconn.executemany('INSERT INTO orders VALUES (?, ?)', [('pune', 100), ('pune', 50), ('delhi', 200)])\nprint(conn.execute('SELECT city, SUM(amount) FROM orders GROUP BY city ORDER BY city').fetchall())",
+      "output": "",
+      "explanation": "GROUP BY har city ka total nikalta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to group_by ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 6: implement join and print the result.",
+      "build": "JOIN users aur orders ko key par jodta hai, phir GROUP BY total deta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "join ke liye sample data snippet me diya hai",
+      "expected": "Printed output join ka result dikhata hai",
+      "hint": "Solution ka core join hai; output ko readable rakho.",
+      "concept": "SQL + Databases · join",
+      "solution": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE users (id INTEGER, name TEXT)')\nconn.execute('CREATE TABLE orders (user_id INTEGER, amount INTEGER)')\nconn.executemany('INSERT INTO users VALUES (?, ?)', [(1, 'Asha'), (2, 'Ravi')])\nconn.executemany('INSERT INTO orders VALUES (?, ?)', [(1, 100), (1, 50)])\nprint(conn.execute('SELECT users.name, SUM(orders.amount) FROM users JOIN orders ON users.id = orders.user_id GROUP BY users.name').fetchall())",
+      "output": "",
+      "explanation": "JOIN users aur orders ko key par jodta hai, phir GROUP BY total deta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to join ka approach kaise badlega?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "name = 'Asha'\nprint('Hello ' + 2024)",
+      "error": "TypeError: can only concatenate str (not \"int\") to str",
+      "why": "String concatenation ko dono taraf str chahiye; Python implicit conversion nahi karta. Ye SQL + Databases ke workflow me bhi wahi galti hai.",
+      "fix": "f-string ya str() se explicit conversion karo.",
+      "correct": "name = 'Asha'\nprint(f'Hello {2024}')",
+      "output": "",
+      "lesson": "TypeError type mismatch batata hai — conversion explicit karo."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "raise",
+      "broken": "scores = [10, 20]\nprint(scores[5])",
+      "error": "IndexError: list index out of range",
+      "why": "List me sirf 0 aur 1 index hain; 5 par kuch nahi. Ye SQL + Databases ke workflow me bhi wahi galti hai.",
+      "fix": "Index se pehle length check karo ya safe getter use karo.",
+      "correct": "scores = [10, 20]\nprint(scores[1] if len(scores) > 1 else None)",
+      "output": "",
+      "lesson": "IndexError off-by-one aur empty collection ka signal hai."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "raise",
+      "broken": "profile = {'name': 'Asha'}\nprint(profile['score'])",
+      "error": "KeyError: 'score'",
+      "why": "Dict me score key exist nahi karti; [] missing key par KeyError deta hai. Ye SQL + Databases ke workflow me bhi wahi galti hai.",
+      "fix": "get() se default do ya key ki presence check karo.",
+      "correct": "profile = {'name': 'Asha'}\nprint(profile.get('score', 'not recorded'))",
+      "output": "",
+      "lesson": "KeyError expected-missing field ka case hai — get/default se handle karo."
+    },
+    {
+      "difficulty": "expert",
+      "mode": "raise",
+      "broken": "raw = '12.5'\nprint(int(raw))",
+      "error": "ValueError: invalid literal for int() with base 10: '12.5'",
+      "why": "int() sirf poore number ka string parse karta hai. Ye SQL + Databases ke workflow me bhi wahi galti hai.",
+      "fix": "Pehle float() phir int() karo, ya Decimal use karo.",
+      "correct": "raw = '12.5'\nprint(int(float(raw)))",
+      "output": "",
+      "lesson": "ValueError format ka issue hai, type ka nahi."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Quick drill: create_insert_select ka ek minimal example likho aur output predict karo.",
+      "hint": "SQL + Databases ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Coding round: where_param aur order_limit ko ek function me combine karo.",
+      "hint": "SQL + Databases ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Advanced: SQL + Databases ka chhota pipeline banao jisme aggregate, group_by aur validation ho.",
+      "hint": "SQL + Databases ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview: SQL + Databases ke 3 trade-offs whiteboard par likho aur join se example do.",
+      "hint": "SQL + Databases ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Build: SQL + Databases ka mini project banao — input, processing, output aur README.",
+      "hint": "SQL + Databases ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "SQL + Databases Starter Lab",
+      "problem": "SQL + Databases ke basics ko ek chhote runnable program me jodna.",
+      "objective": "create_insert_select aur where_param ka demo jo output print kare.",
+      "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, city TEXT)')\nconn.executemany('INSERT INTO users (name, city) VALUES (?, ?)', [('Asha', 'pune'), ('Ravi', 'delhi')])\nprint(conn.execute('SELECT id, name FROM users ORDER BY id').fetchall())\nimport sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE users (name TEXT, city TEXT)')\nconn.execute('INSERT INTO users VALUES (?, ?)', ('Asha', 'pune'))\nrows = conn.execute('SELECT name FROM users WHERE city = ?', ('pune',)).fetchall()\nprint(rows)",
+      "explanation": "CREATE, INSERT aur SELECT milkar basic table workflow banate hain. WHERE filter lagata hai aur ? placeholder values ko safely bind karta hai. Dono snippets ek hi file me chalte hain.",
+      "testing": "create_insert_select ke empty aur normal input par output check karo.",
+      "errors": "Galat type ya missing value par Python exception dega — Version 2 me validation add hoti hai.",
+      "realWorld": "SQL + Databases ke production code me yahi chhote steps repeated hote hain.",
+      "resume": "SQL + Databases starter lab: create_insert_select aur where_param ka runnable demo.",
+      "features": [
+        "create_insert_select ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "SQL + Databases",
+        "create_insert_select"
+      ],
+      "structure": "s19_project_1/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "create_insert_select ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "join ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "SQL + Databases Starter Lab interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "SQL + Databases Starter Lab interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "SQL + Databases Starter Lab interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "SQL + Databases Starter Lab ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "SQL + Databases Data Pipeline",
+      "problem": "Raw input ko validate karke SQL + Databases ke useful output me badalna.",
+      "objective": "order_limit, aggregate aur group_by se chhota pipeline banao.",
+      "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE scores (name TEXT, score INTEGER)')\nconn.executemany('INSERT INTO scores VALUES (?, ?)', [('A', 91), ('B', 78), ('C', 85)])\nprint(conn.execute('SELECT name, score FROM scores ORDER BY score DESC LIMIT 2').fetchall())\nimport sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE scores (score INTEGER)')\nconn.executemany('INSERT INTO scores VALUES (?)', [(91,), (78,), (85,)])\nprint(conn.execute('SELECT COUNT(*), AVG(score), MAX(score) FROM scores').fetchone())\nimport sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE orders (city TEXT, amount INTEGER)')\nconn.executemany('INSERT INTO orders VALUES (?, ?)', [('pune', 100), ('pune', 50), ('delhi', 200)])\nprint(conn.execute('SELECT city, SUM(amount) FROM orders GROUP BY city ORDER BY city').fetchall())",
+      "explanation": "ORDER BY sorting karta hai aur LIMIT top N rows deta hai. COUNT/AVG/MAX aggregate functions poore result set ka summary dete hain. GROUP BY har city ka total nikalta hai. Pipeline ke steps alag-alag testable hain.",
+      "testing": "Ek valid aur ek invalid input se pipeline chalao; dono ka behaviour note karo.",
+      "errors": "Invalid input par crash ke bajaye clear error/message do — Version 3 me error shape add hota hai.",
+      "realWorld": "Yahi load → transform → report pattern SQL + Databases ke dashboards aur services me hota hai.",
+      "resume": "SQL + Databases pipeline: validation aur order_limit/aggregate ke saath end-to-end demo.",
+      "features": [
+        "where_param ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "SQL + Databases",
+        "where_param"
+      ],
+      "structure": "s19_project_2/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "where_param ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "update ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "SQL + Databases Data Pipeline interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "SQL + Databases Data Pipeline interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "SQL + Databases Data Pipeline interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "SQL + Databases Data Pipeline ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "SQL + Databases Capstone",
+      "problem": "Ek believable SQL + Databases use case jo end-to-end chale aur explain ho sake.",
+      "objective": "LEFT JOIN + COALESCE se un customers ka 0 total bhi aata hai jinke koi order nahi. Isse project interview me trade-offs ke saath present karo.",
+      "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\nconn.executescript('''\nCREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, amount INTEGER);\nINSERT INTO customers (name) VALUES ('Asha'), ('Ravi');\nINSERT INTO orders (customer_id, amount) VALUES (1, 100), (1, 50);\n''')\nrows = conn.execute('''\nSELECT customers.name, COALESCE(SUM(orders.amount), 0) AS total\nFROM customers\nLEFT JOIN orders ON customers.id = orders.customer_id\nGROUP BY customers.id\nORDER BY total DESC\n''').fetchall()\nprint(rows)",
+      "explanation": "LEFT JOIN + COALESCE se un customers ka 0 total bhi aata hai jinke koi order nahi.",
+      "testing": "Expected output ko haath se verify karo, phir edge case (empty/missing) add karo.",
+      "errors": "Failure modes document karo: missing data, bad type aur duplicate records.",
+      "realWorld": "Ye capstone resume aur interview dono me ek concrete SQL + Databases story deta hai.",
+      "resume": "SQL + Databases capstone: LEFT JOIN + COALESCE se un customers ka 0 total bhi aata hai jinke koi order nahi.",
+      "features": [
+        "order_limit ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "SQL + Databases",
+        "order_limit"
+      ],
+      "structure": "s19_project_3/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "order_limit ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "delete ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "SQL + Databases Capstone interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "SQL + Databases Capstone interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "SQL + Databases Capstone interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "SQL + Databases Capstone ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      {
+        "q": "Understanding 1.1: why does SQL + Databases Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.2: why does SQL + Databases Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.3: why does SQL + Databases Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.1: why does SQL + Databases Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.2: why does SQL + Databases Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.3: why does SQL + Databases Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.1: why does SQL + Databases Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.2: why does SQL + Databases Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.3: why does SQL + Databases Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      }
+    ],
+    "coding": [
+      {
+        "q": "Coding 1.1: extend SQL + Databases Starter Lab with one more create_insert_select step.",
+        "a": "CREATE, INSERT aur SELECT milkar basic table workflow banate hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.2: extend SQL + Databases Starter Lab with one more where_param step.",
+        "a": "WHERE filter lagata hai aur ? placeholder values ko safely bind karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.3: extend SQL + Databases Starter Lab with one more order_limit step.",
+        "a": "ORDER BY sorting karta hai aur LIMIT top N rows deta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.1: extend SQL + Databases Data Pipeline with one more create_insert_select step.",
+        "a": "CREATE, INSERT aur SELECT milkar basic table workflow banate hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.2: extend SQL + Databases Data Pipeline with one more where_param step.",
+        "a": "WHERE filter lagata hai aur ? placeholder values ko safely bind karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.3: extend SQL + Databases Data Pipeline with one more order_limit step.",
+        "a": "ORDER BY sorting karta hai aur LIMIT top N rows deta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.1: extend SQL + Databases Capstone with one more create_insert_select step.",
+        "a": "CREATE, INSERT aur SELECT milkar basic table workflow banate hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.2: extend SQL + Databases Capstone with one more where_param step.",
+        "a": "WHERE filter lagata hai aur ? placeholder values ko safely bind karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.3: extend SQL + Databases Capstone with one more order_limit step.",
+        "a": "ORDER BY sorting karta hai aur LIMIT top N rows deta hai. Naya step add karke output compare karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced 1.1: how would SQL + Databases Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.2: how would SQL + Databases Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.3: how would SQL + Databases Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.1: how would SQL + Databases Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.2: how would SQL + Databases Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.3: how would SQL + Databases Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.1: how would SQL + Databases Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.2: how would SQL + Databases Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.3: how would SQL + Databases Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview 1.1: defend one trade-off in SQL + Databases Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.2: defend one trade-off in SQL + Databases Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.3: defend one trade-off in SQL + Databases Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.1: defend one trade-off in SQL + Databases Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.2: defend one trade-off in SQL + Databases Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.3: defend one trade-off in SQL + Databases Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.1: defend one trade-off in SQL + Databases Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.2: defend one trade-off in SQL + Databases Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.3: defend one trade-off in SQL + Databases Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      }
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Practical 1: validate SQL + Databases data in 15 minutes.",
+      "a": "Steps likho: input, create_insert_select, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 2: transform SQL + Databases data in 15 minutes.",
+      "a": "Steps likho: input, where_param, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 3: aggregate SQL + Databases data in 15 minutes.",
+      "a": "Steps likho: input, order_limit, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 4: present SQL + Databases data in 15 minutes.",
+      "a": "Steps likho: input, aggregate, expected output; phir code chala kar dikhao."
+    }
+  ],
+  "revision": [
+    "SQL + Databases: revise create_insert_select — CREATE, INSERT aur SELECT milkar basic table workflow banate hain.",
+    "SQL + Databases: revise where_param — WHERE filter lagata hai aur ? placeholder values ko safely bind karta hai.",
+    "SQL + Databases: revise order_limit — ORDER BY sorting karta hai aur LIMIT top N rows deta hai.",
+    "SQL + Databases: revise aggregate — COUNT/AVG/MAX aggregate functions poore result set ka summary dete hain.",
+    "SQL + Databases: revise group_by — GROUP BY har city ka total nikalta hai."
+  ]
+}

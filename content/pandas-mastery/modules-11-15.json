@@ -22,7 +22,7 @@
    {
     "title": "to_csv without the index",
     "body": "By default the index is written as an unnamed first column. `index=False` is what stops a round trip from growing a column each time.",
-    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False).strip().split(\"\\n\"))",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip().splitlines())",
     "output": "['a', '1', '2']"
    },
    {
@@ -281,11 +281,11 @@
    },
    {
     "title": "Aggregating text with a numeric function",
-    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"name\": [\"Aman\"]})\nprint(df.groupby(\"city\")[\"name\"].sum())",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"name\": [\"Aman\"]})\nprint(df.groupby(\"city\")[\"name\"].sum().tolist())",
     "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"name\": [\"Aman\"]})\nprint(df.groupby(\"city\")[\"name\"].count().tolist())",
     "error": "Wrong output: Aman — sum concatenated the text values instead of counting rows.",
     "fixedOutput": "[1]",
-    "brokenOutput": "city\nPune    Aman\nName: name, dtype: str"
+    "brokenOutput": "['Aman']"
    }
   ],
   "tasks": [

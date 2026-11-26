@@ -655,8 +655,8 @@
    {
     "title": "astype on one column only",
     "body": "A per-column conversion keeps the rest of the frame untouched: build a dict or use `astype` on the Series, so a numeric column does not turn the whole frame into text.",
-    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [\"1\", \"2\"], \"name\": [\"a\", \"b\"]})\ndf[\"id\"] = df[\"id\"].astype(int)\nprint(df.dtypes.astype(str).tolist())",
-    "output": "['int64', 'str']"
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [\"1\", \"2\"], \"name\": pd.Series([\"a\", \"b\"], dtype=object)})\ndf[\"id\"] = df[\"id\"].astype(\"int64\")\nprint(df.dtypes.astype(str).tolist())",
+    "output": "['int64', 'object']"
    }
   ],
   "mcq": [

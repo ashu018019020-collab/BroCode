@@ -1,0 +1,717 @@
+{
+  "section": "s13",
+  "topic": "OOP (Object Oriented Programming)",
+  "authored": true,
+  "intro": "Class data aur behaviour ko ek naam ke neeche baandhti hai. Is section me object banana, __init__ se state set karna, methods se behaviour dena, inheritance se reuse karna aur property/dataclass se readable API banana cover hota hai.",
+  "theory": [
+    "Class blueprint hai, instance us blueprint se bana object. `self` current instance ka reference hai — isliye method same class ke do objects par alag data dekhta hai.",
+    "__init__ constructor hai jo naya object banne par chalta hai. Instance attributes self par set hote hain; class attributes sab instances me shared hote hain.",
+    "Inheritance `class Child(Parent)` se hoti hai; `super().__init__()` parent ka setup chalata hai. Method overriding se child apna behaviour de sakta hai.",
+    "Property getter/setter ko attribute jaisa banati hai, isliye validation ke saath `obj.value` readable rehta hai. dataclass __init__, __repr__ aur comparison free me deta hai.",
+    "Composition (object ke andar doosra object) inheritance se zyada flexible hota hai jab relationship \"has-a\" ho; inheritance \"is-a\" ke liye rakho."
+  ],
+  "syntax": [
+    "class Account:\n    def __init__(self, owner, balance=0):\n        self.owner = owner\n        self.balance = balance\n\n    def deposit(self, amount):\n        self.balance += amount\n        return self.balance",
+    "class Savings(Account):\n    def __init__(self, owner, balance, rate):\n        super().__init__(owner, balance)\n        self.rate = rate\n\n    def project(self, years):\n        return self.balance * (1 + self.rate) ** years",
+    "from dataclasses import dataclass\n\n@dataclass\nclass Point:\n    x: int\n    y: int\n\n@property\ndef label(self):\n    return f\"({self.x}, {self.y})\""
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "class Circle:\n    def area(self):\n        return 3\n\nclass Square:\n    def area(self):\n        return 4\n\nfor shape in (Circle(), Square()):\n    print(type(shape).__name__, shape.area())",
+      "output": "",
+      "explain": [
+        "Same method naam alag classes me alag behaviour deta hai — caller ko type ki zaroorat nahi.",
+        "Output ko print se verify karo.",
+        "Ye OOP (Object Oriented Programming) ka basic building block hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "class Account:\n    def __init__(self, balance):\n        self._balance = balance\n\n    @property\n    def balance(self):\n        return self._balance\n\n    @balance.setter\n    def balance(self, value):\n        if value < 0:\n            raise ValueError('negative balance')\n        self._balance = value\n\na = Account(100)\na.balance = 150\nprint(a.balance)",
+      "output": "",
+      "explain": [
+        "Property attribute jaisa access deti hai par setter me validation chalati hai.",
+        "Ek step aur jodne se behaviour kaise badalta hai, dekho.",
+        "Input badal kar edge case test karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "class InsufficientFunds(Exception):\n    pass\n\nclass Account:\n    def __init__(self, owner, balance=0):\n        self.owner = owner\n        self.balance = balance\n\n    def withdraw(self, amount):\n        if amount > self.balance:\n            raise InsufficientFunds(f'{self.owner}: need {amount}, have {self.balance}')\n        self.balance -= amount\n        return self.balance\n\naccount = Account('Asha', 100)\nprint(account.withdraw(40))\ntry:\n    account.withdraw(500)\nexcept InsufficientFunds as error:\n    print('blocked:', error)\nprint('final:', account.balance)",
+      "output": "",
+      "explain": [
+        "Domain exception class business rule ko naam deti hai aur caller ko specific handling deti hai.",
+        "Ye snippet end-to-end flow dikhata hai.",
+        "Output ko project/interview me evidence ki tarah use karo."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Payment, order aur user jaise domain objects par validation aur behaviour class me rakhi jati hai, taaki har caller ko rules dobara na likhne padein.",
+    "SDK aur library APIs classes se banti hain: client object connection/config rakhta hai aur methods operations expose karte hain.",
+    "Dataclasses config aur DTOs ke liye standard hain — free repr se logs readable hote hain aur field mismatch jaldi pakda jata hai."
+  ],
+  "interview": [
+    {
+      "q": "Class attribute aur instance attribute me fark batao.",
+      "a": "Class attribute class par define hota hai aur sab instances share karte hain; instance attribute self par set hota hai aur har object ka apna hota hai. Immutable class attribute safe hai, mutable (list) shared hone se bugs aate hain."
+    },
+    {
+      "q": "__init__ aur __new__ me kya antar hai?",
+      "a": "__new__ object banata hai, __init__ us object ko initialise karta hai. Normal classes me __init__ kaafi hai; immutable subclass ya singleton jaisi cheezon me __new__ chahiye hota hai."
+    },
+    {
+      "q": "Inheritance kab avoid karna chahiye?",
+      "a": "Jab relationship \"is-a\" na ho. Deep hierarchies fragile hoti hain; composition (has-a) se code zyada flexible aur testable rehta hai."
+    },
+    {
+      "q": "Property kyun use karte hain, simple attribute kyun nahi?",
+      "a": "Property se validation, computed values aur API compatibility milti hai bina caller ka syntax badle. Simple data ke liye plain attribute hi theek hai."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Beginner drill 1: what does inheritance do in a OOP (Object Oriented Programming) workflow?",
+        "a": "Child class parent ka __init__ inherit karti hai aur method override kar sakti hai.",
+        "explain": "Child class parent ka __init__ inherit karti hai aur method override kar sakti hai. Snippet chala kar output se confirm karo.",
+        "code": "class Animal:\n    def __init__(self, name):\n        self.name = name\n\n    def speak(self):\n        return '...'\n\nclass Cat(Animal):\n    def speak(self):\n        return 'meow'\n\nprint(Cat('Tom').name, Cat('Tom').speak())",
+        "output": "",
+        "tip": "OOP (Object Oriented Programming) me inheritance ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 2: what does super do in a OOP (Object Oriented Programming) workflow?",
+        "a": "super().__init__ parent ka setup chalata hai taaki shared fields dobara na likhne padein.",
+        "explain": "super().__init__ parent ka setup chalata hai taaki shared fields dobara na likhne padein. Snippet chala kar output se confirm karo.",
+        "code": "class Animal:\n    def __init__(self, name):\n        self.name = name\n\nclass Dog(Animal):\n    def __init__(self, name, breed):\n        super().__init__(name)\n        self.breed = breed\n\nprint(Dog('Tom', 'beagle').name)",
+        "output": "",
+        "tip": "OOP (Object Oriented Programming) me super ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 3: what does polymorphism do in a OOP (Object Oriented Programming) workflow?",
+        "a": "Same method naam alag classes me alag behaviour deta hai — caller ko type ki zaroorat nahi.",
+        "explain": "Same method naam alag classes me alag behaviour deta hai — caller ko type ki zaroorat nahi. Snippet chala kar output se confirm karo.",
+        "code": "class Circle:\n    def area(self):\n        return 3\n\nclass Square:\n    def area(self):\n        return 4\n\nfor shape in (Circle(), Square()):\n    print(type(shape).__name__, shape.area())",
+        "output": "",
+        "tip": "OOP (Object Oriented Programming) me polymorphism ka behaviour edge cases par test karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Intermediate drill 1: what does property do in a OOP (Object Oriented Programming) workflow?",
+        "a": "Property attribute jaisa access deti hai par setter me validation chalati hai.",
+        "explain": "Property attribute jaisa access deti hai par setter me validation chalati hai. Snippet chala kar output se confirm karo.",
+        "code": "class Account:\n    def __init__(self, balance):\n        self._balance = balance\n\n    @property\n    def balance(self):\n        return self._balance\n\n    @balance.setter\n    def balance(self, value):\n        if value < 0:\n            raise ValueError('negative balance')\n        self._balance = value\n\na = Account(100)\na.balance = 150\nprint(a.balance)",
+        "output": "",
+        "tip": "OOP (Object Oriented Programming) me property ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 2: what does dataclass do in a OOP (Object Oriented Programming) workflow?",
+        "a": "dataclass init, repr aur equality automatically banata hai.",
+        "explain": "dataclass init, repr aur equality automatically banata hai. Snippet chala kar output se confirm karo.",
+        "tip": "OOP (Object Oriented Programming) me dataclass ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 3: what does class_instance do in a OOP (Object Oriented Programming) workflow?",
+        "a": "Instance attribute self.name object-specific hai, class attribute species shared hai.",
+        "explain": "Instance attribute self.name object-specific hai, class attribute species shared hai. Snippet chala kar output se confirm karo.",
+        "tip": "OOP (Object Oriented Programming) me class_instance ka behaviour edge cases par test karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced drill 1: what does method do in a OOP (Object Oriented Programming) workflow?",
+        "a": "Method instance state ko badalta hai aur naya value return karta hai.",
+        "explain": "Method instance state ko badalta hai aur naya value return karta hai. Snippet chala kar output se confirm karo.",
+        "code": "class Counter:\n    def __init__(self):\n        self.value = 0\n\n    def bump(self, step=1):\n        self.value += step\n        return self.value\n\nc = Counter()\nprint(c.bump(), c.bump(4))",
+        "output": "",
+        "tip": "OOP (Object Oriented Programming) me method ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 2: what does repr do in a OOP (Object Oriented Programming) workflow?",
+        "a": "__repr__ debugging aur logs ke liye readable representation deta hai.",
+        "explain": "__repr__ debugging aur logs ke liye readable representation deta hai. Snippet chala kar output se confirm karo.",
+        "tip": "OOP (Object Oriented Programming) me repr ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 3: what does inheritance do in a OOP (Object Oriented Programming) workflow?",
+        "a": "Child class parent ka __init__ inherit karti hai aur method override kar sakti hai.",
+        "explain": "Child class parent ka __init__ inherit karti hai aur method override kar sakti hai. Snippet chala kar output se confirm karo.",
+        "tip": "OOP (Object Oriented Programming) me inheritance ka behaviour edge cases par test karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview drill 1: what does super do in a OOP (Object Oriented Programming) workflow?",
+        "a": "super().__init__ parent ka setup chalata hai taaki shared fields dobara na likhne padein.",
+        "explain": "super().__init__ parent ka setup chalata hai taaki shared fields dobara na likhne padein. Snippet chala kar output se confirm karo.",
+        "tip": "OOP (Object Oriented Programming) me super ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 2: what does polymorphism do in a OOP (Object Oriented Programming) workflow?",
+        "a": "Same method naam alag classes me alag behaviour deta hai — caller ko type ki zaroorat nahi.",
+        "explain": "Same method naam alag classes me alag behaviour deta hai — caller ko type ki zaroorat nahi. Snippet chala kar output se confirm karo.",
+        "tip": "OOP (Object Oriented Programming) me polymorphism ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 3: what does property do in a OOP (Object Oriented Programming) workflow?",
+        "a": "Property attribute jaisa access deti hai par setter me validation chalati hai.",
+        "explain": "Property attribute jaisa access deti hai par setter me validation chalati hai. Snippet chala kar output se confirm karo.",
+        "tip": "OOP (Object Oriented Programming) me property ka behaviour edge cases par test karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Realworld drill 1: what does dataclass do in a OOP (Object Oriented Programming) workflow?",
+        "a": "dataclass init, repr aur equality automatically banata hai.",
+        "explain": "dataclass init, repr aur equality automatically banata hai. Snippet chala kar output se confirm karo.",
+        "code": "from dataclasses import dataclass\n\n@dataclass\nclass User:\n    name: str\n    age: int\n\nprint(User('Asha', 31))\nprint(User('Asha', 31) == User('Asha', 31))",
+        "output": "",
+        "tip": "OOP (Object Oriented Programming) me dataclass ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 2: what does class_instance do in a OOP (Object Oriented Programming) workflow?",
+        "a": "Instance attribute self.name object-specific hai, class attribute species shared hai.",
+        "explain": "Instance attribute self.name object-specific hai, class attribute species shared hai. Snippet chala kar output se confirm karo.",
+        "tip": "OOP (Object Oriented Programming) me class_instance ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 3: what does method do in a OOP (Object Oriented Programming) workflow?",
+        "a": "Method instance state ko badalta hai aur naya value return karta hai.",
+        "explain": "Method instance state ko badalta hai aur naya value return karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "OOP (Object Oriented Programming) me method ka behaviour edge cases par test karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 1: implement class_instance and print the result.",
+      "build": "Instance attribute self.name object-specific hai, class attribute species shared hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "class_instance ke liye sample data snippet me diya hai",
+      "expected": "Printed output class_instance ka result dikhata hai",
+      "hint": "Solution ka core class_instance hai; output ko readable rakho.",
+      "concept": "OOP (Object Oriented Programming) · class_instance",
+      "solution": "class Dog:\n    species = 'canine'\n\n    def __init__(self, name):\n        self.name = name\n\nd = Dog('Tom')\nprint(d.name, Dog.species, d.species)",
+      "output": "",
+      "explanation": "Instance attribute self.name object-specific hai, class attribute species shared hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to class_instance ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 2: implement method and print the result.",
+      "build": "Method instance state ko badalta hai aur naya value return karta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "method ke liye sample data snippet me diya hai",
+      "expected": "Printed output method ka result dikhata hai",
+      "hint": "Solution ka core method hai; output ko readable rakho.",
+      "concept": "OOP (Object Oriented Programming) · method",
+      "solution": "class Counter:\n    def __init__(self):\n        self.value = 0\n\n    def bump(self, step=1):\n        self.value += step\n        return self.value\n\nc = Counter()\nprint(c.bump(), c.bump(4))",
+      "output": "",
+      "explanation": "Method instance state ko badalta hai aur naya value return karta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to method ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 3: implement repr and print the result.",
+      "build": "__repr__ debugging aur logs ke liye readable representation deta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "repr ke liye sample data snippet me diya hai",
+      "expected": "Printed output repr ka result dikhata hai",
+      "hint": "Solution ka core repr hai; output ko readable rakho.",
+      "concept": "OOP (Object Oriented Programming) · repr",
+      "solution": "class Point:\n    def __init__(self, x, y):\n        self.x, self.y = x, y\n\n    def __repr__(self):\n        return f'Point({self.x}, {self.y})'\n\nprint(Point(2, 5))",
+      "output": "",
+      "explanation": "__repr__ debugging aur logs ke liye readable representation deta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to repr ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 4: implement inheritance and print the result.",
+      "build": "Child class parent ka __init__ inherit karti hai aur method override kar sakti hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "inheritance ke liye sample data snippet me diya hai",
+      "expected": "Printed output inheritance ka result dikhata hai",
+      "hint": "Solution ka core inheritance hai; output ko readable rakho.",
+      "concept": "OOP (Object Oriented Programming) · inheritance",
+      "solution": "class Animal:\n    def __init__(self, name):\n        self.name = name\n\n    def speak(self):\n        return '...'\n\nclass Cat(Animal):\n    def speak(self):\n        return 'meow'\n\nprint(Cat('Tom').name, Cat('Tom').speak())",
+      "output": "",
+      "explanation": "Child class parent ka __init__ inherit karti hai aur method override kar sakti hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to inheritance ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 5: implement super and print the result.",
+      "build": "super().__init__ parent ka setup chalata hai taaki shared fields dobara na likhne padein. Ek chhota runnable example likho jo output print kare.",
+      "input": "super ke liye sample data snippet me diya hai",
+      "expected": "Printed output super ka result dikhata hai",
+      "hint": "Solution ka core super hai; output ko readable rakho.",
+      "concept": "OOP (Object Oriented Programming) · super",
+      "solution": "class Animal:\n    def __init__(self, name):\n        self.name = name\n\nclass Dog(Animal):\n    def __init__(self, name, breed):\n        super().__init__(name)\n        self.breed = breed\n\nprint(Dog('Tom', 'beagle').name)",
+      "output": "",
+      "explanation": "super().__init__ parent ka setup chalata hai taaki shared fields dobara na likhne padein. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to super ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 6: implement polymorphism and print the result.",
+      "build": "Same method naam alag classes me alag behaviour deta hai — caller ko type ki zaroorat nahi. Ek chhota runnable example likho jo output print kare.",
+      "input": "polymorphism ke liye sample data snippet me diya hai",
+      "expected": "Printed output polymorphism ka result dikhata hai",
+      "hint": "Solution ka core polymorphism hai; output ko readable rakho.",
+      "concept": "OOP (Object Oriented Programming) · polymorphism",
+      "solution": "class Circle:\n    def area(self):\n        return 3\n\nclass Square:\n    def area(self):\n        return 4\n\nfor shape in (Circle(), Square()):\n    print(type(shape).__name__, shape.area())",
+      "output": "",
+      "explanation": "Same method naam alag classes me alag behaviour deta hai — caller ko type ki zaroorat nahi. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to polymorphism ka approach kaise badlega?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "raw = '12.5'\nprint(int(raw))",
+      "error": "ValueError: invalid literal for int() with base 10: '12.5'",
+      "why": "int() sirf poore number ka string parse karta hai. Ye OOP (Object Oriented Programming) ke workflow me bhi wahi galti hai.",
+      "fix": "Pehle float() phir int() karo, ya Decimal use karo.",
+      "correct": "raw = '12.5'\nprint(int(float(raw)))",
+      "output": "",
+      "lesson": "ValueError format ka issue hai, type ka nahi."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "raise",
+      "broken": "text = 'hello'\nprint(text.append('!'))",
+      "error": "AttributeError: 'str' object has no attribute 'append'",
+      "why": "String immutable hai; append list ka method hai. Ye OOP (Object Oriented Programming) ke workflow me bhi wahi galti hai.",
+      "fix": "String concatenation ya join use karo.",
+      "correct": "text = 'hello'\nprint(text + '!')",
+      "output": "",
+      "lesson": "AttributeError galat type par method call ka signal hai."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "raise",
+      "broken": "total = 10\nprint(totl + 1)",
+      "error": "NameError: name 'totl' is not defined",
+      "why": "Naam ki spelling galat hai; Python namespace me wo naam nahi milta. Ye OOP (Object Oriented Programming) ke workflow me bhi wahi galti hai.",
+      "fix": "Variable ka naam theek karo.",
+      "correct": "total = 10\nprint(total + 1)",
+      "output": "",
+      "lesson": "NameError typo ya missing assignment batata hai."
+    },
+    {
+      "difficulty": "expert",
+      "mode": "logic",
+      "broken": "items = [3, 1, 2]\nprint(items.sort())",
+      "error": "Logic error — sort() None return karta hai, list print nahi hoti",
+      "why": "sort() in-place hai aur None deta hai, isliye print None dikhata hai. Ye OOP (Object Oriented Programming) ke workflow me bhi wahi galti hai.",
+      "fix": "sorted() use karo ya pehle sort phir list print karo.",
+      "correct": "items = [3, 1, 2]\nitems.sort()\nprint(items)",
+      "output": "",
+      "lesson": "Mutating methods ka return value None hota hai — usse assign/print mat karo."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Quick drill: class_instance ka ek minimal example likho aur output predict karo.",
+      "hint": "OOP (Object Oriented Programming) ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Coding round: method aur repr ko ek function me combine karo.",
+      "hint": "OOP (Object Oriented Programming) ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Advanced: OOP (Object Oriented Programming) ka chhota pipeline banao jisme inheritance, super aur validation ho.",
+      "hint": "OOP (Object Oriented Programming) ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview: OOP (Object Oriented Programming) ke 3 trade-offs whiteboard par likho aur polymorphism se example do.",
+      "hint": "OOP (Object Oriented Programming) ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Build: OOP (Object Oriented Programming) ka mini project banao — input, processing, output aur README.",
+      "hint": "OOP (Object Oriented Programming) ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "OOP (Object Oriented Programming) Starter Lab",
+      "problem": "OOP (Object Oriented Programming) ke basics ko ek chhote runnable program me jodna.",
+      "objective": "class_instance aur method ka demo jo output print kare.",
+      "code": "class Dog:\n    species = 'canine'\n\n    def __init__(self, name):\n        self.name = name\n\nd = Dog('Tom')\nprint(d.name, Dog.species, d.species)\nclass Counter:\n    def __init__(self):\n        self.value = 0\n\n    def bump(self, step=1):\n        self.value += step\n        return self.value\n\nc = Counter()\nprint(c.bump(), c.bump(4))",
+      "explanation": "Instance attribute self.name object-specific hai, class attribute species shared hai. Method instance state ko badalta hai aur naya value return karta hai. Dono snippets ek hi file me chalte hain.",
+      "testing": "class_instance ke empty aur normal input par output check karo.",
+      "errors": "Galat type ya missing value par Python exception dega — Version 2 me validation add hoti hai.",
+      "realWorld": "OOP (Object Oriented Programming) ke production code me yahi chhote steps repeated hote hain.",
+      "resume": "OOP (Object Oriented Programming) starter lab: class_instance aur method ka runnable demo.",
+      "features": [
+        "class_instance ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "OOP (Object Oriented Programming)",
+        "class_instance"
+      ],
+      "structure": "s13_project_1/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "class_instance ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "polymorphism ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "OOP (Object Oriented Programming) Starter Lab interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "OOP (Object Oriented Programming) Starter Lab interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "OOP (Object Oriented Programming) Starter Lab interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "OOP (Object Oriented Programming) Starter Lab ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "OOP (Object Oriented Programming) Data Pipeline",
+      "problem": "Raw input ko validate karke OOP (Object Oriented Programming) ke useful output me badalna.",
+      "objective": "repr, inheritance aur super se chhota pipeline banao.",
+      "code": "class Point:\n    def __init__(self, x, y):\n        self.x, self.y = x, y\n\n    def __repr__(self):\n        return f'Point({self.x}, {self.y})'\n\nprint(Point(2, 5))\nclass Animal:\n    def __init__(self, name):\n        self.name = name\n\n    def speak(self):\n        return '...'\n\nclass Cat(Animal):\n    def speak(self):\n        return 'meow'\n\nprint(Cat('Tom').name, Cat('Tom').speak())\nclass Animal:\n    def __init__(self, name):\n        self.name = name\n\nclass Dog(Animal):\n    def __init__(self, name, breed):\n        super().__init__(name)\n        self.breed = breed\n\nprint(Dog('Tom', 'beagle').name)",
+      "explanation": "__repr__ debugging aur logs ke liye readable representation deta hai. Child class parent ka __init__ inherit karti hai aur method override kar sakti hai. super().__init__ parent ka setup chalata hai taaki shared fields dobara na likhne padein. Pipeline ke steps alag-alag testable hain.",
+      "testing": "Ek valid aur ek invalid input se pipeline chalao; dono ka behaviour note karo.",
+      "errors": "Invalid input par crash ke bajaye clear error/message do — Version 3 me error shape add hota hai.",
+      "realWorld": "Yahi load → transform → report pattern OOP (Object Oriented Programming) ke dashboards aur services me hota hai.",
+      "resume": "OOP (Object Oriented Programming) pipeline: validation aur repr/inheritance ke saath end-to-end demo.",
+      "features": [
+        "method ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "OOP (Object Oriented Programming)",
+        "method"
+      ],
+      "structure": "s13_project_2/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "method ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "property ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "OOP (Object Oriented Programming) Data Pipeline interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "OOP (Object Oriented Programming) Data Pipeline interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "OOP (Object Oriented Programming) Data Pipeline interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "OOP (Object Oriented Programming) Data Pipeline ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "OOP (Object Oriented Programming) Capstone",
+      "problem": "Ek believable OOP (Object Oriented Programming) use case jo end-to-end chale aur explain ho sake.",
+      "objective": "Domain exception class business rule ko naam deti hai aur caller ko specific handling deti hai. Isse project interview me trade-offs ke saath present karo.",
+      "code": "class InsufficientFunds(Exception):\n    pass\n\nclass Account:\n    def __init__(self, owner, balance=0):\n        self.owner = owner\n        self.balance = balance\n\n    def withdraw(self, amount):\n        if amount > self.balance:\n            raise InsufficientFunds(f'{self.owner}: need {amount}, have {self.balance}')\n        self.balance -= amount\n        return self.balance\n\naccount = Account('Asha', 100)\nprint(account.withdraw(40))\ntry:\n    account.withdraw(500)\nexcept InsufficientFunds as error:\n    print('blocked:', error)\nprint('final:', account.balance)",
+      "explanation": "Domain exception class business rule ko naam deti hai aur caller ko specific handling deti hai.",
+      "testing": "Expected output ko haath se verify karo, phir edge case (empty/missing) add karo.",
+      "errors": "Failure modes document karo: missing data, bad type aur duplicate records.",
+      "realWorld": "Ye capstone resume aur interview dono me ek concrete OOP (Object Oriented Programming) story deta hai.",
+      "resume": "OOP (Object Oriented Programming) capstone: Domain exception class business rule ko naam deti hai aur caller ko specific handling deti hai.",
+      "features": [
+        "repr ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "OOP (Object Oriented Programming)",
+        "repr"
+      ],
+      "structure": "s13_project_3/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "repr ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "dataclass ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "OOP (Object Oriented Programming) Capstone interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "OOP (Object Oriented Programming) Capstone interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "OOP (Object Oriented Programming) Capstone interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "OOP (Object Oriented Programming) Capstone ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      {
+        "q": "Understanding 1.1: why does OOP (Object Oriented Programming) Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.2: why does OOP (Object Oriented Programming) Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.3: why does OOP (Object Oriented Programming) Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.1: why does OOP (Object Oriented Programming) Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.2: why does OOP (Object Oriented Programming) Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.3: why does OOP (Object Oriented Programming) Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.1: why does OOP (Object Oriented Programming) Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.2: why does OOP (Object Oriented Programming) Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.3: why does OOP (Object Oriented Programming) Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      }
+    ],
+    "coding": [
+      {
+        "q": "Coding 1.1: extend OOP (Object Oriented Programming) Starter Lab with one more class_instance step.",
+        "a": "Instance attribute self.name object-specific hai, class attribute species shared hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.2: extend OOP (Object Oriented Programming) Starter Lab with one more method step.",
+        "a": "Method instance state ko badalta hai aur naya value return karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.3: extend OOP (Object Oriented Programming) Starter Lab with one more repr step.",
+        "a": "__repr__ debugging aur logs ke liye readable representation deta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.1: extend OOP (Object Oriented Programming) Data Pipeline with one more class_instance step.",
+        "a": "Instance attribute self.name object-specific hai, class attribute species shared hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.2: extend OOP (Object Oriented Programming) Data Pipeline with one more method step.",
+        "a": "Method instance state ko badalta hai aur naya value return karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.3: extend OOP (Object Oriented Programming) Data Pipeline with one more repr step.",
+        "a": "__repr__ debugging aur logs ke liye readable representation deta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.1: extend OOP (Object Oriented Programming) Capstone with one more class_instance step.",
+        "a": "Instance attribute self.name object-specific hai, class attribute species shared hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.2: extend OOP (Object Oriented Programming) Capstone with one more method step.",
+        "a": "Method instance state ko badalta hai aur naya value return karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.3: extend OOP (Object Oriented Programming) Capstone with one more repr step.",
+        "a": "__repr__ debugging aur logs ke liye readable representation deta hai. Naya step add karke output compare karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced 1.1: how would OOP (Object Oriented Programming) Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.2: how would OOP (Object Oriented Programming) Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.3: how would OOP (Object Oriented Programming) Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.1: how would OOP (Object Oriented Programming) Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.2: how would OOP (Object Oriented Programming) Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.3: how would OOP (Object Oriented Programming) Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.1: how would OOP (Object Oriented Programming) Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.2: how would OOP (Object Oriented Programming) Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.3: how would OOP (Object Oriented Programming) Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview 1.1: defend one trade-off in OOP (Object Oriented Programming) Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.2: defend one trade-off in OOP (Object Oriented Programming) Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.3: defend one trade-off in OOP (Object Oriented Programming) Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.1: defend one trade-off in OOP (Object Oriented Programming) Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.2: defend one trade-off in OOP (Object Oriented Programming) Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.3: defend one trade-off in OOP (Object Oriented Programming) Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.1: defend one trade-off in OOP (Object Oriented Programming) Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.2: defend one trade-off in OOP (Object Oriented Programming) Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.3: defend one trade-off in OOP (Object Oriented Programming) Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      }
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Practical 1: validate OOP (Object Oriented Programming) data in 15 minutes.",
+      "a": "Steps likho: input, class_instance, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 2: transform OOP (Object Oriented Programming) data in 15 minutes.",
+      "a": "Steps likho: input, method, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 3: aggregate OOP (Object Oriented Programming) data in 15 minutes.",
+      "a": "Steps likho: input, repr, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 4: present OOP (Object Oriented Programming) data in 15 minutes.",
+      "a": "Steps likho: input, inheritance, expected output; phir code chala kar dikhao."
+    }
+  ],
+  "revision": [
+    "OOP (Object Oriented Programming): revise class_instance — Instance attribute self.name object-specific hai, class attribute species shared hai.",
+    "OOP (Object Oriented Programming): revise method — Method instance state ko badalta hai aur naya value return karta hai.",
+    "OOP (Object Oriented Programming): revise repr — __repr__ debugging aur logs ke liye readable representation deta hai.",
+    "OOP (Object Oriented Programming): revise inheritance — Child class parent ka __init__ inherit karti hai aur method override kar sakti hai.",
+    "OOP (Object Oriented Programming): revise super — super().__init__ parent ka setup chalata hai taaki shared fields dobara na likhne padein."
+  ]
+}

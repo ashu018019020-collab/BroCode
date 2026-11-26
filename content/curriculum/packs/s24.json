@@ -1,0 +1,717 @@
+{
+  "section": "s24",
+  "topic": "APIs, Flask/FastAPI & Production Python",
+  "authored": true,
+  "intro": "API ek contract hai: request ka shape, response ka shape aur failure ka behaviour. Is section me routing, validation, status codes, pagination aur error handling ko pure functions me banaya jata hai, taaki framework badalne par bhi concepts wahi rahein.",
+  "theory": [
+    "Route method + path ko handler se jodta hai. Path parameters resource identify karte hain, query parameters filtering/pagination karte hain.",
+    "Input validation boundary par honi chahiye: missing field, wrong type aur out-of-range values ko 4xx status ke saath clear error do.",
+    "Status codes contract hain: 200 success, 201 created, 400 bad request, 401/403 auth, 404 missing, 422 validation, 500 server error.",
+    "Pagination me limit/offset ya cursor use hota hai; response me total/next hona chahiye taaki client poora data fetch kar sake.",
+    "Errors ko ek shape me return karo ({error: {code, message}}), aur unexpected exception ko 500 me badlo bina internals leak kiye."
+  ],
+  "syntax": [
+    "from fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass Order(BaseModel):\n    item: str\n    qty: int\n\n@app.post(\"/orders\", status_code=201)\ndef create_order(order: Order):\n    return {\"id\": 1, **order.dict()}",
+    "from flask import Flask, request, jsonify\n\napp = Flask(__name__)\n\n@app.get(\"/users/<int:user_id>\")\ndef get_user(user_id):\n    return jsonify(id=user_id)",
+    "try:\n    return handler(payload)\nexcept ValidationError as error:\n    return {\"error\": {\"code\": \"invalid\", \"message\": str(error)}}, 422"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "def get_user(user_id):\n    return {'id': int(user_id)}\n\nprint(get_user('42'))",
+      "output": "",
+      "explain": [
+        "Path parameter resource identify karta hai aur type conversion boundary par hota hai.",
+        "Output ko print se verify karo.",
+        "Ye APIs, Flask/FastAPI & Production Python ka basic building block hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "from urllib.parse import parse_qs\n\nquery = 'city=pune&limit=10'\nprint(parse_qs(query))",
+      "output": "",
+      "explain": [
+        "Query string ko parse karke filters aur pagination options milte hain.",
+        "Ek step aur jodne se behaviour kaise badalta hai, dekho.",
+        "Input badal kar edge case test karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "def create_app():\n    users = {1: {'id': 1, 'name': 'Asha'}}\n\n    def get_user(user_id):\n        user = users.get(user_id)\n        if user is None:\n            return {'error': {'code': 'not_found', 'message': 'user missing'}}, 404\n        return user, 200\n\n    def list_users(limit=10, offset=0):\n        rows = list(users.values())[offset:offset + limit]\n        return {'items': rows, 'total': len(users)}, 200\n\n    return {'get_user': get_user, 'list_users': list_users}\n\napp = create_app()\nprint(app['get_user'](1))\nprint(app['get_user'](99))\nprint(app['list_users'](limit=1))",
+      "output": "",
+      "explain": [
+        "Routing, handler, not-found error aur pagination ek hi chhote app contract me.",
+        "Ye snippet end-to-end flow dikhata hai.",
+        "Output ko project/interview me evidence ki tarah use karo."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Frontend aur mobile app API contract par depend karte hain; response shape badalna breaking change hota hai — versioning zaroori hai.",
+    "Payment/order endpoints me idempotency key duplicate requests se double charge rokti hai.",
+    "Health endpoint, structured errors aur request logging production readiness ke basic checks hain."
+  ],
+  "interview": [
+    {
+      "q": "400 aur 422 me kya fark hai?",
+      "a": "400 malformed request (parse nahi ho sakti), 422 syntactically valid par semantically invalid (validation fail). FastAPI/Pydantic validation errors 422 dete hain."
+    },
+    {
+      "q": "Pagination me offset aur cursor kab use karoge?",
+      "a": "Offset simple hai par bade/chaning datasets me duplicates ya misses de sakta hai. Cursor stable ordering par next page deta hai aur scale better karta hai."
+    },
+    {
+      "q": "API versioning kaise karte hain?",
+      "a": "URL prefix (/v1), header ya media type se. Breaking changes naye version me; purana version deprecation window ke saath chalta rehta hai."
+    },
+    {
+      "q": "Idempotency key kya solve karti hai?",
+      "a": "Client retry karne par same request do baar process na ho — server key store karke pehla response repeat karta hai. Payment jaise side effects ke liye zaroori hai."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Beginner drill 1: what does query_parse do in a APIs, Flask/FastAPI & Production Python workflow?",
+        "a": "Query string ko parse karke filters aur pagination options milte hain.",
+        "explain": "Query string ko parse karke filters aur pagination options milte hain. Snippet chala kar output se confirm karo.",
+        "code": "from urllib.parse import parse_qs\n\nquery = 'city=pune&limit=10'\nprint(parse_qs(query))",
+        "output": "",
+        "tip": "APIs, Flask/FastAPI & Production Python me query_parse ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 2: what does error_shape do in a APIs, Flask/FastAPI & Production Python workflow?",
+        "a": "Ek consistent error shape client handling ko simple banati hai.",
+        "explain": "Ek consistent error shape client handling ko simple banati hai. Snippet chala kar output se confirm karo.",
+        "code": "def error(code, message, status=400):\n    return {'error': {'code': code, 'message': message}}, status\n\nprint(error('invalid', 'qty must be positive', 422))",
+        "output": "",
+        "tip": "APIs, Flask/FastAPI & Production Python me error_shape ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 3: what does handler do in a APIs, Flask/FastAPI & Production Python workflow?",
+        "a": "Handler request leta hai aur response dict return karta hai.",
+        "explain": "Handler request leta hai aur response dict return karta hai. Snippet chala kar output se confirm karo.",
+        "code": "def health():\n    return {'status': 'ok'}\n\nprint(health())",
+        "output": "",
+        "tip": "APIs, Flask/FastAPI & Production Python me handler ka behaviour edge cases par test karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Intermediate drill 1: what does route_dispatch do in a APIs, Flask/FastAPI & Production Python workflow?",
+        "a": "Routing method + path ko handler se map karta hai.",
+        "explain": "Routing method + path ko handler se map karta hai. Snippet chala kar output se confirm karo.",
+        "code": "routes = {('GET', '/health'): lambda: {'status': 'ok'}}\nhandler = routes[('GET', '/health')]\nprint(handler())",
+        "output": "",
+        "tip": "APIs, Flask/FastAPI & Production Python me route_dispatch ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 2: what does validate_payload do in a APIs, Flask/FastAPI & Production Python workflow?",
+        "a": "Validation missing fields ko request boundary par pakadti hai.",
+        "explain": "Validation missing fields ko request boundary par pakadti hai. Snippet chala kar output se confirm karo.",
+        "tip": "APIs, Flask/FastAPI & Production Python me validate_payload ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 3: what does status_codes do in a APIs, Flask/FastAPI & Production Python workflow?",
+        "a": "Status code response ka machine-readable outcome hai.",
+        "explain": "Status code response ka machine-readable outcome hai. Snippet chala kar output se confirm karo.",
+        "tip": "APIs, Flask/FastAPI & Production Python me status_codes ka behaviour edge cases par test karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced drill 1: what does pagination do in a APIs, Flask/FastAPI & Production Python workflow?",
+        "a": "Limit/offset pagination se client thoda-thoda data fetch karta hai.",
+        "explain": "Limit/offset pagination se client thoda-thoda data fetch karta hai. Snippet chala kar output se confirm karo.",
+        "code": "items = list(range(1, 11))\npage, size = 2, 3\nstart = (page - 1) * size\nprint(items[start:start + size])",
+        "output": "",
+        "tip": "APIs, Flask/FastAPI & Production Python me pagination ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 2: what does path_params do in a APIs, Flask/FastAPI & Production Python workflow?",
+        "a": "Path parameter resource identify karta hai aur type conversion boundary par hota hai.",
+        "explain": "Path parameter resource identify karta hai aur type conversion boundary par hota hai. Snippet chala kar output se confirm karo.",
+        "tip": "APIs, Flask/FastAPI & Production Python me path_params ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 3: what does query_parse do in a APIs, Flask/FastAPI & Production Python workflow?",
+        "a": "Query string ko parse karke filters aur pagination options milte hain.",
+        "explain": "Query string ko parse karke filters aur pagination options milte hain. Snippet chala kar output se confirm karo.",
+        "tip": "APIs, Flask/FastAPI & Production Python me query_parse ka behaviour edge cases par test karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview drill 1: what does error_shape do in a APIs, Flask/FastAPI & Production Python workflow?",
+        "a": "Ek consistent error shape client handling ko simple banati hai.",
+        "explain": "Ek consistent error shape client handling ko simple banati hai. Snippet chala kar output se confirm karo.",
+        "tip": "APIs, Flask/FastAPI & Production Python me error_shape ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 2: what does handler do in a APIs, Flask/FastAPI & Production Python workflow?",
+        "a": "Handler request leta hai aur response dict return karta hai.",
+        "explain": "Handler request leta hai aur response dict return karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "APIs, Flask/FastAPI & Production Python me handler ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 3: what does route_dispatch do in a APIs, Flask/FastAPI & Production Python workflow?",
+        "a": "Routing method + path ko handler se map karta hai.",
+        "explain": "Routing method + path ko handler se map karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "APIs, Flask/FastAPI & Production Python me route_dispatch ka behaviour edge cases par test karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Realworld drill 1: what does validate_payload do in a APIs, Flask/FastAPI & Production Python workflow?",
+        "a": "Validation missing fields ko request boundary par pakadti hai.",
+        "explain": "Validation missing fields ko request boundary par pakadti hai. Snippet chala kar output se confirm karo.",
+        "code": "payload = {'item': 'pen'}\nmissing = [field for field in ('item', 'qty') if field not in payload]\nprint(missing)",
+        "output": "",
+        "tip": "APIs, Flask/FastAPI & Production Python me validate_payload ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 2: what does status_codes do in a APIs, Flask/FastAPI & Production Python workflow?",
+        "a": "Status code response ka machine-readable outcome hai.",
+        "explain": "Status code response ka machine-readable outcome hai. Snippet chala kar output se confirm karo.",
+        "tip": "APIs, Flask/FastAPI & Production Python me status_codes ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 3: what does pagination do in a APIs, Flask/FastAPI & Production Python workflow?",
+        "a": "Limit/offset pagination se client thoda-thoda data fetch karta hai.",
+        "explain": "Limit/offset pagination se client thoda-thoda data fetch karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "APIs, Flask/FastAPI & Production Python me pagination ka behaviour edge cases par test karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 1: implement handler and print the result.",
+      "build": "Handler request leta hai aur response dict return karta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "handler ke liye sample data snippet me diya hai",
+      "expected": "Printed output handler ka result dikhata hai",
+      "hint": "Solution ka core handler hai; output ko readable rakho.",
+      "concept": "APIs, Flask/FastAPI & Production Python · handler",
+      "solution": "def health():\n    return {'status': 'ok'}\n\nprint(health())",
+      "output": "",
+      "explanation": "Handler request leta hai aur response dict return karta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to handler ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 2: implement route_dispatch and print the result.",
+      "build": "Routing method + path ko handler se map karta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "route_dispatch ke liye sample data snippet me diya hai",
+      "expected": "Printed output route_dispatch ka result dikhata hai",
+      "hint": "Solution ka core route_dispatch hai; output ko readable rakho.",
+      "concept": "APIs, Flask/FastAPI & Production Python · route_dispatch",
+      "solution": "routes = {('GET', '/health'): lambda: {'status': 'ok'}}\nhandler = routes[('GET', '/health')]\nprint(handler())",
+      "output": "",
+      "explanation": "Routing method + path ko handler se map karta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to route_dispatch ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 3: implement validate_payload and print the result.",
+      "build": "Validation missing fields ko request boundary par pakadti hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "validate_payload ke liye sample data snippet me diya hai",
+      "expected": "Printed output validate_payload ka result dikhata hai",
+      "hint": "Solution ka core validate_payload hai; output ko readable rakho.",
+      "concept": "APIs, Flask/FastAPI & Production Python · validate_payload",
+      "solution": "payload = {'item': 'pen'}\nmissing = [field for field in ('item', 'qty') if field not in payload]\nprint(missing)",
+      "output": "",
+      "explanation": "Validation missing fields ko request boundary par pakadti hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to validate_payload ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 4: implement status_codes and print the result.",
+      "build": "Status code response ka machine-readable outcome hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "status_codes ke liye sample data snippet me diya hai",
+      "expected": "Printed output status_codes ka result dikhata hai",
+      "hint": "Solution ka core status_codes hai; output ko readable rakho.",
+      "concept": "APIs, Flask/FastAPI & Production Python · status_codes",
+      "solution": "STATUS = {200: 'OK', 201: 'Created', 400: 'Bad Request', 404: 'Not Found', 422: 'Unprocessable Entity'}\nprint(STATUS[201], STATUS[404])",
+      "output": "",
+      "explanation": "Status code response ka machine-readable outcome hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to status_codes ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 5: implement pagination and print the result.",
+      "build": "Limit/offset pagination se client thoda-thoda data fetch karta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "pagination ke liye sample data snippet me diya hai",
+      "expected": "Printed output pagination ka result dikhata hai",
+      "hint": "Solution ka core pagination hai; output ko readable rakho.",
+      "concept": "APIs, Flask/FastAPI & Production Python · pagination",
+      "solution": "items = list(range(1, 11))\npage, size = 2, 3\nstart = (page - 1) * size\nprint(items[start:start + size])",
+      "output": "",
+      "explanation": "Limit/offset pagination se client thoda-thoda data fetch karta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to pagination ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 6: implement path_params and print the result.",
+      "build": "Path parameter resource identify karta hai aur type conversion boundary par hota hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "path_params ke liye sample data snippet me diya hai",
+      "expected": "Printed output path_params ka result dikhata hai",
+      "hint": "Solution ka core path_params hai; output ko readable rakho.",
+      "concept": "APIs, Flask/FastAPI & Production Python · path_params",
+      "solution": "def get_user(user_id):\n    return {'id': int(user_id)}\n\nprint(get_user('42'))",
+      "output": "",
+      "explanation": "Path parameter resource identify karta hai aur type conversion boundary par hota hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to path_params ka approach kaise badlega?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "total = 10\nprint(totl + 1)",
+      "error": "NameError: name 'totl' is not defined",
+      "why": "Naam ki spelling galat hai; Python namespace me wo naam nahi milta. Ye APIs, Flask/FastAPI & Production Python ke workflow me bhi wahi galti hai.",
+      "fix": "Variable ka naam theek karo.",
+      "correct": "total = 10\nprint(total + 1)",
+      "output": "",
+      "lesson": "NameError typo ya missing assignment batata hai."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "items = [3, 1, 2]\nprint(items.sort())",
+      "error": "Logic error — sort() None return karta hai, list print nahi hoti",
+      "why": "sort() in-place hai aur None deta hai, isliye print None dikhata hai. Ye APIs, Flask/FastAPI & Production Python ke workflow me bhi wahi galti hai.",
+      "fix": "sorted() use karo ya pehle sort phir list print karo.",
+      "correct": "items = [3, 1, 2]\nitems.sort()\nprint(items)",
+      "output": "",
+      "lesson": "Mutating methods ka return value None hota hai — usse assign/print mat karo."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "logic",
+      "broken": "prices = [100, 200]\ntotal = 0\nfor p in prices:\n    total = p\nprint(total)",
+      "error": "Logic error — total 200 aata hai, sum 300 hona chahiye",
+      "why": "Assignment purani value replace karta hai; accumulator chahiye. Ye APIs, Flask/FastAPI & Production Python ke workflow me bhi wahi galti hai.",
+      "fix": "total += p use karo ya sum(prices).",
+      "correct": "prices = [100, 200]\ntotal = 0\nfor p in prices:\n    total += p\nprint(total)",
+      "output": "",
+      "lesson": "Logic bugs exception nahi dete — chhote sample par expected value likho."
+    },
+    {
+      "difficulty": "expert",
+      "mode": "logic",
+      "broken": "items = [1, 2, 3]\nprint(items[0:1])",
+      "error": "Logic error — pehla do items chahiye the, sirf pehla aaya",
+      "why": "Slice ka end exclusive hota hai; 0:1 sirf index 0 deta hai. Ye APIs, Flask/FastAPI & Production Python ke workflow me bhi wahi galti hai.",
+      "fix": "End index ko +1 karo: 0:2.",
+      "correct": "items = [1, 2, 3]\nprint(items[0:2])",
+      "output": "",
+      "lesson": "Slice boundaries exclusive hoti hain — range jaisa hi rule."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Quick drill: handler ka ek minimal example likho aur output predict karo.",
+      "hint": "APIs, Flask/FastAPI & Production Python ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Coding round: route_dispatch aur validate_payload ko ek function me combine karo.",
+      "hint": "APIs, Flask/FastAPI & Production Python ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Advanced: APIs, Flask/FastAPI & Production Python ka chhota pipeline banao jisme status_codes, pagination aur validation ho.",
+      "hint": "APIs, Flask/FastAPI & Production Python ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview: APIs, Flask/FastAPI & Production Python ke 3 trade-offs whiteboard par likho aur path_params se example do.",
+      "hint": "APIs, Flask/FastAPI & Production Python ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Build: APIs, Flask/FastAPI & Production Python ka mini project banao — input, processing, output aur README.",
+      "hint": "APIs, Flask/FastAPI & Production Python ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "APIs, Flask/FastAPI & Production Python Starter Lab",
+      "problem": "APIs, Flask/FastAPI & Production Python ke basics ko ek chhote runnable program me jodna.",
+      "objective": "handler aur route_dispatch ka demo jo output print kare.",
+      "code": "def health():\n    return {'status': 'ok'}\n\nprint(health())\nroutes = {('GET', '/health'): lambda: {'status': 'ok'}}\nhandler = routes[('GET', '/health')]\nprint(handler())",
+      "explanation": "Handler request leta hai aur response dict return karta hai. Routing method + path ko handler se map karta hai. Dono snippets ek hi file me chalte hain.",
+      "testing": "handler ke empty aur normal input par output check karo.",
+      "errors": "Galat type ya missing value par Python exception dega — Version 2 me validation add hoti hai.",
+      "realWorld": "APIs, Flask/FastAPI & Production Python ke production code me yahi chhote steps repeated hote hain.",
+      "resume": "APIs, Flask/FastAPI & Production Python starter lab: handler aur route_dispatch ka runnable demo.",
+      "features": [
+        "handler ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "APIs, Flask/FastAPI & Production Python",
+        "handler"
+      ],
+      "structure": "s24_project_1/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "handler ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "path_params ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "APIs, Flask/FastAPI & Production Python Starter Lab interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "APIs, Flask/FastAPI & Production Python Starter Lab interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "APIs, Flask/FastAPI & Production Python Starter Lab interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "APIs, Flask/FastAPI & Production Python Starter Lab ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "APIs, Flask/FastAPI & Production Python Data Pipeline",
+      "problem": "Raw input ko validate karke APIs, Flask/FastAPI & Production Python ke useful output me badalna.",
+      "objective": "validate_payload, status_codes aur pagination se chhota pipeline banao.",
+      "code": "payload = {'item': 'pen'}\nmissing = [field for field in ('item', 'qty') if field not in payload]\nprint(missing)\nSTATUS = {200: 'OK', 201: 'Created', 400: 'Bad Request', 404: 'Not Found', 422: 'Unprocessable Entity'}\nprint(STATUS[201], STATUS[404])\nitems = list(range(1, 11))\npage, size = 2, 3\nstart = (page - 1) * size\nprint(items[start:start + size])",
+      "explanation": "Validation missing fields ko request boundary par pakadti hai. Status code response ka machine-readable outcome hai. Limit/offset pagination se client thoda-thoda data fetch karta hai. Pipeline ke steps alag-alag testable hain.",
+      "testing": "Ek valid aur ek invalid input se pipeline chalao; dono ka behaviour note karo.",
+      "errors": "Invalid input par crash ke bajaye clear error/message do — Version 3 me error shape add hota hai.",
+      "realWorld": "Yahi load → transform → report pattern APIs, Flask/FastAPI & Production Python ke dashboards aur services me hota hai.",
+      "resume": "APIs, Flask/FastAPI & Production Python pipeline: validation aur validate_payload/status_codes ke saath end-to-end demo.",
+      "features": [
+        "route_dispatch ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "APIs, Flask/FastAPI & Production Python",
+        "route_dispatch"
+      ],
+      "structure": "s24_project_2/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "route_dispatch ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "query_parse ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "APIs, Flask/FastAPI & Production Python Data Pipeline interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "APIs, Flask/FastAPI & Production Python Data Pipeline interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "APIs, Flask/FastAPI & Production Python Data Pipeline interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "APIs, Flask/FastAPI & Production Python Data Pipeline ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "APIs, Flask/FastAPI & Production Python Capstone",
+      "problem": "Ek believable APIs, Flask/FastAPI & Production Python use case jo end-to-end chale aur explain ho sake.",
+      "objective": "Routing, handler, not-found error aur pagination ek hi chhote app contract me. Isse project interview me trade-offs ke saath present karo.",
+      "code": "def create_app():\n    users = {1: {'id': 1, 'name': 'Asha'}}\n\n    def get_user(user_id):\n        user = users.get(user_id)\n        if user is None:\n            return {'error': {'code': 'not_found', 'message': 'user missing'}}, 404\n        return user, 200\n\n    def list_users(limit=10, offset=0):\n        rows = list(users.values())[offset:offset + limit]\n        return {'items': rows, 'total': len(users)}, 200\n\n    return {'get_user': get_user, 'list_users': list_users}\n\napp = create_app()\nprint(app['get_user'](1))\nprint(app['get_user'](99))\nprint(app['list_users'](limit=1))",
+      "explanation": "Routing, handler, not-found error aur pagination ek hi chhote app contract me.",
+      "testing": "Expected output ko haath se verify karo, phir edge case (empty/missing) add karo.",
+      "errors": "Failure modes document karo: missing data, bad type aur duplicate records.",
+      "realWorld": "Ye capstone resume aur interview dono me ek concrete APIs, Flask/FastAPI & Production Python story deta hai.",
+      "resume": "APIs, Flask/FastAPI & Production Python capstone: Routing, handler, not-found error aur pagination ek hi chhote app contract me.",
+      "features": [
+        "validate_payload ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "APIs, Flask/FastAPI & Production Python",
+        "validate_payload"
+      ],
+      "structure": "s24_project_3/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "validate_payload ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "error_shape ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "APIs, Flask/FastAPI & Production Python Capstone interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "APIs, Flask/FastAPI & Production Python Capstone interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "APIs, Flask/FastAPI & Production Python Capstone interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "APIs, Flask/FastAPI & Production Python Capstone ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      {
+        "q": "Understanding 1.1: why does APIs, Flask/FastAPI & Production Python Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.2: why does APIs, Flask/FastAPI & Production Python Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.3: why does APIs, Flask/FastAPI & Production Python Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.1: why does APIs, Flask/FastAPI & Production Python Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.2: why does APIs, Flask/FastAPI & Production Python Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.3: why does APIs, Flask/FastAPI & Production Python Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.1: why does APIs, Flask/FastAPI & Production Python Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.2: why does APIs, Flask/FastAPI & Production Python Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.3: why does APIs, Flask/FastAPI & Production Python Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      }
+    ],
+    "coding": [
+      {
+        "q": "Coding 1.1: extend APIs, Flask/FastAPI & Production Python Starter Lab with one more handler step.",
+        "a": "Handler request leta hai aur response dict return karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.2: extend APIs, Flask/FastAPI & Production Python Starter Lab with one more route_dispatch step.",
+        "a": "Routing method + path ko handler se map karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.3: extend APIs, Flask/FastAPI & Production Python Starter Lab with one more validate_payload step.",
+        "a": "Validation missing fields ko request boundary par pakadti hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.1: extend APIs, Flask/FastAPI & Production Python Data Pipeline with one more handler step.",
+        "a": "Handler request leta hai aur response dict return karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.2: extend APIs, Flask/FastAPI & Production Python Data Pipeline with one more route_dispatch step.",
+        "a": "Routing method + path ko handler se map karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.3: extend APIs, Flask/FastAPI & Production Python Data Pipeline with one more validate_payload step.",
+        "a": "Validation missing fields ko request boundary par pakadti hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.1: extend APIs, Flask/FastAPI & Production Python Capstone with one more handler step.",
+        "a": "Handler request leta hai aur response dict return karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.2: extend APIs, Flask/FastAPI & Production Python Capstone with one more route_dispatch step.",
+        "a": "Routing method + path ko handler se map karta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.3: extend APIs, Flask/FastAPI & Production Python Capstone with one more validate_payload step.",
+        "a": "Validation missing fields ko request boundary par pakadti hai. Naya step add karke output compare karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced 1.1: how would APIs, Flask/FastAPI & Production Python Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.2: how would APIs, Flask/FastAPI & Production Python Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.3: how would APIs, Flask/FastAPI & Production Python Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.1: how would APIs, Flask/FastAPI & Production Python Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.2: how would APIs, Flask/FastAPI & Production Python Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.3: how would APIs, Flask/FastAPI & Production Python Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.1: how would APIs, Flask/FastAPI & Production Python Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.2: how would APIs, Flask/FastAPI & Production Python Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.3: how would APIs, Flask/FastAPI & Production Python Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview 1.1: defend one trade-off in APIs, Flask/FastAPI & Production Python Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.2: defend one trade-off in APIs, Flask/FastAPI & Production Python Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.3: defend one trade-off in APIs, Flask/FastAPI & Production Python Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.1: defend one trade-off in APIs, Flask/FastAPI & Production Python Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.2: defend one trade-off in APIs, Flask/FastAPI & Production Python Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.3: defend one trade-off in APIs, Flask/FastAPI & Production Python Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.1: defend one trade-off in APIs, Flask/FastAPI & Production Python Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.2: defend one trade-off in APIs, Flask/FastAPI & Production Python Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.3: defend one trade-off in APIs, Flask/FastAPI & Production Python Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      }
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Practical 1: validate APIs, Flask/FastAPI & Production Python data in 15 minutes.",
+      "a": "Steps likho: input, handler, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 2: transform APIs, Flask/FastAPI & Production Python data in 15 minutes.",
+      "a": "Steps likho: input, route_dispatch, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 3: aggregate APIs, Flask/FastAPI & Production Python data in 15 minutes.",
+      "a": "Steps likho: input, validate_payload, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 4: present APIs, Flask/FastAPI & Production Python data in 15 minutes.",
+      "a": "Steps likho: input, status_codes, expected output; phir code chala kar dikhao."
+    }
+  ],
+  "revision": [
+    "APIs, Flask/FastAPI & Production Python: revise handler — Handler request leta hai aur response dict return karta hai.",
+    "APIs, Flask/FastAPI & Production Python: revise route_dispatch — Routing method + path ko handler se map karta hai.",
+    "APIs, Flask/FastAPI & Production Python: revise validate_payload — Validation missing fields ko request boundary par pakadti hai.",
+    "APIs, Flask/FastAPI & Production Python: revise status_codes — Status code response ka machine-readable outcome hai.",
+    "APIs, Flask/FastAPI & Production Python: revise pagination — Limit/offset pagination se client thoda-thoda data fetch karta hai."
+  ]
+}

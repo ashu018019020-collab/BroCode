@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { validateTaskFixtures } = require('../lib/pandas-fixture.cjs');
+const { inspectTaskFixtures, validateTaskFixtures } = require('../lib/pandas-fixture.cjs');
 
 const setup = 'import pandas as pd';
 const fixture = 'df = pd.DataFrame({"a": [1, 2]})';
@@ -109,4 +109,23 @@ test('pandas fixture: reports execution failures instead of silently passing', (
   );
 
   assert.ok(problems.some((problem) => problem.includes('task execution failed')));
+});
+
+test('pandas fixture: counts one task once when it reports several problems', () => {
+  const audit = inspectTaskFixtures(
+    [moduleWith([task({ starter: setup, solution: 'print("different")', expected: '' })])],
+    { execute: false },
+  );
+
+  assert.ok(audit.problems.length > 1, 'the fixture should exercise several checks');
+  assert.equal(audit.failed.size, 1);
+});
+
+test('pandas fixture: an execution failure marks every task as unverified', () => {
+  const audit = inspectTaskFixtures(
+    [moduleWith([task()])],
+    { runSolutions: () => { throw new Error('python3 is unavailable'); } },
+  );
+
+  assert.equal(audit.failed.size, 1);
 });

@@ -100,11 +100,13 @@ function runSolutions(samples) {
 }
 
 /**
- * Validate every coding task. Returns human-readable problems; an empty array means the Coding
- * Lab passes. `runSolutions` is injectable for tests and defaults to the real Python executor.
+ * Inspect every coding task. Returns the human-readable problems plus the set of entries that
+ * produced at least one — an entry that fails several checks is still one failed task, which is
+ * what a pass/total count must subtract. `runSolutions` is injectable for tests.
  */
-function validateTaskFixtures(modules, options = {}) {
+function inspectTaskFixtures(modules, options = {}) {
   const problems = [];
+  const failed = new Set();
   const fail = (message) => problems.push(message);
   const samples = [];
 
@@ -112,6 +114,10 @@ function validateTaskFixtures(modules, options = {}) {
     const tasks = Array.isArray(module.tasks) ? module.tasks : [];
     for (const [index, task] of tasks.entries()) {
       const at = `${module.id}: task "${task?.title || index + 1}"`;
+      const fail = (message) => {
+        problems.push(message);
+        failed.add(`${module.id}:${index}`);
+      };
       if (!task || !task.title || !task.statement || !task.solution) {
         fail(`${at} needs title/statement/solution`);
         continue;
@@ -159,14 +165,15 @@ function validateTaskFixtures(modules, options = {}) {
     }
   }
 
-  if (options.execute === false || !samples.length) return problems;
+  if (options.execute === false || !samples.length) return { problems, failed };
 
   let results;
   try {
     results = (options.runSolutions || runSolutions)(samples);
   } catch (error) {
+    for (const sample of samples) failed.add(sample.key);
     fail(`task execution failed: ${error.message}`);
-    return problems;
+    return { problems, failed };
   }
 
   for (const module of modules) {
@@ -174,6 +181,10 @@ function validateTaskFixtures(modules, options = {}) {
     for (const [index, task] of tasks.entries()) {
       if (!task || !task.solution || !task.expected) continue;
       const at = `${module.id}: task "${task.title || index + 1}"`;
+      const fail = (message) => {
+        problems.push(message);
+        failed.add(`${module.id}:${index}`);
+      };
       const result = results.get(`${module.id}:${index}`);
       if (!result) {
         fail(`${at} has no execution result`);
@@ -189,7 +200,12 @@ function validateTaskFixtures(modules, options = {}) {
     }
   }
 
-  return problems;
+  return { problems, failed };
 }
 
-module.exports = { codeLines, normalizeOutput, runSolutions, validateTaskFixtures };
+/** The guard's contract: just the human-readable problems. */
+function validateTaskFixtures(modules, options = {}) {
+  return inspectTaskFixtures(modules, options).problems;
+}
+
+module.exports = { codeLines, inspectTaskFixtures, normalizeOutput, runSolutions, validateTaskFixtures };

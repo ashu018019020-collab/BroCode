@@ -1,0 +1,717 @@
+{
+  "section": "s16",
+  "topic": "Advanced Python & Performance",
+  "authored": true,
+  "intro": "Same kaam ko fast aur readable banane wale tools: comprehensions, generators, zip/enumerate, Counter/defaultdict/deque aur functools. Is section ka focus hai sahi data structure chunna aur memory waste kiye bina iteration karna.",
+  "theory": [
+    "List comprehension loop se chhoti aur tez hoti hai, par usme side effects ya bahut complicated logic nahi hona chahiye — tab normal loop zyada readable hai.",
+    "Generator values ko lazily deta hai, isliye poori list memory me nahi banti. Bade files/streams ke liye generator expression ya `yield` use karo.",
+    "enumerate index aur value dono deta hai; zip do ya zyada iterables ko parallel chalata hai. Manual range(len(...)) se ye dono behtar hain.",
+    "collections ke specialised containers: Counter ginti, defaultdict default values, deque fast append/pop dono ends par.",
+    "functools.lru_cache pure functions ke repeated calls cache karta hai; `sum(x*x for x in data)` jaisa generator built-in ko de sakte ho."
+  ],
+  "syntax": [
+    "squares = [n * n for n in range(5)]\neven = [n for n in nums if n % 2 == 0]\npairs = {k: v for k, v in rows}\nlookup = {row[\"id\"]: row for row in rows}",
+    "total = sum(n * n for n in range(1000000))\n\ndef read_lines(path):\n    with open(path, encoding=\"utf-8\") as handle:\n        for line in handle:\n            yield line.rstrip()",
+    "from collections import Counter, defaultdict, deque\ncounts = Counter(words)\ngroups = defaultdict(list)\nqueue = deque([1, 2, 3])\nqueue.appendleft(0)"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "from collections import Counter\n\nwords = ['sql', 'python', 'sql', 'ml', 'sql']\ncounts = Counter(words)\nprint(counts)\nprint(counts.most_common(2))",
+      "output": "",
+      "explain": [
+        "Counter frequency ginta hai aur most_common se top items deta hai.",
+        "Output ko print se verify karo.",
+        "Ye Advanced Python & Performance ka basic building block hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "from collections import defaultdict\n\ngroups = defaultdict(list)\nfor name, team in [('Asha', 'data'), ('Ravi', 'ml'), ('Meera', 'data')]:\n    groups[team].append(name)\nprint(dict(groups))",
+      "output": "",
+      "explain": [
+        "defaultdict missing key par automatic empty list deta hai, isliye if-check nahi chahiye.",
+        "Ek step aur jodne se behaviour kaise badalta hai, dekho.",
+        "Input badal kar edge case test karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "from collections import deque\n\nwindow = deque(maxlen=3)\nreadings = [10, 12, 11, 15, 14]\nfor value in readings:\n    window.append(value)\n    print(list(window), 'avg=', round(sum(window) / len(window), 1))",
+      "output": "",
+      "explain": [
+        "deque(maxlen=n) purane items automatically hatata hai, isliye moving window O(1) rehta hai.",
+        "Ye snippet end-to-end flow dikhata hai.",
+        "Output ko project/interview me evidence ki tarah use karo."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Log analysis me Counter se status codes/errors ki frequency ek line me milti hai; manual dict increments se zyada clear hai.",
+    "Bade CSV/JSON files ko generator se line-by-line process karna memory ko constant rakhta hai.",
+    "Sliding windows aur BFS me deque use hota hai kyunki dono ends par O(1) operations chahiye."
+  ],
+  "interview": [
+    {
+      "q": "List comprehension aur generator expression me kya chunenge?",
+      "a": "Ek baar use hone wale result ke liye list comprehension; bade ya streaming data ke liye generator expression, jo lazy hai aur memory nahi bharta. Generator sirf ek baar iterate hota hai."
+    },
+    {
+      "q": "lru_cache kab nahi use karna chahiye?",
+      "a": "Jab function impure ho (I/O, time, random) ya arguments unhashable hon. Cache stale data bhi de sakta hai, isliye invalidation/ttl sochna padta hai."
+    },
+    {
+      "q": "Counter aur defaultdict me kya antar hai?",
+      "a": "Counter counting ke liye specialised dict hai (most_common, arithmetic). defaultdict kisi bhi value ke default factory ke liye general hai."
+    },
+    {
+      "q": "zip kya karta hai jab lengths alag hon?",
+      "a": "Sabse chhoti iterable par ruk jata hai. Strict behaviour chahiye to Python 3.10+ me `zip(a, b, strict=True)` use karo."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Beginner drill 1: what does defaultdict do in a Advanced Python & Performance workflow?",
+        "a": "defaultdict missing key par automatic empty list deta hai, isliye if-check nahi chahiye.",
+        "explain": "defaultdict missing key par automatic empty list deta hai, isliye if-check nahi chahiye. Snippet chala kar output se confirm karo.",
+        "code": "from collections import defaultdict\n\ngroups = defaultdict(list)\nfor name, team in [('Asha', 'data'), ('Ravi', 'ml'), ('Meera', 'data')]:\n    groups[team].append(name)\nprint(dict(groups))",
+        "output": "",
+        "tip": "Advanced Python & Performance me defaultdict ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 2: what does lru_cache do in a Advanced Python & Performance workflow?",
+        "a": "lru_cache repeated pure calls ko cache karta hai aur recursion ko fast banata hai.",
+        "explain": "lru_cache repeated pure calls ko cache karta hai aur recursion ko fast banata hai. Snippet chala kar output se confirm karo.",
+        "code": "from functools import lru_cache\n\n@lru_cache(maxsize=None)\ndef fib(n):\n    return n if n < 2 else fib(n - 1) + fib(n - 2)\n\nprint(fib(20))\nprint(fib.cache_info().hits)",
+        "output": "",
+        "tip": "Advanced Python & Performance me lru_cache ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 3: what does enumerate do in a Advanced Python & Performance workflow?",
+        "a": "enumerate index aur value ek saath deta hai, manual counter ki zaroorat nahi.",
+        "explain": "enumerate index aur value ek saath deta hai, manual counter ki zaroorat nahi. Snippet chala kar output se confirm karo.",
+        "code": "names = ['Asha', 'Ravi', 'Meera']\nfor position, name in enumerate(names, start=1):\n    print(position, name)",
+        "output": "",
+        "tip": "Advanced Python & Performance me enumerate ka behaviour edge cases par test karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Intermediate drill 1: what does zip do in a Advanced Python & Performance workflow?",
+        "a": "zip parallel lists ko pair karta hai aur sabse chhoti list par rukta hai.",
+        "explain": "zip parallel lists ko pair karta hai aur sabse chhoti list par rukta hai. Snippet chala kar output se confirm karo.",
+        "code": "names = ['Asha', 'Ravi']\nscores = [91, 78]\nfor name, score in zip(names, scores):\n    print(f'{name}: {score}')",
+        "output": "",
+        "tip": "Advanced Python & Performance me zip ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 2: what does comprehension do in a Advanced Python & Performance workflow?",
+        "a": "Comprehension filter aur transform ek expression me karti hai.",
+        "explain": "Comprehension filter aur transform ek expression me karti hai. Snippet chala kar output se confirm karo.",
+        "tip": "Advanced Python & Performance me comprehension ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 3: what does dict_comprehension do in a Advanced Python & Performance workflow?",
+        "a": "Dict comprehension se key-value mapping ek line me banti hai.",
+        "explain": "Dict comprehension se key-value mapping ek line me banti hai. Snippet chala kar output se confirm karo.",
+        "tip": "Advanced Python & Performance me dict_comprehension ka behaviour edge cases par test karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced drill 1: what does generator do in a Advanced Python & Performance workflow?",
+        "a": "Generator values lazily deta hai, isliye memory me poori list nahi banti.",
+        "explain": "Generator values lazily deta hai, isliye memory me poori list nahi banti. Snippet chala kar output se confirm karo.",
+        "code": "def countdown(n):\n    while n > 0:\n        yield n\n        n -= 1\n\nprint(list(countdown(4)))\nprint(sum(countdown(4)))",
+        "output": "",
+        "tip": "Advanced Python & Performance me generator ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 2: what does counter do in a Advanced Python & Performance workflow?",
+        "a": "Counter frequency ginta hai aur most_common se top items deta hai.",
+        "explain": "Counter frequency ginta hai aur most_common se top items deta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Advanced Python & Performance me counter ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 3: what does defaultdict do in a Advanced Python & Performance workflow?",
+        "a": "defaultdict missing key par automatic empty list deta hai, isliye if-check nahi chahiye.",
+        "explain": "defaultdict missing key par automatic empty list deta hai, isliye if-check nahi chahiye. Snippet chala kar output se confirm karo.",
+        "tip": "Advanced Python & Performance me defaultdict ka behaviour edge cases par test karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview drill 1: what does lru_cache do in a Advanced Python & Performance workflow?",
+        "a": "lru_cache repeated pure calls ko cache karta hai aur recursion ko fast banata hai.",
+        "explain": "lru_cache repeated pure calls ko cache karta hai aur recursion ko fast banata hai. Snippet chala kar output se confirm karo.",
+        "tip": "Advanced Python & Performance me lru_cache ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 2: what does enumerate do in a Advanced Python & Performance workflow?",
+        "a": "enumerate index aur value ek saath deta hai, manual counter ki zaroorat nahi.",
+        "explain": "enumerate index aur value ek saath deta hai, manual counter ki zaroorat nahi. Snippet chala kar output se confirm karo.",
+        "tip": "Advanced Python & Performance me enumerate ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 3: what does zip do in a Advanced Python & Performance workflow?",
+        "a": "zip parallel lists ko pair karta hai aur sabse chhoti list par rukta hai.",
+        "explain": "zip parallel lists ko pair karta hai aur sabse chhoti list par rukta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Advanced Python & Performance me zip ka behaviour edge cases par test karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Realworld drill 1: what does comprehension do in a Advanced Python & Performance workflow?",
+        "a": "Comprehension filter aur transform ek expression me karti hai.",
+        "explain": "Comprehension filter aur transform ek expression me karti hai. Snippet chala kar output se confirm karo.",
+        "code": "values = [1, 2, 3, 4, 5]\nsquares = [value * value for value in values if value % 2 == 1]\nprint(squares)",
+        "output": "",
+        "tip": "Advanced Python & Performance me comprehension ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 2: what does dict_comprehension do in a Advanced Python & Performance workflow?",
+        "a": "Dict comprehension se key-value mapping ek line me banti hai.",
+        "explain": "Dict comprehension se key-value mapping ek line me banti hai. Snippet chala kar output se confirm karo.",
+        "tip": "Advanced Python & Performance me dict_comprehension ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 3: what does generator do in a Advanced Python & Performance workflow?",
+        "a": "Generator values lazily deta hai, isliye memory me poori list nahi banti.",
+        "explain": "Generator values lazily deta hai, isliye memory me poori list nahi banti. Snippet chala kar output se confirm karo.",
+        "tip": "Advanced Python & Performance me generator ka behaviour edge cases par test karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 1: implement enumerate and print the result.",
+      "build": "enumerate index aur value ek saath deta hai, manual counter ki zaroorat nahi. Ek chhota runnable example likho jo output print kare.",
+      "input": "enumerate ke liye sample data snippet me diya hai",
+      "expected": "Printed output enumerate ka result dikhata hai",
+      "hint": "Solution ka core enumerate hai; output ko readable rakho.",
+      "concept": "Advanced Python & Performance · enumerate",
+      "solution": "names = ['Asha', 'Ravi', 'Meera']\nfor position, name in enumerate(names, start=1):\n    print(position, name)",
+      "output": "",
+      "explanation": "enumerate index aur value ek saath deta hai, manual counter ki zaroorat nahi. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to enumerate ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 2: implement zip and print the result.",
+      "build": "zip parallel lists ko pair karta hai aur sabse chhoti list par rukta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "zip ke liye sample data snippet me diya hai",
+      "expected": "Printed output zip ka result dikhata hai",
+      "hint": "Solution ka core zip hai; output ko readable rakho.",
+      "concept": "Advanced Python & Performance · zip",
+      "solution": "names = ['Asha', 'Ravi']\nscores = [91, 78]\nfor name, score in zip(names, scores):\n    print(f'{name}: {score}')",
+      "output": "",
+      "explanation": "zip parallel lists ko pair karta hai aur sabse chhoti list par rukta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to zip ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 3: implement comprehension and print the result.",
+      "build": "Comprehension filter aur transform ek expression me karti hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "comprehension ke liye sample data snippet me diya hai",
+      "expected": "Printed output comprehension ka result dikhata hai",
+      "hint": "Solution ka core comprehension hai; output ko readable rakho.",
+      "concept": "Advanced Python & Performance · comprehension",
+      "solution": "values = [1, 2, 3, 4, 5]\nsquares = [value * value for value in values if value % 2 == 1]\nprint(squares)",
+      "output": "",
+      "explanation": "Comprehension filter aur transform ek expression me karti hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to comprehension ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 4: implement dict_comprehension and print the result.",
+      "build": "Dict comprehension se key-value mapping ek line me banti hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "dict_comprehension ke liye sample data snippet me diya hai",
+      "expected": "Printed output dict_comprehension ka result dikhata hai",
+      "hint": "Solution ka core dict_comprehension hai; output ko readable rakho.",
+      "concept": "Advanced Python & Performance · dict_comprehension",
+      "solution": "words = ['apple', 'banana', 'avocado']\nlengths = {word: len(word) for word in words}\nprint(lengths)",
+      "output": "",
+      "explanation": "Dict comprehension se key-value mapping ek line me banti hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to dict_comprehension ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 5: implement generator and print the result.",
+      "build": "Generator values lazily deta hai, isliye memory me poori list nahi banti. Ek chhota runnable example likho jo output print kare.",
+      "input": "generator ke liye sample data snippet me diya hai",
+      "expected": "Printed output generator ka result dikhata hai",
+      "hint": "Solution ka core generator hai; output ko readable rakho.",
+      "concept": "Advanced Python & Performance · generator",
+      "solution": "def countdown(n):\n    while n > 0:\n        yield n\n        n -= 1\n\nprint(list(countdown(4)))\nprint(sum(countdown(4)))",
+      "output": "",
+      "explanation": "Generator values lazily deta hai, isliye memory me poori list nahi banti. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to generator ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 6: implement counter and print the result.",
+      "build": "Counter frequency ginta hai aur most_common se top items deta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "counter ke liye sample data snippet me diya hai",
+      "expected": "Printed output counter ka result dikhata hai",
+      "hint": "Solution ka core counter hai; output ko readable rakho.",
+      "concept": "Advanced Python & Performance · counter",
+      "solution": "from collections import Counter\n\nwords = ['sql', 'python', 'sql', 'ml', 'sql']\ncounts = Counter(words)\nprint(counts)\nprint(counts.most_common(2))",
+      "output": "",
+      "explanation": "Counter frequency ginta hai aur most_common se top items deta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to counter ka approach kaise badlega?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "logic",
+      "broken": "items = [3, 1, 2]\nprint(items.sort())",
+      "error": "Logic error — sort() None return karta hai, list print nahi hoti",
+      "why": "sort() in-place hai aur None deta hai, isliye print None dikhata hai. Ye Advanced Python & Performance ke workflow me bhi wahi galti hai.",
+      "fix": "sorted() use karo ya pehle sort phir list print karo.",
+      "correct": "items = [3, 1, 2]\nitems.sort()\nprint(items)",
+      "output": "",
+      "lesson": "Mutating methods ka return value None hota hai — usse assign/print mat karo."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "prices = [100, 200]\ntotal = 0\nfor p in prices:\n    total = p\nprint(total)",
+      "error": "Logic error — total 200 aata hai, sum 300 hona chahiye",
+      "why": "Assignment purani value replace karta hai; accumulator chahiye. Ye Advanced Python & Performance ke workflow me bhi wahi galti hai.",
+      "fix": "total += p use karo ya sum(prices).",
+      "correct": "prices = [100, 200]\ntotal = 0\nfor p in prices:\n    total += p\nprint(total)",
+      "output": "",
+      "lesson": "Logic bugs exception nahi dete — chhote sample par expected value likho."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "logic",
+      "broken": "items = [1, 2, 3]\nprint(items[0:1])",
+      "error": "Logic error — pehla do items chahiye the, sirf pehla aaya",
+      "why": "Slice ka end exclusive hota hai; 0:1 sirf index 0 deta hai. Ye Advanced Python & Performance ke workflow me bhi wahi galti hai.",
+      "fix": "End index ko +1 karo: 0:2.",
+      "correct": "items = [1, 2, 3]\nprint(items[0:2])",
+      "output": "",
+      "lesson": "Slice boundaries exclusive hoti hain — range jaisa hi rule."
+    },
+    {
+      "difficulty": "expert",
+      "mode": "raise",
+      "broken": "name = 'Asha'\nprint('Hello ' + 2024)",
+      "error": "TypeError: can only concatenate str (not \"int\") to str",
+      "why": "String concatenation ko dono taraf str chahiye; Python implicit conversion nahi karta. Ye Advanced Python & Performance ke workflow me bhi wahi galti hai.",
+      "fix": "f-string ya str() se explicit conversion karo.",
+      "correct": "name = 'Asha'\nprint(f'Hello {2024}')",
+      "output": "",
+      "lesson": "TypeError type mismatch batata hai — conversion explicit karo."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Quick drill: enumerate ka ek minimal example likho aur output predict karo.",
+      "hint": "Advanced Python & Performance ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Coding round: zip aur comprehension ko ek function me combine karo.",
+      "hint": "Advanced Python & Performance ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Advanced: Advanced Python & Performance ka chhota pipeline banao jisme dict_comprehension, generator aur validation ho.",
+      "hint": "Advanced Python & Performance ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview: Advanced Python & Performance ke 3 trade-offs whiteboard par likho aur counter se example do.",
+      "hint": "Advanced Python & Performance ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Build: Advanced Python & Performance ka mini project banao — input, processing, output aur README.",
+      "hint": "Advanced Python & Performance ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Advanced Python & Performance Starter Lab",
+      "problem": "Advanced Python & Performance ke basics ko ek chhote runnable program me jodna.",
+      "objective": "enumerate aur zip ka demo jo output print kare.",
+      "code": "names = ['Asha', 'Ravi', 'Meera']\nfor position, name in enumerate(names, start=1):\n    print(position, name)\nnames = ['Asha', 'Ravi']\nscores = [91, 78]\nfor name, score in zip(names, scores):\n    print(f'{name}: {score}')",
+      "explanation": "enumerate index aur value ek saath deta hai, manual counter ki zaroorat nahi. zip parallel lists ko pair karta hai aur sabse chhoti list par rukta hai. Dono snippets ek hi file me chalte hain.",
+      "testing": "enumerate ke empty aur normal input par output check karo.",
+      "errors": "Galat type ya missing value par Python exception dega — Version 2 me validation add hoti hai.",
+      "realWorld": "Advanced Python & Performance ke production code me yahi chhote steps repeated hote hain.",
+      "resume": "Advanced Python & Performance starter lab: enumerate aur zip ka runnable demo.",
+      "features": [
+        "enumerate ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Advanced Python & Performance",
+        "enumerate"
+      ],
+      "structure": "s16_project_1/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "enumerate ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "counter ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Advanced Python & Performance Starter Lab interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Advanced Python & Performance Starter Lab interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Advanced Python & Performance Starter Lab interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Advanced Python & Performance Starter Lab ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Advanced Python & Performance Data Pipeline",
+      "problem": "Raw input ko validate karke Advanced Python & Performance ke useful output me badalna.",
+      "objective": "comprehension, dict_comprehension aur generator se chhota pipeline banao.",
+      "code": "values = [1, 2, 3, 4, 5]\nsquares = [value * value for value in values if value % 2 == 1]\nprint(squares)\nwords = ['apple', 'banana', 'avocado']\nlengths = {word: len(word) for word in words}\nprint(lengths)\ndef countdown(n):\n    while n > 0:\n        yield n\n        n -= 1\n\nprint(list(countdown(4)))\nprint(sum(countdown(4)))",
+      "explanation": "Comprehension filter aur transform ek expression me karti hai. Dict comprehension se key-value mapping ek line me banti hai. Generator values lazily deta hai, isliye memory me poori list nahi banti. Pipeline ke steps alag-alag testable hain.",
+      "testing": "Ek valid aur ek invalid input se pipeline chalao; dono ka behaviour note karo.",
+      "errors": "Invalid input par crash ke bajaye clear error/message do — Version 3 me error shape add hota hai.",
+      "realWorld": "Yahi load → transform → report pattern Advanced Python & Performance ke dashboards aur services me hota hai.",
+      "resume": "Advanced Python & Performance pipeline: validation aur comprehension/dict_comprehension ke saath end-to-end demo.",
+      "features": [
+        "zip ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Advanced Python & Performance",
+        "zip"
+      ],
+      "structure": "s16_project_2/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "zip ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "defaultdict ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Advanced Python & Performance Data Pipeline interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Advanced Python & Performance Data Pipeline interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Advanced Python & Performance Data Pipeline interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Advanced Python & Performance Data Pipeline ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "Advanced Python & Performance Capstone",
+      "problem": "Ek believable Advanced Python & Performance use case jo end-to-end chale aur explain ho sake.",
+      "objective": "deque(maxlen=n) purane items automatically hatata hai, isliye moving window O(1) rehta hai. Isse project interview me trade-offs ke saath present karo.",
+      "code": "from collections import deque\n\nwindow = deque(maxlen=3)\nreadings = [10, 12, 11, 15, 14]\nfor value in readings:\n    window.append(value)\n    print(list(window), 'avg=', round(sum(window) / len(window), 1))",
+      "explanation": "deque(maxlen=n) purane items automatically hatata hai, isliye moving window O(1) rehta hai.",
+      "testing": "Expected output ko haath se verify karo, phir edge case (empty/missing) add karo.",
+      "errors": "Failure modes document karo: missing data, bad type aur duplicate records.",
+      "realWorld": "Ye capstone resume aur interview dono me ek concrete Advanced Python & Performance story deta hai.",
+      "resume": "Advanced Python & Performance capstone: deque(maxlen=n) purane items automatically hatata hai, isliye moving window O(1) rehta hai.",
+      "features": [
+        "comprehension ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Advanced Python & Performance",
+        "comprehension"
+      ],
+      "structure": "s16_project_3/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "comprehension ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "lru_cache ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Advanced Python & Performance Capstone interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Advanced Python & Performance Capstone interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Advanced Python & Performance Capstone interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Advanced Python & Performance Capstone ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      {
+        "q": "Understanding 1.1: why does Advanced Python & Performance Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.2: why does Advanced Python & Performance Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.3: why does Advanced Python & Performance Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.1: why does Advanced Python & Performance Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.2: why does Advanced Python & Performance Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.3: why does Advanced Python & Performance Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.1: why does Advanced Python & Performance Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.2: why does Advanced Python & Performance Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.3: why does Advanced Python & Performance Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      }
+    ],
+    "coding": [
+      {
+        "q": "Coding 1.1: extend Advanced Python & Performance Starter Lab with one more enumerate step.",
+        "a": "enumerate index aur value ek saath deta hai, manual counter ki zaroorat nahi. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.2: extend Advanced Python & Performance Starter Lab with one more zip step.",
+        "a": "zip parallel lists ko pair karta hai aur sabse chhoti list par rukta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.3: extend Advanced Python & Performance Starter Lab with one more comprehension step.",
+        "a": "Comprehension filter aur transform ek expression me karti hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.1: extend Advanced Python & Performance Data Pipeline with one more enumerate step.",
+        "a": "enumerate index aur value ek saath deta hai, manual counter ki zaroorat nahi. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.2: extend Advanced Python & Performance Data Pipeline with one more zip step.",
+        "a": "zip parallel lists ko pair karta hai aur sabse chhoti list par rukta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.3: extend Advanced Python & Performance Data Pipeline with one more comprehension step.",
+        "a": "Comprehension filter aur transform ek expression me karti hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.1: extend Advanced Python & Performance Capstone with one more enumerate step.",
+        "a": "enumerate index aur value ek saath deta hai, manual counter ki zaroorat nahi. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.2: extend Advanced Python & Performance Capstone with one more zip step.",
+        "a": "zip parallel lists ko pair karta hai aur sabse chhoti list par rukta hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.3: extend Advanced Python & Performance Capstone with one more comprehension step.",
+        "a": "Comprehension filter aur transform ek expression me karti hai. Naya step add karke output compare karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced 1.1: how would Advanced Python & Performance Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.2: how would Advanced Python & Performance Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.3: how would Advanced Python & Performance Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.1: how would Advanced Python & Performance Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.2: how would Advanced Python & Performance Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.3: how would Advanced Python & Performance Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.1: how would Advanced Python & Performance Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.2: how would Advanced Python & Performance Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.3: how would Advanced Python & Performance Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview 1.1: defend one trade-off in Advanced Python & Performance Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.2: defend one trade-off in Advanced Python & Performance Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.3: defend one trade-off in Advanced Python & Performance Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.1: defend one trade-off in Advanced Python & Performance Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.2: defend one trade-off in Advanced Python & Performance Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.3: defend one trade-off in Advanced Python & Performance Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.1: defend one trade-off in Advanced Python & Performance Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.2: defend one trade-off in Advanced Python & Performance Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.3: defend one trade-off in Advanced Python & Performance Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      }
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Practical 1: validate Advanced Python & Performance data in 15 minutes.",
+      "a": "Steps likho: input, enumerate, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 2: transform Advanced Python & Performance data in 15 minutes.",
+      "a": "Steps likho: input, zip, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 3: aggregate Advanced Python & Performance data in 15 minutes.",
+      "a": "Steps likho: input, comprehension, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 4: present Advanced Python & Performance data in 15 minutes.",
+      "a": "Steps likho: input, dict_comprehension, expected output; phir code chala kar dikhao."
+    }
+  ],
+  "revision": [
+    "Advanced Python & Performance: revise enumerate — enumerate index aur value ek saath deta hai, manual counter ki zaroorat nahi.",
+    "Advanced Python & Performance: revise zip — zip parallel lists ko pair karta hai aur sabse chhoti list par rukta hai.",
+    "Advanced Python & Performance: revise comprehension — Comprehension filter aur transform ek expression me karti hai.",
+    "Advanced Python & Performance: revise dict_comprehension — Dict comprehension se key-value mapping ek line me banti hai.",
+    "Advanced Python & Performance: revise generator — Generator values lazily deta hai, isliye memory me poori list nahi banti."
+  ]
+}

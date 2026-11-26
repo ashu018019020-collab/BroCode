@@ -1,0 +1,717 @@
+{
+  "section": "s18",
+  "topic": "Pandas for Data Science",
+  "authored": true,
+  "intro": "Pandas NumPy ke upar labelled data deta hai: rows, columns, index aur missing values. Is section me Series/DataFrame banana, filter, groupby, merge, sort aur pivot tak ka practical workflow cover hota hai — wahi 80% jo daily analysis me chahiye.",
+  "theory": [
+    "Series ek labelled 1-D array hai; DataFrame labelled columns ka collection. Har column ka apna dtype hota hai.",
+    "Selection ka rule: `df[\"col\"]` column deta hai, `df[[\"a\", \"b\"]]` frame, `df.loc[row_label, col_label]` label se, `df.iloc[i, j]` position se.",
+    "Boolean mask se filter hota hai; multiple conditions ko parentheses me `&`/`|` se jodo. `query()` readable alternative hai.",
+    "groupby split-apply-combine karta hai: group banao, aggregate/transform karo, result combine karo. `agg` multiple metrics ek saath deta hai.",
+    "merge join keys par tables jodta hai; validate= fan-out pakadta hai. Missing values ke liye isna/fillna/dropna, reshape ke liye pivot_table/melt."
+  ],
+  "syntax": [
+    "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"pune\", \"delhi\"], \"sales\": [100, 250]})\nprint(df[\"sales\"].mean())\nprint(df[df[\"sales\"] > 150])",
+    "summary = df.groupby(\"city\")[\"sales\"].sum()\nwide = df.pivot_table(index=\"city\", values=\"sales\", aggfunc=\"sum\")\njoined = left.merge(right, on=\"id\", how=\"left\", validate=\"many_to_one\")",
+    "df.sort_values(\"sales\", ascending=False)\ndf.assign(margin=lambda d: d[\"sales\"] - d[\"cost\"])\ndf[\"price\"].fillna(df[\"price\"].median())"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({'sales': [100, 250], 'cost': [60, 150]})\ndf = df.assign(profit=lambda d: d['sales'] - d['cost'])\nprint(df['profit'].tolist())",
+      "output": "",
+      "explain": [
+        "assign naya column return karta hai aur chaining readable rakhta hai.",
+        "Output ko print se verify karo.",
+        "Ye Pandas for Data Science ka basic building block hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({'price': [100.0, None, 300.0]})\nfilled = df['price'].fillna(df['price'].median())\nprint(filled.tolist())",
+      "output": "",
+      "explain": [
+        "fillna missing values ko chuni hui value se bharta hai.",
+        "Ek step aur jodne se behaviour kaise badalta hai, dekho.",
+        "Input badal kar edge case test karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\n    'city': ['pune', 'pune', 'delhi', 'delhi'],\n    'product': ['a', 'b', 'a', 'b'],\n    'sales': [100, 200, 150, 50],\n})\nwide = df.pivot_table(index='city', columns='product', values='sales', aggfunc='sum', fill_value=0)\nprint(wide)\nprint(wide.sum(axis=0).to_dict())",
+      "output": "",
+      "explain": [
+        "pivot_table city × product ka cross-tab banata hai aur missing combinations ko zero se bharta hai.",
+        "Ye snippet end-to-end flow dikhata hai.",
+        "Output ko project/interview me evidence ki tarah use karo."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Sales/ops reports me groupby + pivot_table se city/product wise totals nikalte hain aur missing values ko median se bharte hain.",
+    "Do exports (orders aur customers) ko merge karke unmatched rows ka indicator se pata lagaya jata hai.",
+    "Time series me resample/rolling se weekly totals aur moving averages banti hain — pandas ka core analytics use case."
+  ],
+  "interview": [
+    {
+      "q": "loc aur iloc me fark batao.",
+      "a": "loc label-based hai (index/column names), iloc integer position-based. Slice semantics bhi alag hain: loc ka end label include hota hai, iloc ka end position exclude."
+    },
+    {
+      "q": "SettingWithCopyWarning kyun aata hai?",
+      "a": "Jab aap slice ki copy par assign karte hain aur pandas ko clear nahi hota ki original badalna hai ya copy. Fix: ek step me `.loc[mask, \"col\"] = value` likho ya `.copy()` explicit karo."
+    },
+    {
+      "q": "merge validate kya karta hai?",
+      "a": "Expected cardinality (one_to_one, one_to_many, many_to_one, many_to_many) check karta hai aur fan-out par MergeError deta hai — silent row multiplication se bachata hai."
+    },
+    {
+      "q": "groupby ke baad transform aur agg me kya antar hai?",
+      "a": "agg group ko ek row me collapse karta hai; transform har original row ke liye group-level value deta hai, isliye row count same rehta hai."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Beginner drill 1: what does series do in a Pandas for Data Science workflow?",
+        "a": "Series values ke saath labels rakhti hai, isliye label se access hota hai.",
+        "explain": "Series values ke saath labels rakhti hai, isliye label se access hota hai. Snippet chala kar output se confirm karo.",
+        "code": "import pandas as pd\n\ns = pd.Series([10, 20, 30], index=['a', 'b', 'c'])\nprint(s['b'], s.mean())",
+        "output": "",
+        "tip": "Pandas for Data Science me series ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 2: what does dataframe do in a Pandas for Data Science workflow?",
+        "a": "DataFrame dict se banta hai jisme har key column hoti hai.",
+        "explain": "DataFrame dict se banta hai jisme har key column hoti hai. Snippet chala kar output se confirm karo.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'city': ['pune', 'delhi'], 'sales': [100, 250]})\nprint(df)\nprint(df.shape, list(df.columns))",
+        "output": "",
+        "tip": "Pandas for Data Science me dataframe ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Beginner drill 3: what does filter do in a Pandas for Data Science workflow?",
+        "a": "Boolean mask se matching rows filter hoti hain.",
+        "explain": "Boolean mask se matching rows filter hoti hain. Snippet chala kar output se confirm karo.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'city': ['pune', 'delhi', 'pune'], 'sales': [100, 250, 300]})\nprint(df[df['sales'] > 150]['city'].tolist())",
+        "output": "",
+        "tip": "Pandas for Data Science me filter ka behaviour edge cases par test karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Intermediate drill 1: what does groupby do in a Pandas for Data Science workflow?",
+        "a": "groupby unique keys par aggregate karta hai.",
+        "explain": "groupby unique keys par aggregate karta hai. Snippet chala kar output se confirm karo.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'city': ['pune', 'delhi', 'pune'], 'sales': [100, 250, 300]})\nprint(df.groupby('city')['sales'].sum().to_dict())",
+        "output": "",
+        "tip": "Pandas for Data Science me groupby ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 2: what does sort_values do in a Pandas for Data Science workflow?",
+        "a": "sort_values order badalta hai aur original frame ko mutate nahi karta.",
+        "explain": "sort_values order badalta hai aur original frame ko mutate nahi karta. Snippet chala kar output se confirm karo.",
+        "tip": "Pandas for Data Science me sort_values ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Intermediate drill 3: what does assign do in a Pandas for Data Science workflow?",
+        "a": "assign naya column return karta hai aur chaining readable rakhta hai.",
+        "explain": "assign naya column return karta hai aur chaining readable rakhta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Pandas for Data Science me assign ka behaviour edge cases par test karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced drill 1: what does fillna do in a Pandas for Data Science workflow?",
+        "a": "fillna missing values ko chuni hui value se bharta hai.",
+        "explain": "fillna missing values ko chuni hui value se bharta hai. Snippet chala kar output se confirm karo.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'price': [100.0, None, 300.0]})\nfilled = df['price'].fillna(df['price'].median())\nprint(filled.tolist())",
+        "output": "",
+        "tip": "Pandas for Data Science me fillna ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 2: what does merge do in a Pandas for Data Science workflow?",
+        "a": "Left merge har order rakhta hai aur matching user ka naam jodta hai.",
+        "explain": "Left merge har order rakhta hai aur matching user ka naam jodta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Pandas for Data Science me merge ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Advanced drill 3: what does series do in a Pandas for Data Science workflow?",
+        "a": "Series values ke saath labels rakhti hai, isliye label se access hota hai.",
+        "explain": "Series values ke saath labels rakhti hai, isliye label se access hota hai. Snippet chala kar output se confirm karo.",
+        "tip": "Pandas for Data Science me series ka behaviour edge cases par test karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview drill 1: what does dataframe do in a Pandas for Data Science workflow?",
+        "a": "DataFrame dict se banta hai jisme har key column hoti hai.",
+        "explain": "DataFrame dict se banta hai jisme har key column hoti hai. Snippet chala kar output se confirm karo.",
+        "tip": "Pandas for Data Science me dataframe ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 2: what does filter do in a Pandas for Data Science workflow?",
+        "a": "Boolean mask se matching rows filter hoti hain.",
+        "explain": "Boolean mask se matching rows filter hoti hain. Snippet chala kar output se confirm karo.",
+        "tip": "Pandas for Data Science me filter ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Interview drill 3: what does groupby do in a Pandas for Data Science workflow?",
+        "a": "groupby unique keys par aggregate karta hai.",
+        "explain": "groupby unique keys par aggregate karta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Pandas for Data Science me groupby ka behaviour edge cases par test karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Realworld drill 1: what does sort_values do in a Pandas for Data Science workflow?",
+        "a": "sort_values order badalta hai aur original frame ko mutate nahi karta.",
+        "explain": "sort_values order badalta hai aur original frame ko mutate nahi karta. Snippet chala kar output se confirm karo.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'name': ['A', 'B', 'C'], 'score': [91, 78, 85]})\nprint(df.sort_values('score', ascending=False)['name'].tolist())",
+        "output": "",
+        "tip": "Pandas for Data Science me sort_values ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 2: what does assign do in a Pandas for Data Science workflow?",
+        "a": "assign naya column return karta hai aur chaining readable rakhta hai.",
+        "explain": "assign naya column return karta hai aur chaining readable rakhta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Pandas for Data Science me assign ka behaviour edge cases par test karo."
+      },
+      {
+        "q": "Realworld drill 3: what does fillna do in a Pandas for Data Science workflow?",
+        "a": "fillna missing values ko chuni hui value se bharta hai.",
+        "explain": "fillna missing values ko chuni hui value se bharta hai. Snippet chala kar output se confirm karo.",
+        "tip": "Pandas for Data Science me fillna ka behaviour edge cases par test karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 1: implement series and print the result.",
+      "build": "Series values ke saath labels rakhti hai, isliye label se access hota hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "series ke liye sample data snippet me diya hai",
+      "expected": "Printed output series ka result dikhata hai",
+      "hint": "Solution ka core series hai; output ko readable rakho.",
+      "concept": "Pandas for Data Science · series",
+      "solution": "import pandas as pd\n\ns = pd.Series([10, 20, 30], index=['a', 'b', 'c'])\nprint(s['b'], s.mean())",
+      "output": "",
+      "explanation": "Series values ke saath labels rakhti hai, isliye label se access hota hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to series ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Coding lab 2: implement dataframe and print the result.",
+      "build": "DataFrame dict se banta hai jisme har key column hoti hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "dataframe ke liye sample data snippet me diya hai",
+      "expected": "Printed output dataframe ka result dikhata hai",
+      "hint": "Solution ka core dataframe hai; output ko readable rakho.",
+      "concept": "Pandas for Data Science · dataframe",
+      "solution": "import pandas as pd\n\ndf = pd.DataFrame({'city': ['pune', 'delhi'], 'sales': [100, 250]})\nprint(df)\nprint(df.shape, list(df.columns))",
+      "output": "",
+      "explanation": "DataFrame dict se banta hai jisme har key column hoti hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to dataframe ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 3: implement filter and print the result.",
+      "build": "Boolean mask se matching rows filter hoti hain. Ek chhota runnable example likho jo output print kare.",
+      "input": "filter ke liye sample data snippet me diya hai",
+      "expected": "Printed output filter ka result dikhata hai",
+      "hint": "Solution ka core filter hai; output ko readable rakho.",
+      "concept": "Pandas for Data Science · filter",
+      "solution": "import pandas as pd\n\ndf = pd.DataFrame({'city': ['pune', 'delhi', 'pune'], 'sales': [100, 250, 300]})\nprint(df[df['sales'] > 150]['city'].tolist())",
+      "output": "",
+      "explanation": "Boolean mask se matching rows filter hoti hain. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to filter ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Coding lab 4: implement groupby and print the result.",
+      "build": "groupby unique keys par aggregate karta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "groupby ke liye sample data snippet me diya hai",
+      "expected": "Printed output groupby ka result dikhata hai",
+      "hint": "Solution ka core groupby hai; output ko readable rakho.",
+      "concept": "Pandas for Data Science · groupby",
+      "solution": "import pandas as pd\n\ndf = pd.DataFrame({'city': ['pune', 'delhi', 'pune'], 'sales': [100, 250, 300]})\nprint(df.groupby('city')['sales'].sum().to_dict())",
+      "output": "",
+      "explanation": "groupby unique keys par aggregate karta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to groupby ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 5: implement sort_values and print the result.",
+      "build": "sort_values order badalta hai aur original frame ko mutate nahi karta. Ek chhota runnable example likho jo output print kare.",
+      "input": "sort_values ke liye sample data snippet me diya hai",
+      "expected": "Printed output sort_values ka result dikhata hai",
+      "hint": "Solution ka core sort_values hai; output ko readable rakho.",
+      "concept": "Pandas for Data Science · sort_values",
+      "solution": "import pandas as pd\n\ndf = pd.DataFrame({'name': ['A', 'B', 'C'], 'score': [91, 78, 85]})\nprint(df.sort_values('score', ascending=False)['name'].tolist())",
+      "output": "",
+      "explanation": "sort_values order badalta hai aur original frame ko mutate nahi karta. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to sort_values ka approach kaise badlega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Coding lab 6: implement assign and print the result.",
+      "build": "assign naya column return karta hai aur chaining readable rakhta hai. Ek chhota runnable example likho jo output print kare.",
+      "input": "assign ke liye sample data snippet me diya hai",
+      "expected": "Printed output assign ka result dikhata hai",
+      "hint": "Solution ka core assign hai; output ko readable rakho.",
+      "concept": "Pandas for Data Science · assign",
+      "solution": "import pandas as pd\n\ndf = pd.DataFrame({'sales': [100, 250], 'cost': [60, 150]})\ndf = df.assign(profit=lambda d: d['sales'] - d['cost'])\nprint(df['profit'].tolist())",
+      "output": "",
+      "explanation": "assign naya column return karta hai aur chaining readable rakhta hai. Isliye example seedha result print karta hai, taaki behaviour verify ho sake.",
+      "time": "O(n) — input size ke linear, jahan applicable",
+      "space": "O(1) ya O(n) — operation ke hisaab se",
+      "better": "Bade input par built-in vectorized/streaming approach chuno aur output ko summary tak seemit rakho.",
+      "followUp": "Agar data 100x bada ho to assign ka approach kaise badlega?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "logic",
+      "broken": "items = [1, 2, 3]\nprint(items[0:1])",
+      "error": "Logic error — pehla do items chahiye the, sirf pehla aaya",
+      "why": "Slice ka end exclusive hota hai; 0:1 sirf index 0 deta hai. Ye Pandas for Data Science ke workflow me bhi wahi galti hai.",
+      "fix": "End index ko +1 karo: 0:2.",
+      "correct": "items = [1, 2, 3]\nprint(items[0:2])",
+      "output": "",
+      "lesson": "Slice boundaries exclusive hoti hain — range jaisa hi rule."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "raise",
+      "broken": "name = 'Asha'\nprint('Hello ' + 2024)",
+      "error": "TypeError: can only concatenate str (not \"int\") to str",
+      "why": "String concatenation ko dono taraf str chahiye; Python implicit conversion nahi karta. Ye Pandas for Data Science ke workflow me bhi wahi galti hai.",
+      "fix": "f-string ya str() se explicit conversion karo.",
+      "correct": "name = 'Asha'\nprint(f'Hello {2024}')",
+      "output": "",
+      "lesson": "TypeError type mismatch batata hai — conversion explicit karo."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "raise",
+      "broken": "scores = [10, 20]\nprint(scores[5])",
+      "error": "IndexError: list index out of range",
+      "why": "List me sirf 0 aur 1 index hain; 5 par kuch nahi. Ye Pandas for Data Science ke workflow me bhi wahi galti hai.",
+      "fix": "Index se pehle length check karo ya safe getter use karo.",
+      "correct": "scores = [10, 20]\nprint(scores[1] if len(scores) > 1 else None)",
+      "output": "",
+      "lesson": "IndexError off-by-one aur empty collection ka signal hai."
+    },
+    {
+      "difficulty": "expert",
+      "mode": "raise",
+      "broken": "profile = {'name': 'Asha'}\nprint(profile['score'])",
+      "error": "KeyError: 'score'",
+      "why": "Dict me score key exist nahi karti; [] missing key par KeyError deta hai. Ye Pandas for Data Science ke workflow me bhi wahi galti hai.",
+      "fix": "get() se default do ya key ki presence check karo.",
+      "correct": "profile = {'name': 'Asha'}\nprint(profile.get('score', 'not recorded'))",
+      "output": "",
+      "lesson": "KeyError expected-missing field ka case hai — get/default se handle karo."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Quick drill: series ka ek minimal example likho aur output predict karo.",
+      "hint": "Pandas for Data Science ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Coding round: dataframe aur filter ko ek function me combine karo.",
+      "hint": "Pandas for Data Science ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Advanced: Pandas for Data Science ka chhota pipeline banao jisme groupby, sort_values aur validation ho.",
+      "hint": "Pandas for Data Science ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview: Pandas for Data Science ke 3 trade-offs whiteboard par likho aur assign se example do.",
+      "hint": "Pandas for Data Science ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Build: Pandas for Data Science ka mini project banao — input, processing, output aur README.",
+      "hint": "Pandas for Data Science ke ops se ek chhota runnable example banao.",
+      "deliverable": "Working snippet + output + one-line explanation."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Pandas for Data Science Starter Lab",
+      "problem": "Pandas for Data Science ke basics ko ek chhote runnable program me jodna.",
+      "objective": "series aur dataframe ka demo jo output print kare.",
+      "code": "import pandas as pd\n\ns = pd.Series([10, 20, 30], index=['a', 'b', 'c'])\nprint(s['b'], s.mean())\nimport pandas as pd\n\ndf = pd.DataFrame({'city': ['pune', 'delhi'], 'sales': [100, 250]})\nprint(df)\nprint(df.shape, list(df.columns))",
+      "explanation": "Series values ke saath labels rakhti hai, isliye label se access hota hai. DataFrame dict se banta hai jisme har key column hoti hai. Dono snippets ek hi file me chalte hain.",
+      "testing": "series ke empty aur normal input par output check karo.",
+      "errors": "Galat type ya missing value par Python exception dega — Version 2 me validation add hoti hai.",
+      "realWorld": "Pandas for Data Science ke production code me yahi chhote steps repeated hote hain.",
+      "resume": "Pandas for Data Science starter lab: series aur dataframe ka runnable demo.",
+      "features": [
+        "series ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Pandas for Data Science",
+        "series"
+      ],
+      "structure": "s18_project_1/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "series ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "assign ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Pandas for Data Science Starter Lab interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Pandas for Data Science Starter Lab interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Pandas for Data Science Starter Lab interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Pandas for Data Science Starter Lab ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Pandas for Data Science Data Pipeline",
+      "problem": "Raw input ko validate karke Pandas for Data Science ke useful output me badalna.",
+      "objective": "filter, groupby aur sort_values se chhota pipeline banao.",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({'city': ['pune', 'delhi', 'pune'], 'sales': [100, 250, 300]})\nprint(df[df['sales'] > 150]['city'].tolist())\nimport pandas as pd\n\ndf = pd.DataFrame({'city': ['pune', 'delhi', 'pune'], 'sales': [100, 250, 300]})\nprint(df.groupby('city')['sales'].sum().to_dict())\nimport pandas as pd\n\ndf = pd.DataFrame({'name': ['A', 'B', 'C'], 'score': [91, 78, 85]})\nprint(df.sort_values('score', ascending=False)['name'].tolist())",
+      "explanation": "Boolean mask se matching rows filter hoti hain. groupby unique keys par aggregate karta hai. sort_values order badalta hai aur original frame ko mutate nahi karta. Pipeline ke steps alag-alag testable hain.",
+      "testing": "Ek valid aur ek invalid input se pipeline chalao; dono ka behaviour note karo.",
+      "errors": "Invalid input par crash ke bajaye clear error/message do — Version 3 me error shape add hota hai.",
+      "realWorld": "Yahi load → transform → report pattern Pandas for Data Science ke dashboards aur services me hota hai.",
+      "resume": "Pandas for Data Science pipeline: validation aur filter/groupby ke saath end-to-end demo.",
+      "features": [
+        "dataframe ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Pandas for Data Science",
+        "dataframe"
+      ],
+      "structure": "s18_project_2/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "dataframe ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "fillna ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Pandas for Data Science Data Pipeline interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Pandas for Data Science Data Pipeline interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Pandas for Data Science Data Pipeline interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Pandas for Data Science Data Pipeline ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "Pandas for Data Science Capstone",
+      "problem": "Ek believable Pandas for Data Science use case jo end-to-end chale aur explain ho sake.",
+      "objective": "pivot_table city × product ka cross-tab banata hai aur missing combinations ko zero se bharta hai. Isse project interview me trade-offs ke saath present karo.",
+      "code": "import pandas as pd\n\ndf = pd.DataFrame({\n    'city': ['pune', 'pune', 'delhi', 'delhi'],\n    'product': ['a', 'b', 'a', 'b'],\n    'sales': [100, 200, 150, 50],\n})\nwide = df.pivot_table(index='city', columns='product', values='sales', aggfunc='sum', fill_value=0)\nprint(wide)\nprint(wide.sum(axis=0).to_dict())",
+      "explanation": "pivot_table city × product ka cross-tab banata hai aur missing combinations ko zero se bharta hai.",
+      "testing": "Expected output ko haath se verify karo, phir edge case (empty/missing) add karo.",
+      "errors": "Failure modes document karo: missing data, bad type aur duplicate records.",
+      "realWorld": "Ye capstone resume aur interview dono me ek concrete Pandas for Data Science story deta hai.",
+      "resume": "Pandas for Data Science capstone: pivot_table city × product ka cross-tab banata hai aur missing combinations ko zero se bharta hai.",
+      "features": [
+        "filter ka runnable example",
+        "Clear printed output",
+        "Zero external dependencies (stdlib only)"
+      ],
+      "concepts": [
+        "Pandas for Data Science",
+        "filter"
+      ],
+      "structure": "s18_project_3/\n└── main.py   # saara demo, ek file",
+      "steps": [
+        "filter ka input aur expected output likho.",
+        "Snippet ko function/step me wrap karo aur run karo.",
+        "Output ko README ke sample ke saath match karo."
+      ],
+      "improvements": [
+        "Input ko CLI argument ya file se lo",
+        "Errors ko structured message me return karo",
+        "Output ko CSV/JSON me export karo"
+      ],
+      "advanced": [
+        "Bade dataset par streaming/batching add karo",
+        "merge ko pipeline me integrate karo",
+        "Basic tests aur logging add karo"
+      ],
+      "interview": [
+        {
+          "q": "Pandas for Data Science Capstone interview 1: design decision kya tha?",
+          "a": "Design me ${ops[projectIndex].name} ko isolated step rakha taaki testable rahe."
+        },
+        {
+          "q": "Pandas for Data Science Capstone interview 2: failure par kya hota hai?",
+          "a": "Validation aur clear error se failure handle hota hai."
+        },
+        {
+          "q": "Pandas for Data Science Capstone interview 3: scale par kya badlega?",
+          "a": "Batching, indexing aur pagination se scale karte hain."
+        }
+      ],
+      "readme": [
+        "Pandas for Data Science Capstone ek line me",
+        "Kaise chalayein (command)",
+        "Sample input aur output"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      {
+        "q": "Understanding 1.1: why does Pandas for Data Science Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.2: why does Pandas for Data Science Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 1.3: why does Pandas for Data Science Starter Lab separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.1: why does Pandas for Data Science Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.2: why does Pandas for Data Science Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 2.3: why does Pandas for Data Science Data Pipeline separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.1: why does Pandas for Data Science Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.2: why does Pandas for Data Science Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      },
+      {
+        "q": "Understanding 3.3: why does Pandas for Data Science Capstone separate steps?",
+        "a": "Alag steps independently testable hote hain aur failure ka location clear hota hai."
+      }
+    ],
+    "coding": [
+      {
+        "q": "Coding 1.1: extend Pandas for Data Science Starter Lab with one more series step.",
+        "a": "Series values ke saath labels rakhti hai, isliye label se access hota hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.2: extend Pandas for Data Science Starter Lab with one more dataframe step.",
+        "a": "DataFrame dict se banta hai jisme har key column hoti hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 1.3: extend Pandas for Data Science Starter Lab with one more filter step.",
+        "a": "Boolean mask se matching rows filter hoti hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.1: extend Pandas for Data Science Data Pipeline with one more series step.",
+        "a": "Series values ke saath labels rakhti hai, isliye label se access hota hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.2: extend Pandas for Data Science Data Pipeline with one more dataframe step.",
+        "a": "DataFrame dict se banta hai jisme har key column hoti hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 2.3: extend Pandas for Data Science Data Pipeline with one more filter step.",
+        "a": "Boolean mask se matching rows filter hoti hain. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.1: extend Pandas for Data Science Capstone with one more series step.",
+        "a": "Series values ke saath labels rakhti hai, isliye label se access hota hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.2: extend Pandas for Data Science Capstone with one more dataframe step.",
+        "a": "DataFrame dict se banta hai jisme har key column hoti hai. Naya step add karke output compare karo."
+      },
+      {
+        "q": "Coding 3.3: extend Pandas for Data Science Capstone with one more filter step.",
+        "a": "Boolean mask se matching rows filter hoti hain. Naya step add karke output compare karo."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Advanced 1.1: how would Pandas for Data Science Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.2: how would Pandas for Data Science Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 1.3: how would Pandas for Data Science Starter Lab handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.1: how would Pandas for Data Science Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.2: how would Pandas for Data Science Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 2.3: how would Pandas for Data Science Data Pipeline handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.1: how would Pandas for Data Science Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.2: how would Pandas for Data Science Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      },
+      {
+        "q": "Advanced 3.3: how would Pandas for Data Science Capstone handle 10x data?",
+        "a": "Streaming/batching, indexes aur pagination se memory aur latency control karo."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview 1.1: defend one trade-off in Pandas for Data Science Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.2: defend one trade-off in Pandas for Data Science Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 1.3: defend one trade-off in Pandas for Data Science Starter Lab.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.1: defend one trade-off in Pandas for Data Science Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.2: defend one trade-off in Pandas for Data Science Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 2.3: defend one trade-off in Pandas for Data Science Data Pipeline.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.1: defend one trade-off in Pandas for Data Science Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.2: defend one trade-off in Pandas for Data Science Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      },
+      {
+        "q": "Interview 3.3: defend one trade-off in Pandas for Data Science Capstone.",
+        "a": "Simplicity vs scale: abhi clear code, scale par measure karke optimize — reasoning batao."
+      }
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Practical 1: validate Pandas for Data Science data in 15 minutes.",
+      "a": "Steps likho: input, series, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 2: transform Pandas for Data Science data in 15 minutes.",
+      "a": "Steps likho: input, dataframe, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 3: aggregate Pandas for Data Science data in 15 minutes.",
+      "a": "Steps likho: input, filter, expected output; phir code chala kar dikhao."
+    },
+    {
+      "q": "Practical 4: present Pandas for Data Science data in 15 minutes.",
+      "a": "Steps likho: input, groupby, expected output; phir code chala kar dikhao."
+    }
+  ],
+  "revision": [
+    "Pandas for Data Science: revise series — Series values ke saath labels rakhti hai, isliye label se access hota hai.",
+    "Pandas for Data Science: revise dataframe — DataFrame dict se banta hai jisme har key column hoti hai.",
+    "Pandas for Data Science: revise filter — Boolean mask se matching rows filter hoti hain.",
+    "Pandas for Data Science: revise groupby — groupby unique keys par aggregate karta hai.",
+    "Pandas for Data Science: revise sort_values — sort_values order badalta hai aur original frame ko mutate nahi karta."
+  ]
+}
