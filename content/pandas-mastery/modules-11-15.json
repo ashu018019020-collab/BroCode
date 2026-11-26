@@ -22,7 +22,7 @@
    {
     "title": "to_csv without the index",
     "body": "By default the index is written as an unnamed first column. `index=False` is what stops a round trip from growing a column each time.",
-    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False, lineterminator=\"\\n\").strip().splitlines())",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\ntext = df.to_csv(index=False, lineterminator=\"\\n\")\nprint(text.strip().replace(\"\\r\", \"\").split(\"\\n\"))",
     "output": "['a', '1', '2']"
    },
    {

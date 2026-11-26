@@ -230,3 +230,53 @@ test('pandas-coverage --check: a module that teaches an operation it never tests
     assert.match(result.stderr, /no coding task or debug challenge tests/);
   });
 });
+
+/* ---------------------------- executed examples --------------------------- */
+
+/**
+ * The audit's own contract, in both directions. A topic whose stored output carries a stray
+ * carriage return — the shape a Windows run once printed, `['a\r', '1', '2']` — must fail with
+ * the topic named, and the same sample with the real printed list must pass. Each fixture holds
+ * exactly one topic, so the audit's Python process executes one sample instead of the course.
+ */
+const PYTHON = process.env.PYTHON || 'python3';
+const pandasReady = spawnSync(PYTHON, ['-c', 'import pandas'], { encoding: 'utf8', timeout: 60_000 }).status === 0;
+const NO_PANDAS = pandasReady ? false : `${PYTHON} with pandas is not installed here`;
+
+function auditFixture(output) {
+  return {
+    libs: ['pandas-debug.cjs', 'pandas-fixture.cjs'],
+    content: {
+      'course.json': { course: { title: 'Audit fixture' } },
+      'modules-01-05.json': [{
+        id: 'p01',
+        title: 'Fixture module',
+        topics: [{
+          title: 'to_csv without the index',
+          body: '',
+          code: 'import pandas as pd\n\ndf = pd.DataFrame({"a": [1, 2]})\nprint(df.to_csv(index=False, lineterminator="\\n").strip().replace("\\r", "").split("\\n"))',
+          output,
+        }],
+        tasks: [],
+        debug: [],
+      }],
+    },
+  };
+}
+
+test('pandas-audit: a topic output with a stray carriage return fails', { skip: NO_PANDAS }, () => {
+  withFixture('pandas-audit.cjs', auditFixture("['a\\r', '1', '2']"), (dir) => {
+    const result = run('pandas-audit.cjs', [], dir);
+    assert.equal(result.status, 1, `expected exit 1, got ${result.status}\n${result.stdout}`);
+    assert.match(result.stderr, /to_csv without the index/);
+    assert.match(result.stderr, /prints a different result than stored/);
+  });
+});
+
+test('pandas-audit: the same topic passes when the stored output is the printed list', { skip: NO_PANDAS }, () => {
+  withFixture('pandas-audit.cjs', auditFixture("['a', '1', '2']"), (dir) => {
+    const result = run('pandas-audit.cjs', [], dir);
+    assert.equal(result.status, 0, `expected exit 0, got ${result.status}\n${result.stderr}`);
+    assert.match(result.stdout, /topic examples\s+1\/1/);
+  });
+});
