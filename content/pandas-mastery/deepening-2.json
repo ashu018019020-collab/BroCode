@@ -113,13 +113,21 @@
     "title": "Broadcast a row vector",
     "statement": "Add the row offsets to every row of the frame and print the result as nested lists.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nrow = pd.Series({\"a\": 10, \"b\": 20})\nprint(df.add(row, axis=\"columns\").values.tolist())",
-    "expected": "[[11, 23], [12, 24]]"
+    "expected": "[[11, 23], [12, 24]]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nrow = pd.Series({\"a\": 10, \"b\": 20})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nrow = pd.Series({\"a\": 10, \"b\": 20})\n\n# write the result the task asks for and print it\n",
+    "requires": "add()"
    },
    {
     "title": "Running total",
     "statement": "Add a running total column and print it.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [5, 10, 1]})\ndf[\"run\"] = df[\"v\"].cumsum()\nprint(df[\"run\"].tolist())",
-    "expected": "[5, 15, 16]"
+    "expected": "[5, 15, 16]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"v\": [5, 10, 1]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"v\": [5, 10, 1]})\n\n# write the result the task asks for and print it\n",
+    "requires": "cumsum()"
    }
   ],
   "debug": [
@@ -263,13 +271,21 @@
     "title": "Percentile score",
     "statement": "Add a percentile rank column and print it rounded to two decimals.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [10, 20, 30, 40]})\nprint(df[\"v\"].rank(pct=True).round(2).tolist())",
-    "expected": "[0.25, 0.5, 0.75, 1.0]"
+    "expected": "[0.25, 0.5, 0.75, 1.0]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"v\": [10, 20, 30, 40]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"v\": [10, 20, 30, 40]})\n\n# write the result the task asks for and print it\n",
+    "requires": "round()"
    },
    {
     "title": "Correlation with a target",
     "statement": "Print the correlation of each column with the target series, rounded to two decimals.",
     "solution": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1, 2, 3], \"y\": [3, 2, 1]})\nb = pd.Series([1, 2, 3])\nprint(a.corrwith(b).round(2).to_dict())",
-    "expected": "{'x': 1.0, 'y': -1.0}"
+    "expected": "{'x': 1.0, 'y': -1.0}",
+    "setup": "import pandas as pd",
+    "fixture": "a = pd.DataFrame({\"x\": [1, 2, 3], \"y\": [3, 2, 1]})\nb = pd.Series([1, 2, 3])",
+    "starter": "import pandas as pd\na = pd.DataFrame({\"x\": [1, 2, 3], \"y\": [3, 2, 1]})\nb = pd.Series([1, 2, 3])\n\n# write the result the task asks for and print it\n",
+    "requires": "round()"
    }
   ],
   "debug": [
@@ -413,13 +429,21 @@
     "title": "Incomplete rows",
     "statement": "Print how many rows have at least one missing value.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, None], \"b\": [None, 2]})\nprint(int(df.isna().any(axis=1).sum()))",
-    "expected": "2"
+    "expected": "2",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, None], \"b\": [None, 2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, None], \"b\": [None, 2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    },
    {
     "title": "Per-column fill",
     "statement": "Fill the numeric gap with 0 and the text gap with \"unknown\", then print the missing count.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"score\": [10.0, None], \"city\": [None, \"Pune\"]})\nfilled = df.fillna({\"score\": 0.0, \"city\": \"unknown\"})\nprint(int(filled.isna().sum().sum()))",
-    "expected": "0"
+    "expected": "0",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"score\": [10.0, None], \"city\": [None, \"Pune\"]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"score\": [10.0, None], \"city\": [None, \"Pune\"]})\n\n# write the result the task asks for and print it\n",
+    "requires": "fillna()"
    }
   ],
   "debug": [
@@ -563,13 +587,21 @@
     "title": "Keep the newest record",
     "statement": "Drop duplicate ids keeping the last row and print the kept values.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1, 2], \"v\": [\"old\", \"new\", \"x\"]})\nprint(df.drop_duplicates(\"id\", keep=\"last\")[\"v\"].tolist())",
-    "expected": "['new', 'x']"
+    "expected": "['new', 'x']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"id\": [1, 1, 2], \"v\": [\"old\", \"new\", \"x\"]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"id\": [1, 1, 2], \"v\": [\"old\", \"new\", \"x\"]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Flag by z-score",
     "statement": "Print the values whose z-score is above 1.5 in absolute value.",
     "solution": "import pandas as pd\n\ns = pd.Series([10, 12, 11, 40])\nz = (s - s.mean()) / s.std()\nprint(s[z.abs() > 1.5].tolist())",
-    "expected": "[]"
+    "expected": "[]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([10, 12, 11, 40])",
+    "starter": "import pandas as pd\ns = pd.Series([10, 12, 11, 40])\n\n# write the result the task asks for and print it\n",
+    "requires": "mean()"
    }
   ],
   "debug": [
@@ -713,13 +745,21 @@
     "title": "Pad ids to four digits",
     "statement": "Convert the ids to text, pad to four characters and print them.",
     "solution": "import pandas as pd\n\ns = pd.Series([7, 42]).astype(str)\nprint(s.str.zfill(4).tolist())",
-    "expected": "['0007', '0042']"
+    "expected": "['0007', '0042']",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([7, 42]).astype(str)",
+    "starter": "import pandas as pd\ns = pd.Series([7, 42]).astype(str)\n\n# write the result the task asks for and print it\n",
+    "requires": "zfill()"
    },
    {
     "title": "Join first and last names",
     "statement": "Concatenate the two name columns with a space and print the result.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"first\": [\"Aman\"], \"last\": [\"Sharma\"]})\nprint(df[\"first\"].str.cat(df[\"last\"], sep=\" \").tolist())",
-    "expected": "['Aman Sharma']"
+    "expected": "['Aman Sharma']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"first\": [\"Aman\"], \"last\": [\"Sharma\"]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"first\": [\"Aman\"], \"last\": [\"Sharma\"]})\n\n# write the result the task asks for and print it\n",
+    "requires": "cat()"
    }
   ],
   "debug": [
@@ -727,7 +767,7 @@
     "title": "An unescaped parenthesis in a regex",
     "broken": "import pandas as pd\n\ns = pd.Series([\"(022) 1234\"])\nprint(s.str.replace(\"(\", \"\", regex=True).tolist())",
     "fix": "import pandas as pd\n\ns = pd.Series([\"(022) 1234\"])\nprint(s.str.replace(r\"\\(\", \"\", regex=True).tolist())",
-    "error": "re.error: missing ), unterminated subpattern at position 0",
+    "error": "re.PatternError: missing ), unterminated subpattern at position 0",
     "fixedOutput": "['022) 1234']"
    },
    {

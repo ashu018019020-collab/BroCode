@@ -375,6 +375,12 @@ function EntryCard({ section, entry, index }: { section: NSectionKey; entry: NEn
       {section === 'defense' && entry.answer && (
         <p className="small" style={{ margin: '6px 0 0' }}>{entry.answer}</p>
       )}
+      {section === 'coding' && entry.starter && (
+        <details style={{ marginTop: 8 }}>
+          <summary className="small" style={{ cursor: 'pointer' }}>Starter — fixture already loaded</summary>
+          <pre className="codeblock" style={{ margin: '4px 0 0' }}>{entry.starter}</pre>
+        </details>
+      )}
       {section === 'coding' && entry.solution && (
         <details style={{ marginTop: 8 }}>
           <summary className="small" style={{ cursor: 'pointer' }}>Reference solution</summary>

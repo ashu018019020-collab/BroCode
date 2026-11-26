@@ -43,6 +43,11 @@ export interface NEntry {
   task?: string;
   statement?: string;
   code?: string;
+  /** Imports and supporting code run before a coding task's fixture. */
+  setup?: string;
+  /** Executable data construction (DataFrame/Series) for a coding task. */
+  fixture?: string;
+  /** The runnable coding-task scaffold: setup + fixture + an instruction comment. */
   starter?: string;
   /** Independent authored task with a hidden check, vs a guided practice entry built from a topic. */
   kind?: 'topic' | 'task';

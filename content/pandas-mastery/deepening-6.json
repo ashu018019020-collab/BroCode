@@ -5,25 +5,41 @@
     "title": "Double a column by assign",
     "statement": "Add a doubled column with assign and print it.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.assign(b=df[\"a\"] * 2)[\"b\"].tolist())",
-    "expected": "[2, 4]"
+    "expected": "[2, 4]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Clamp a range",
     "statement": "Clip the values into 0..10 and print the result.",
     "solution": "import pandas as pd\n\ns = pd.Series([-5, 5, 50])\nprint(s.clip(0, 10).tolist())",
-    "expected": "[0, 5, 10]"
+    "expected": "[0, 5, 10]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([-5, 5, 50])",
+    "starter": "import pandas as pd\ns = pd.Series([-5, 5, 50])\n\n# write the result the task asks for and print it\n",
+    "requires": "clip()"
    },
    {
     "title": "Map codes to labels",
     "statement": "Map the letters to their numbers and print the mapped values.",
     "solution": "import pandas as pd\n\ns = pd.Series([\"x\", \"y\"])\nprint(s.map({\"x\": 1, \"y\": 2}).tolist())",
-    "expected": "[1, 2]"
+    "expected": "[1, 2]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\"x\", \"y\"])",
+    "starter": "import pandas as pd\ns = pd.Series([\"x\", \"y\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "map()"
    },
    {
     "title": "A conditional column with where",
     "statement": "Keep the value when it is at least 10, otherwise print \"low\".",
     "solution": "import pandas as pd\n\ns = pd.Series([5, 10])\nprint(s.where(s >= 10, \"low\").tolist())",
-    "expected": "['low', 10]"
+    "expected": "['low', 10]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([5, 10])",
+    "starter": "import pandas as pd\ns = pd.Series([5, 10])\n\n# write the result the task asks for and print it\n",
+    "requires": "where()"
    }
   ],
   "debug": [
@@ -64,25 +80,41 @@
     "title": "Two largest values",
     "statement": "Print the two largest values in the column.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [5, 9, 1]})\nprint(df.nlargest(2, \"v\")[\"v\"].tolist())",
-    "expected": "[9, 5]"
+    "expected": "[9, 5]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"v\": [5, 9, 1]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"v\": [5, 9, 1]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Ranks with a tie",
     "statement": "Print the average ranks of the values.",
     "solution": "import pandas as pd\n\ns = pd.Series([10, 20, 20, 40])\nprint(s.rank().tolist())",
-    "expected": "[1.0, 2.5, 2.5, 4.0]"
+    "expected": "[1.0, 2.5, 2.5, 4.0]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([10, 20, 20, 40])",
+    "starter": "import pandas as pd\ns = pd.Series([10, 20, 20, 40])\n\n# write the result the task asks for and print it\n",
+    "requires": "rank()"
    },
    {
     "title": "Share of each value",
     "statement": "Print each value's share of the rows, rounded to two decimals.",
     "solution": "import pandas as pd\n\ns = pd.Series([\"a\", \"a\", \"b\"])\nprint(s.value_counts(normalize=True).round(2).tolist())",
-    "expected": "[0.67, 0.33]"
+    "expected": "[0.67, 0.33]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\"a\", \"a\", \"b\"])",
+    "starter": "import pandas as pd\ns = pd.Series([\"a\", \"a\", \"b\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "round()"
    },
    {
     "title": "Quartiles",
     "statement": "Print the first and third quartiles.",
     "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 3, 4])\nprint(s.quantile([0.25, 0.75]).tolist())",
-    "expected": "[1.75, 3.25]"
+    "expected": "[1.75, 3.25]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([1, 2, 3, 4])",
+    "starter": "import pandas as pd\ns = pd.Series([1, 2, 3, 4])\n\n# write the result the task asks for and print it\n",
+    "requires": "quantile()"
    }
   ],
   "debug": [
@@ -123,25 +155,41 @@
     "title": "Count gaps per column",
     "statement": "Print the total number of missing values in the frame.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, None], \"b\": [None, 2]})\nprint(int(df.isna().sum().sum()))",
-    "expected": "2"
+    "expected": "2",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, None], \"b\": [None, 2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, None], \"b\": [None, 2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    },
    {
     "title": "Fill forward then back",
     "statement": "Fill the gap from both directions and print the series.",
     "solution": "import pandas as pd\n\ns = pd.Series([None, 2.0, None])\nprint(s.ffill().bfill().tolist())",
-    "expected": "[2.0, 2.0, 2.0]"
+    "expected": "[2.0, 2.0, 2.0]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([None, 2.0, None])",
+    "starter": "import pandas as pd\ns = pd.Series([None, 2.0, None])\n\n# write the result the task asks for and print it\n",
+    "requires": "bfill()"
    },
    {
     "title": "Drop rows missing a key",
     "statement": "Drop rows missing the key column and print the kept ids.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, None, 3]})\nprint(df.dropna(subset=[\"id\"])[\"id\"].tolist())",
-    "expected": "[1.0, 3.0]"
+    "expected": "[1.0, 3.0]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"id\": [1, None, 3]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"id\": [1, None, 3]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Fill with the median",
     "statement": "Fill the gap with the column median and print the values.",
     "solution": "import pandas as pd\n\ns = pd.Series([1.0, None, 3.0])\nprint(s.fillna(s.median()).tolist())",
-    "expected": "[1.0, 2.0, 3.0]"
+    "expected": "[1.0, 2.0, 3.0]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([1.0, None, 3.0])",
+    "starter": "import pandas as pd\ns = pd.Series([1.0, None, 3.0])\n\n# write the result the task asks for and print it\n",
+    "requires": "fillna()"
    }
   ],
   "debug": [
@@ -182,25 +230,41 @@
     "title": "Keep the first copy",
     "statement": "Drop duplicate ids keeping the first and print the kept values.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1, 2], \"v\": [\"a\", \"b\", \"c\"]})\nprint(df.drop_duplicates(\"id\", keep=\"first\")[\"v\"].tolist())",
-    "expected": "['a', 'c']"
+    "expected": "['a', 'c']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"id\": [1, 1, 2], \"v\": [\"a\", \"b\", \"c\"]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"id\": [1, 1, 2], \"v\": [\"a\", \"b\", \"c\"]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Normalise city text",
     "statement": "Strip and lower the city values, then print them.",
     "solution": "import pandas as pd\n\ns = pd.Series([\" Pune \", \"DELHI\"])\nprint(s.str.strip().str.lower().tolist())",
-    "expected": "['pune', 'delhi']"
+    "expected": "['pune', 'delhi']",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\" Pune \", \"DELHI\"])",
+    "starter": "import pandas as pd\ns = pd.Series([\" Pune \", \"DELHI\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "lower()"
    },
    {
     "title": "Count outliers by IQR",
     "statement": "Flag values outside 1.5×IQR and print how many there are.",
     "solution": "import pandas as pd\n\ns = pd.Series([10, 11, 12, 13, 100])\nq1, q3 = s.quantile(0.25), s.quantile(0.75)\niqr = q3 - q1\nprint(int(((s < q1 - 1.5 * iqr) | (s > q3 + 1.5 * iqr)).sum()))",
-    "expected": "1"
+    "expected": "1",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([10, 11, 12, 13, 100])",
+    "starter": "import pandas as pd\ns = pd.Series([10, 11, 12, 13, 100])\n\n# write the result the task asks for and print it\n",
+    "requires": "quantile()"
    },
    {
     "title": "Rename a column",
     "statement": "Rename v to total and print the column list.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1]})\nprint(df.rename(columns={\"v\": \"total\"}).columns.tolist())",
-    "expected": "['total']"
+    "expected": "['total']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"v\": [1]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"v\": [1]})\n\n# write the result the task asks for and print it\n",
+    "requires": "rename()"
    }
   ],
   "debug": [
@@ -241,25 +305,41 @@
     "title": "Count a pattern match",
     "statement": "Count how many cities contain \"pur\" regardless of case.",
     "solution": "import pandas as pd\n\ns = pd.Series([\"Pune\", \"Nagpur\", \"Goa\"])\nprint(int(s.str.contains(\"pur\", case=False).sum()))",
-    "expected": "1"
+    "expected": "1",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\"Pune\", \"Nagpur\", \"Goa\"])",
+    "starter": "import pandas as pd\ns = pd.Series([\"Pune\", \"Nagpur\", \"Goa\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    },
    {
     "title": "Extract digits",
     "statement": "Extract the digits from each code and print them.",
     "solution": "import pandas as pd\n\ns = pd.Series([\"MH-12\", \"DL-7\"])\nprint(s.str.extract(r\"(\\d+)\")[0].tolist())",
-    "expected": "['12', '7']"
+    "expected": "['12', '7']",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\"MH-12\", \"DL-7\"])",
+    "starter": "import pandas as pd\ns = pd.Series([\"MH-12\", \"DL-7\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Deduplicate normalised text",
     "statement": "Strip and lower the values, then print the unique sorted labels.",
     "solution": "import pandas as pd\n\ns = pd.Series([\" Pune\", \"pune \", \"Goa\"])\nprint(sorted(s.str.strip().str.lower().unique()))",
-    "expected": "['goa', 'pune']"
+    "expected": "['goa', 'pune']",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\" Pune\", \"pune \", \"Goa\"])",
+    "starter": "import pandas as pd\ns = pd.Series([\" Pune\", \"pune \", \"Goa\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "unique()"
    },
    {
     "title": "Split into two columns",
     "statement": "Split the values on the pipe and print the resulting shape.",
     "solution": "import pandas as pd\n\ns = pd.Series([\"pune|MH\", \"delhi|DL\"])\nprint(s.str.split(\"|\", expand=True).shape)",
-    "expected": "(2, 2)"
+    "expected": "(2, 2)",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\"pune|MH\", \"delhi|DL\"])",
+    "starter": "import pandas as pd\ns = pd.Series([\"pune|MH\", \"delhi|DL\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "split()"
    }
   ],
   "debug": [
@@ -275,7 +355,7 @@
     "title": "An unclosed group in a pattern",
     "broken": "import pandas as pd\n\ns = pd.Series([\"a1\"])\nprint(s.str.extract(r\"(\\d+\")[0].tolist())",
     "fix": "import pandas as pd\n\ns = pd.Series([\"a1\"])\nprint(s.str.extract(r\"(\\d+)\")[0].tolist())",
-    "error": "re.error: missing ), unterminated subpattern at position 0",
+    "error": "re.PatternError: missing ), unterminated subpattern at position 0",
     "fixedOutput": "['1']"
    },
    {

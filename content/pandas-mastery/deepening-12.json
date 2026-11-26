@@ -5,25 +5,41 @@
     "title": "Reorder categories",
     "statement": "Reorder the categories as low, high and print the sorted values.",
     "solution": "import pandas as pd\n\ns = pd.Series(pd.Categorical([\"high\", \"low\"], categories=[\"high\", \"low\"], ordered=True))\nprint(s.cat.reorder_categories([\"low\", \"high\"]).sort_values().tolist())",
-    "expected": "['low', 'high']"
+    "expected": "['low', 'high']",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series(pd.Categorical([\"high\", \"low\"], categories=[\"high\", \"low\"], ordered=True))",
+    "starter": "import pandas as pd\ns = pd.Series(pd.Categorical([\"high\", \"low\"], categories=[\"high\", \"low\"], ordered=True))\n\n# write the result the task asks for and print it\n",
+    "requires": "sort_values()"
    },
    {
     "title": "Names for a MultiIndex",
     "statement": "Build a MultiIndex from the tuples with names and print them.",
     "solution": "import pandas as pd\n\nidx = pd.MultiIndex.from_tuples([(\"Pune\", 2026)], names=[\"city\", \"year\"])\nprint(list(idx.names))",
-    "expected": "['city', 'year']"
+    "expected": "['city', 'year']",
+    "setup": "import pandas as pd",
+    "fixture": "idx = pd.MultiIndex.from_tuples([(\"Pune\", 2026)], names=[\"city\", \"year\"])",
+    "starter": "import pandas as pd\nidx = pd.MultiIndex.from_tuples([(\"Pune\", 2026)], names=[\"city\", \"year\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "names"
    },
    {
     "title": "Cross-section shape",
     "statement": "Take the cross-section for one city and print its length.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\"], \"year\": [2025, 2026], \"v\": [1, 2]})\ns = df.groupby([\"city\", \"year\"])[\"v\"].sum()\nprint(len(s.xs(\"Pune\", level=\"city\")))",
-    "expected": "2"
+    "expected": "2",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"city\": [\"Pune\", \"Pune\"], \"year\": [2025, 2026], \"v\": [1, 2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\"], \"year\": [2025, 2026], \"v\": [1, 2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    },
    {
     "title": "Pipe a lambda",
     "statement": "Add one to the values through pipe and print them.",
-    "solution": "import pandas as pd\n\nprint(pd.DataFrame({\"v\": [1, 2]}).pipe(lambda d: d.assign(v=d[\"v\"] + 1))[\"v\"].tolist())",
-    "expected": "[2, 3]"
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"v\": [1, 2]})\nprint(df.pipe(lambda d: d.assign(v=d[\"v\"] + 1))[\"v\"].tolist())",
+    "expected": "[2, 3]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"v\": [1, 2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"v\": [1, 2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    }
   ],
   "debug": [
@@ -64,25 +80,41 @@
     "title": "Z-score inside each group",
     "statement": "Standardise the values within each group and print the rounded result.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\", \"a\", \"b\"], \"v\": [1.0, 3.0, 10.0]})\nz = df.groupby(\"g\")[\"v\"].transform(lambda x: (x - x.mean()) / x.std(ddof=0))\nprint(z.round(2).tolist())",
-    "expected": "[-1.0, 1.0, nan]"
+    "expected": "[-1.0, 1.0, nan]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"g\": [\"a\", \"a\", \"b\"], \"v\": [1.0, 3.0, 10.0]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"g\": [\"a\", \"a\", \"b\"], \"v\": [1.0, 3.0, 10.0]})\n\n# write the result the task asks for and print it\n",
+    "requires": "transform()"
    },
    {
     "title": "Correlation matrix shape",
     "statement": "Print the shape of the correlation matrix of the numeric columns.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [2, 4], \"c\": [5, 1]})\nprint(df[[\"a\", \"b\", \"c\"]].corr().shape)",
-    "expected": "(3, 3)"
+    "expected": "(3, 3)",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 2], \"b\": [2, 4], \"c\": [5, 1]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [2, 4], \"c\": [5, 1]})\n\n# write the result the task asks for and print it\n",
+    "requires": "corr()"
    },
    {
     "title": "Counts per bin",
     "statement": "Cut the values into two bins and print the count per bin.",
-    "solution": "import pandas as pd\n\nprint(pd.cut(pd.Series([1, 7, 9]), bins=[0, 5, 10]).value_counts().sort_index().tolist())",
-    "expected": "[1, 2]"
+    "solution": "import pandas as pd\ns = pd.Series([1, 7, 9])\nprint(pd.cut(s, bins=[0, 5, 10]).value_counts().sort_index().tolist())",
+    "expected": "[1, 2]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([1, 7, 9])",
+    "starter": "import pandas as pd\ns = pd.Series([1, 7, 9])\n\n# write the result the task asks for and print it\n",
+    "requires": "sort_index()"
    },
    {
     "title": "Kurtosis",
     "statement": "Print the kurtosis of the values rounded to two decimals.",
-    "solution": "import pandas as pd\n\nprint(round(float(pd.Series([1, 2, 3, 100]).kurt()), 2))",
-    "expected": "3.99"
+    "solution": "import pandas as pd\ns = pd.Series([1, 2, 3, 100])\nprint(round(float(s.kurt()), 2))",
+    "expected": "3.99",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([1, 2, 3, 100])",
+    "starter": "import pandas as pd\ns = pd.Series([1, 2, 3, 100])\n\n# write the result the task asks for and print it\n",
+    "requires": "kurt()"
    }
   ],
   "debug": [
@@ -123,25 +155,41 @@
     "title": "Bytes of a float32 column",
     "statement": "Cast the values to float32 and print the bytes used.",
     "solution": "import pandas as pd\n\ns = pd.Series([1.0, 2.0], dtype=\"float64\")\nprint(s.astype(\"float32\").nbytes)",
-    "expected": "8"
+    "expected": "8",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([1.0, 2.0], dtype=\"float64\")",
+    "starter": "import pandas as pd\ns = pd.Series([1.0, 2.0], dtype=\"float64\")\n\n# write the result the task asks for and print it\n",
+    "requires": "astype()"
    },
    {
     "title": "Category for repeated text",
     "statement": "Store the labels as a category and print the dtype name and category count.",
     "solution": "import pandas as pd\n\ns = pd.Series([\"a\", \"b\", \"a\"], dtype=\"category\")\nprint(s.dtype.name, len(s.cat.categories))",
-    "expected": "category 2"
+    "expected": "category 2",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\"a\", \"b\", \"a\"], dtype=\"category\")",
+    "starter": "import pandas as pd\ns = pd.Series([\"a\", \"b\", \"a\"], dtype=\"category\")\n\n# write the result the task asks for and print it\n",
+    "requires": "categories"
    },
    {
     "title": "A vectorised formula",
     "statement": "Print the sum of a times 2 without a Python loop.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3]})\nprint(int(df[\"a\"].mul(2).sum()))",
-    "expected": "12"
+    "expected": "12",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 2, 3]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3]})\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    },
    {
     "title": "One column read only",
     "statement": "Read only the v column with usecols and print its length.",
     "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"v,w\\n1,2\\n3,4\\n\"), usecols=[\"v\"])\nprint(len(df))",
-    "expected": "2"
+    "expected": "2",
+    "setup": "import pandas as pd\nfrom io import StringIO",
+    "fixture": "df = pd.read_csv(StringIO(\"v,w\\n1,2\\n3,4\\n\"), usecols=[\"v\"])",
+    "starter": "import pandas as pd\nfrom io import StringIO\ndf = pd.read_csv(StringIO(\"v,w\\n1,2\\n3,4\\n\"), usecols=[\"v\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "read_csv()"
    }
   ],
   "debug": [
@@ -182,25 +230,41 @@
     "title": "Series from an array with labels",
     "statement": "Build a Series from the array with the given labels and print them.",
     "solution": "import numpy as np\nimport pandas as pd\n\ns = pd.Series(np.array([1, 2]), index=[\"a\", \"b\"])\nprint(s.index.tolist())",
-    "expected": "['a', 'b']"
+    "expected": "['a', 'b']",
+    "setup": "import numpy as np\nimport pandas as pd",
+    "fixture": "s = pd.Series(np.array([1, 2]), index=[\"a\", \"b\"])",
+    "starter": "import numpy as np\nimport pandas as pd\ns = pd.Series(np.array([1, 2]), index=[\"a\", \"b\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "tolist()"
    },
    {
     "title": "Count True in a mask",
     "statement": "Print how many values pass the test as a plain integer.",
     "solution": "import pandas as pd\n\ns = pd.Series([1, 5, 9])\nprint(int(s.gt(4).to_numpy().sum()))",
-    "expected": "2"
+    "expected": "2",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([1, 5, 9])",
+    "starter": "import pandas as pd\ns = pd.Series([1, 5, 9])\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    },
    {
     "title": "Array of a column subset",
     "statement": "Convert the two-column selection to an array and print its shape.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2], \"c\": [3]})\nprint(df[[\"a\", \"b\"]].to_numpy().shape)",
-    "expected": "(1, 2)"
+    "expected": "(1, 2)",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1], \"b\": [2], \"c\": [3]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1], \"b\": [2], \"c\": [3]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Records with a dtype",
     "statement": "Build the frame from records and print the dtype of the id column.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame.from_records([(1, \"a\")], columns=[\"id\", \"name\"])\nprint(df[\"id\"].dtype)",
-    "expected": "int64"
+    "expected": "int64",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame.from_records([(1, \"a\")], columns=[\"id\", \"name\"])",
+    "starter": "import pandas as pd\ndf = pd.DataFrame.from_records([(1, \"a\")], columns=[\"id\", \"name\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    }
   ],
   "debug": [
@@ -240,25 +304,41 @@
     "title": "Sort a report by rate",
     "statement": "Sort the report by rate descending and print the city order.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\"], \"passed\": [True, False]})\nreport = df.groupby(\"city\")[\"passed\"].mean().sort_values(ascending=False)\nprint(report.index.tolist())",
-    "expected": "['Pune', 'Delhi']"
+    "expected": "['Pune', 'Delhi']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\"], \"passed\": [True, False]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\"], \"passed\": [True, False]})\n\n# write the result the task asks for and print it\n",
+    "requires": "sort_values()"
    },
    {
     "title": "Rounded export",
     "statement": "Round the values to one decimal, export without the index and print the first two lines.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1.234]})\nprint(df.round(1).to_csv(index=False).strip().splitlines())",
-    "expected": "['v', '1.2']"
+    "expected": "['v', '1.2']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"v\": [1.234]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"v\": [1.234]})\n\n# write the result the task asks for and print it\n",
+    "requires": "strip()"
    },
    {
     "title": "Attempts per city",
     "statement": "Print the row count per city as a dict.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"]})\nprint(df.groupby(\"city\").size().to_dict())",
-    "expected": "{'Delhi': 1, 'Pune': 2}"
+    "expected": "{'Delhi': 1, 'Pune': 2}",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"]})\n\n# write the result the task asks for and print it\n",
+    "requires": "size()"
    },
    {
     "title": "Grain check before the aggregate",
     "statement": "Print the row count and the distinct id count for the frame.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1, 2]})\nprint(len(df), df[\"id\"].nunique())",
-    "expected": "3 2"
+    "expected": "3 2",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"id\": [1, 1, 2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"id\": [1, 1, 2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "nunique()"
    }
   ],
   "debug": [

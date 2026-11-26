@@ -5,25 +5,41 @@
     "title": "Row-wise maximum",
     "statement": "Print the larger value of each row.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 5], \"b\": [3, 2]})\nprint(df.max(axis=1).tolist())",
-    "expected": "[3, 5]"
+    "expected": "[3, 5]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 5], \"b\": [3, 2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 5], \"b\": [3, 2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "max()"
    },
    {
     "title": "Cumulative product",
     "statement": "Print the running product of the values.",
-    "solution": "import pandas as pd\n\nprint(pd.Series([2, 3, 4]).cumprod().tolist())",
-    "expected": "[2, 6, 24]"
+    "solution": "import pandas as pd\ns = pd.Series([2, 3, 4])\nprint(s.cumprod().tolist())",
+    "expected": "[2, 6, 24]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([2, 3, 4])",
+    "starter": "import pandas as pd\ns = pd.Series([2, 3, 4])\n\n# write the result the task asks for and print it\n",
+    "requires": "cumprod()"
    },
    {
     "title": "Squared values",
     "statement": "Square every value and print the result.",
     "solution": "import pandas as pd\n\ns = pd.Series([2, 3])\nprint((s ** 2).tolist())",
-    "expected": "[4, 9]"
+    "expected": "[4, 9]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([2, 3])",
+    "starter": "import pandas as pd\ns = pd.Series([2, 3])\n\n# write the result the task asks for and print it\n",
+    "requires": "tolist()"
    },
    {
     "title": "Absolute gap between columns",
     "statement": "Print the absolute difference between the two columns.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [5, 1], \"b\": [2, 4]})\nprint((df[\"a\"] - df[\"b\"]).abs().tolist())",
-    "expected": "[3, 3]"
+    "expected": "[3, 3]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [5, 1], \"b\": [2, 4]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [5, 1], \"b\": [2, 4]})\n\n# write the result the task asks for and print it\n",
+    "requires": "abs()"
    }
   ],
   "debug": [
@@ -64,25 +80,41 @@
     "title": "Median absolute deviation",
     "statement": "Print the median absolute deviation from the median.",
     "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 10])\nprint((s - s.median()).abs().median())",
-    "expected": "1.0"
+    "expected": "1.0",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([1, 2, 10])",
+    "starter": "import pandas as pd\ns = pd.Series([1, 2, 10])\n\n# write the result the task asks for and print it\n",
+    "requires": "median()"
    },
    {
     "title": "Value counts in order",
     "statement": "Print the values ordered from most to least frequent.",
     "solution": "import pandas as pd\n\ns = pd.Series([\"a\", \"b\", \"a\"])\nprint(s.value_counts().index.tolist())",
-    "expected": "['a', 'b']"
+    "expected": "['a', 'b']",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\"a\", \"b\", \"a\"])",
+    "starter": "import pandas as pd\ns = pd.Series([\"a\", \"b\", \"a\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "value_counts()"
    },
    {
     "title": "Index of the maximum",
     "statement": "Print the index label of the largest value.",
     "solution": "import pandas as pd\n\ns = pd.Series([5, 9, 2])\nprint(s.idxmax())",
-    "expected": "1"
+    "expected": "1",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([5, 9, 2])",
+    "starter": "import pandas as pd\ns = pd.Series([5, 9, 2])\n\n# write the result the task asks for and print it\n",
+    "requires": "idxmax()"
    },
    {
     "title": "Describe per group",
     "statement": "Describe the values per group and print the resulting shape.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\", \"a\", \"b\"], \"v\": [1, 2, 3]})\nprint(df.groupby(\"g\")[\"v\"].describe().shape)",
-    "expected": "(2, 8)"
+    "expected": "(2, 8)",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"g\": [\"a\", \"a\", \"b\"], \"v\": [1, 2, 3]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"g\": [\"a\", \"a\", \"b\"], \"v\": [1, 2, 3]})\n\n# write the result the task asks for and print it\n",
+    "requires": "describe()"
    }
   ],
   "debug": [
@@ -123,25 +155,41 @@
     "title": "Fill only the first gap",
     "statement": "Fill at most one gap and print the series.",
     "solution": "import pandas as pd\n\ns = pd.Series([None, None, 3.0])\nprint(s.fillna(0, limit=1).tolist())",
-    "expected": "[0.0, nan, 3.0]"
+    "expected": "[0.0, nan, 3.0]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([None, None, 3.0])",
+    "starter": "import pandas as pd\ns = pd.Series([None, None, 3.0])\n\n# write the result the task asks for and print it\n",
+    "requires": "fillna()"
    },
    {
     "title": "Drop columns that are empty",
     "statement": "Drop columns that are entirely missing and print the remaining names.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1.0], \"b\": [None]})\nprint(df.dropna(axis=1, how=\"all\").columns.tolist())",
-    "expected": "['a']"
+    "expected": "['a']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1.0], \"b\": [None]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1.0], \"b\": [None]})\n\n# write the result the task asks for and print it\n",
+    "requires": "dropna()"
    },
    {
     "title": "Combine two partial series",
     "statement": "Fill the gaps of the first series from the second and print the result.",
     "solution": "import pandas as pd\n\na = pd.Series([1.0, None])\nb = pd.Series([9.0, 2.0])\nprint(a.combine_first(b).tolist())",
-    "expected": "[1.0, 2.0]"
+    "expected": "[1.0, 2.0]",
+    "setup": "import pandas as pd",
+    "fixture": "a = pd.Series([1.0, None])\nb = pd.Series([9.0, 2.0])",
+    "starter": "import pandas as pd\na = pd.Series([1.0, None])\nb = pd.Series([9.0, 2.0])\n\n# write the result the task asks for and print it\n",
+    "requires": "combine_first()"
    },
    {
     "title": "Missing count per column",
     "statement": "Print how many values are missing in each column.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, None], \"b\": [None, None]})\nprint(df.isna().sum().to_dict())",
-    "expected": "{'a': 1, 'b': 2}"
+    "expected": "{'a': 1, 'b': 2}",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, None], \"b\": [None, None]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, None], \"b\": [None, None]})\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    }
   ],
   "debug": [
@@ -182,25 +230,41 @@
     "title": "Case-insensitive comparison",
     "statement": "Casefold the labels and print the unique values in order.",
     "solution": "import pandas as pd\n\ns = pd.Series([\"Pune\", \"PUNE\", \"Goa\"])\nprint(sorted(s.str.casefold().unique()))",
-    "expected": "['goa', 'pune']"
+    "expected": "['goa', 'pune']",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\"Pune\", \"PUNE\", \"Goa\"])",
+    "starter": "import pandas as pd\ns = pd.Series([\"Pune\", \"PUNE\", \"Goa\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "unique()"
    },
    {
     "title": "Duplicates across two columns",
     "statement": "Count rows that repeat a pair of values.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 1, 2], \"b\": [1, 1, 2]})\nprint(int(df.duplicated(subset=[\"a\", \"b\"]).sum()))",
-    "expected": "1"
+    "expected": "1",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 1, 2], \"b\": [1, 1, 2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 1, 2], \"b\": [1, 1, 2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    },
    {
     "title": "Winsorize by quantiles",
     "statement": "Clip the values to the 5th and 95th percentiles and print them.",
     "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 3, 4, 100])\nprint(s.clip(s.quantile(0.05), s.quantile(0.95)).tolist())",
-    "expected": "[1.2, 2.0, 3.0, 4.0, 80.79999999999998]"
+    "expected": "[1.2, 2.0, 3.0, 4.0, 80.79999999999998]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([1, 2, 3, 4, 100])",
+    "starter": "import pandas as pd\ns = pd.Series([1, 2, 3, 4, 100])\n\n# write the result the task asks for and print it\n",
+    "requires": "clip()"
    },
    {
     "title": "Map booleans to labels",
     "statement": "Map True to yes and False to no, then print the labels.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"ok\": [True, False]})\nprint(df[\"ok\"].map({True: \"yes\", False: \"no\"}).tolist())",
-    "expected": "['yes', 'no']"
+    "expected": "['yes', 'no']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"ok\": [True, False]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"ok\": [True, False]})\n\n# write the result the task asks for and print it\n",
+    "requires": "map()"
    }
   ],
   "debug": [
@@ -242,25 +306,41 @@
     "title": "Title case labels",
     "statement": "Title-case the labels and print them.",
     "solution": "import pandas as pd\n\ns = pd.Series([\"pune city\", \"goa\"])\nprint(s.str.title().tolist())",
-    "expected": "['Pune City', 'Goa']"
+    "expected": "['Pune City', 'Goa']",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\"pune city\", \"goa\"])",
+    "starter": "import pandas as pd\ns = pd.Series([\"pune city\", \"goa\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "title()"
    },
    {
     "title": "Strip punctuation",
     "statement": "Remove everything that is not a letter, digit or space, then print the labels.",
     "solution": "import pandas as pd\n\ns = pd.Series([\"Pune!\", \"Goa?\", \"Mumbai.\"])\nprint(s.str.replace(r\"[^A-Za-z0-9 ]\", \"\", regex=True).tolist())",
-    "expected": "['Pune', 'Goa', 'Mumbai']"
+    "expected": "['Pune', 'Goa', 'Mumbai']",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\"Pune!\", \"Goa?\", \"Mumbai.\"])",
+    "starter": "import pandas as pd\ns = pd.Series([\"Pune!\", \"Goa?\", \"Mumbai.\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "replace()"
    },
    {
     "title": "Pad to a fixed width",
     "statement": "Left-align the codes in a width of five characters and print them.",
     "solution": "import pandas as pd\n\ns = pd.Series([\"ab\", \"c\"])\nprint(s.str.ljust(5, \".\").tolist())",
-    "expected": "['ab...', 'c....']"
+    "expected": "['ab...', 'c....']",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\"ab\", \"c\"])",
+    "starter": "import pandas as pd\ns = pd.Series([\"ab\", \"c\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "ljust()"
    },
    {
     "title": "Either of two patterns",
     "statement": "Count the labels containing either \"pur\" or \"del\".",
     "solution": "import pandas as pd\n\ns = pd.Series([\"Pune\", \"Nagpur\", \"Delhi\"])\nprint(int(s.str.contains(\"pur|del\", case=False).sum()))",
-    "expected": "2"
+    "expected": "2",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\"Pune\", \"Nagpur\", \"Delhi\"])",
+    "starter": "import pandas as pd\ns = pd.Series([\"Pune\", \"Nagpur\", \"Delhi\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    }
   ],
   "debug": [
@@ -268,7 +348,7 @@
     "title": "An unterminated character set",
     "broken": "import pandas as pd\n\ns = pd.Series([\"a\"])\nprint(s.str.match(r\"[\").tolist())",
     "fix": "import pandas as pd\n\ns = pd.Series([\"a\"])\nprint(s.str.match(r\"[a-z]\").tolist())",
-    "error": "re.error: unterminated character set at position 0",
+    "error": "re.PatternError: unterminated character set at position 0",
     "fixedOutput": "[True]"
    },
    {

@@ -93,13 +93,21 @@
     "title": "Swap the report levels",
     "statement": "Group by city and year, swap the levels and print the index names.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"year\": [2026], \"v\": [1]})\ns = df.groupby([\"city\", \"year\"])[\"v\"].sum()\nprint(s.swaplevel().index.names)",
-    "expected": "['year', 'city']"
+    "expected": "['year', 'city']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"city\": [\"Pune\"], \"year\": [2026], \"v\": [1]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"year\": [2026], \"v\": [1]})\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    },
    {
     "title": "Parameterised pipeline",
     "statement": "Scale the value column by 10 through pipe and print the result.",
-    "solution": "import pandas as pd\n\ndef scale(df, factor):\n    return df.assign(v=df[\"v\"] * factor)\n\nprint(pd.DataFrame({\"v\": [1, 2]}).pipe(scale, 10)[\"v\"].tolist())",
-    "expected": "[10, 20]"
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"v\": [1, 2]})\n\ndef scale(df, factor):\n    return df.assign(v=df[\"v\"] * factor)\n\nprint(df.pipe(scale, 10)[\"v\"].tolist())",
+    "expected": "[10, 20]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"v\": [1, 2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"v\": [1, 2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "assign()"
    }
   ],
   "debug": [
@@ -111,10 +119,10 @@
     "fixedOutput": "['a', 'b']"
    },
    {
-    "title": "swaplevel on a flat index",
-    "broken": "import pandas as pd\n\ns = pd.Series([1], index=[\"a\"])\nprint(s.swaplevel().index.tolist())",
-    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"year\": [2026], \"v\": [1]})\ns = df.groupby([\"city\", \"year\"])[\"v\"].sum()\nprint(s.swaplevel().index.names)",
-    "error": "AssertionError",
+    "title": "swaplevel asks for a third level",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"year\": [2026], \"v\": [1]})\ns = df.groupby([\"city\", \"year\"])[\"v\"].sum()\nprint(s.swaplevel(0, 2).index.names)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"year\": [2026], \"v\": [1]})\ns = df.groupby([\"city\", \"year\"])[\"v\"].sum()\nprint(s.swaplevel(0, 1).index.names)",
+    "error": "IndexError: Too many levels: Index has only 2 levels, not 3",
     "fixedOutput": "['year', 'city']"
    }
   ],
@@ -223,13 +231,21 @@
     "title": "Spearman rank correlation",
     "statement": "Print the Spearman correlation between the two columns rounded to two decimals.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3, 4], \"b\": [1, 4, 9, 16]})\nprint(round(float(df[\"a\"].corr(df[\"b\"], method=\"spearman\")), 2))",
-    "expected": "1.0"
+    "expected": "1.0",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 2, 3, 4], \"b\": [1, 4, 9, 16]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3, 4], \"b\": [1, 4, 9, 16]})\n\n# write the result the task asks for and print it\n",
+    "requires": "corr()"
    },
    {
     "title": "Equal-count buckets",
     "statement": "Split the values into three equal-count buckets and print the counts.",
     "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 3, 4, 5, 6])\nprint(pd.qcut(s, 3).value_counts().sort_index().tolist())",
-    "expected": "[2, 2, 2]"
+    "expected": "[2, 2, 2]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([1, 2, 3, 4, 5, 6])",
+    "starter": "import pandas as pd\ns = pd.Series([1, 2, 3, 4, 5, 6])\n\n# write the result the task asks for and print it\n",
+    "requires": "sort_index()"
    }
   ],
   "debug": [
@@ -353,13 +369,21 @@
     "title": "Narrow integers",
     "statement": "Store the values as int8 and print the resulting bytes and maximum.",
     "solution": "import pandas as pd\n\ns = pd.Series([1, 127], dtype=\"int64\")\nprint(s.astype(\"int8\").nbytes, s.astype(\"int8\").max())",
-    "expected": "2 127"
+    "expected": "2 127",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([1, 127], dtype=\"int64\")",
+    "starter": "import pandas as pd\ns = pd.Series([1, 127], dtype=\"int64\")\n\n# write the result the task asks for and print it\n",
+    "requires": "astype()"
    },
    {
-    "title": "Category codes",
-    "statement": "Store the column as a category and print the integer codes.",
-    "solution": "import pandas as pd\n\ns = pd.Series([\"b\", \"a\", \"b\"], dtype=\"category\")\nprint(s.cat.codes.tolist())",
-    "expected": "[1, 0, 1]"
+    "title": "Add ten to every value",
+    "statement": "Add ten to every value with a Series method and print the list.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1, 2])\nprint(s.add(10).tolist())",
+    "expected": "[11, 12]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([1, 2])",
+    "starter": "import pandas as pd\n\ns = pd.Series([1, 2])\n\n# write the result the task asks for and print it\n",
+    "requires": "add()"
    }
   ],
   "debug": [
@@ -480,16 +504,24 @@
   ],
   "tasks": [
    {
-    "title": "Frame from records",
+    "title": "Names from tuple records",
     "statement": "Build the frame from the tuples and print the names.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame.from_records([(1, \"a\"), (2, \"b\")], columns=[\"id\", \"name\"])\nprint(df[\"name\"].tolist())",
-    "expected": "['a', 'b']"
+    "expected": "['a', 'b']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame.from_records([(1, \"a\"), (2, \"b\")], columns=[\"id\", \"name\"])",
+    "starter": "import pandas as pd\ndf = pd.DataFrame.from_records([(1, \"a\"), (2, \"b\")], columns=[\"id\", \"name\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Train-only mean",
     "statement": "Compute the mean on the first three rows and print the first test value minus that mean, rounded to two decimals.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"x\": [1.0, 2.0, 3.0, 10.0]})\ntrain, test = df.iloc[:3], df.iloc[3:]\nprint(round(float((test[\"x\"] - train[\"x\"].mean()).iloc[0]), 2))",
-    "expected": "8.0"
+    "expected": "8.0",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"x\": [1.0, 2.0, 3.0, 10.0]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"x\": [1.0, 2.0, 3.0, 10.0]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    }
   ],
   "debug": [
@@ -614,13 +646,21 @@
     "title": "Two grains, two numbers",
     "statement": "Print the mean minutes per user and the mean minutes per attempt.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"user\": [1, 1, 2], \"minutes\": [10, 20, 30]})\nprint(df.groupby(\"user\")[\"minutes\"].sum().mean(), df[\"minutes\"].mean())",
-    "expected": "30.0 20.0"
+    "expected": "30.0 20.0",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"user\": [1, 1, 2], \"minutes\": [10, 20, 30]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"user\": [1, 1, 2], \"minutes\": [10, 20, 30]})\n\n# write the result the task asks for and print it\n",
+    "requires": "mean()"
    },
    {
     "title": "Report with denominators",
     "statement": "Print learners and pass rate per city as nested dicts.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})\nprint(df.groupby(\"city\")[\"passed\"].agg(learners=\"size\", rate=\"mean\").round(2).to_dict(\"index\"))",
-    "expected": "{'Delhi': {'learners': 1, 'rate': 1.0}, 'Pune': {'learners': 2, 'rate': 0.5}}"
+    "expected": "{'Delhi': {'learners': 1, 'rate': 1.0}, 'Pune': {'learners': 2, 'rate': 0.5}}",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})\n\n# write the result the task asks for and print it\n",
+    "requires": "round()"
    }
   ],
   "debug": [

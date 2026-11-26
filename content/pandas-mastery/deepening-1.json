@@ -113,13 +113,21 @@
     "title": "Report the table's size",
     "statement": "Print rows, columns and the number of distinct cities in one line.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\", \"Pune\"]})\nprint(len(df), len(df.columns), df[\"city\"].nunique())",
-    "expected": "3 1 2"
+    "expected": "3 1 2",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\", \"Pune\"]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\", \"Pune\"]})\n\n# write the result the task asks for and print it\n",
+    "requires": "nunique()"
    },
    {
     "title": "Average of one column",
     "statement": "Build a two-column student table and print the mean marks as a plain float.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"name\": [\"A\", \"B\"], \"marks\": [80, 91]})\nprint(float(df[\"marks\"].mean()))",
-    "expected": "85.5"
+    "expected": "85.5",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"name\": [\"A\", \"B\"], \"marks\": [80, 91]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"name\": [\"A\", \"B\"], \"marks\": [80, 91]})\n\n# write the result the task asks for and print it\n",
+    "requires": "mean()"
    }
   ],
   "debug": [
@@ -263,13 +271,21 @@
     "title": "Index by id",
     "statement": "Set the id column as the index and print the label of the second record.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [10, 20], \"name\": [\"A\", \"B\"]}).set_index(\"id\")\nprint(df.index[1])",
-    "expected": "20"
+    "expected": "20",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"id\": [10, 20], \"name\": [\"A\", \"B\"]}).set_index(\"id\")",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"id\": [10, 20], \"name\": [\"A\", \"B\"]}).set_index(\"id\")\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Reindex to a fixed calendar",
     "statement": "Reindex the series to labels a, b, c and print the missing count.",
     "solution": "import pandas as pd\n\ns = pd.Series([1, 2], index=[\"a\", \"b\"])\nprint(s.reindex([\"a\", \"b\", \"c\"]).isna().sum())",
-    "expected": "1"
+    "expected": "1",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([1, 2], index=[\"a\", \"b\"])",
+    "starter": "import pandas as pd\ns = pd.Series([1, 2], index=[\"a\", \"b\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    }
   ],
   "debug": [
@@ -413,13 +429,21 @@
     "title": "Numeric column count",
     "statement": "Print how many numeric columns the table has.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})\nprint(df.select_dtypes(\"number\").shape[1])",
-    "expected": "2"
+    "expected": "2",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Usable values in a column",
     "statement": "Print the count of non-missing values beside the total number of values.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, None, 3]})\nprint(df[\"a\"].count(), df[\"a\"].size)",
-    "expected": "2 3"
+    "expected": "2 3",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, None, 3]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, None, 3]})\n\n# write the result the task asks for and print it\n",
+    "requires": "count()"
    }
   ],
   "debug": [
@@ -564,13 +588,21 @@
     "title": "One cell, by label",
     "statement": "Read the marks of student \"b\" with `at` and print it.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"marks\": [80, 90]}, index=[\"a\", \"b\"])\nprint(df.at[\"b\", \"marks\"])",
-    "expected": "90"
+    "expected": "90",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"marks\": [80, 90]}, index=[\"a\", \"b\"])",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"marks\": [80, 90]}, index=[\"a\", \"b\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Cap values without changing shape",
     "statement": "Replace every value above 100 with 100 and print the column as a list.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [50, 120, 90]})\nprint(df.where(df[\"v\"] <= 100, 100)[\"v\"].tolist())",
-    "expected": "[50, 100, 90]"
+    "expected": "[50, 100, 90]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"v\": [50, 120, 90]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"v\": [50, 120, 90]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    }
   ],
   "debug": [
@@ -714,13 +746,21 @@
     "title": "Year from a date column",
     "statement": "Convert the text dates and print the year of the first one.",
     "solution": "import pandas as pd\n\ns = pd.to_datetime(pd.Series([\"2026-01-05\", \"2025-12-31\"]))\nprint(int(s.dt.year.iloc[0]))",
-    "expected": "2026"
+    "expected": "2026",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.to_datetime(pd.Series([\"2026-01-05\", \"2025-12-31\"]))",
+    "starter": "import pandas as pd\ns = pd.to_datetime(pd.Series([\"2026-01-05\", \"2025-12-31\"]))\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Category with a known vocabulary",
     "statement": "Store the values as an ordered category and print its categories.",
     "solution": "import pandas as pd\n\ns = pd.Series([\"medium\", \"low\"], dtype=pd.CategoricalDtype([\"low\", \"medium\", \"high\"], ordered=True))\nprint(s.cat.categories.tolist())",
-    "expected": "['low', 'medium', 'high']"
+    "expected": "['low', 'medium', 'high']",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\"medium\", \"low\"], dtype=pd.CategoricalDtype([\"low\", \"medium\", \"high\"], ordered=True))",
+    "starter": "import pandas as pd\ns = pd.Series([\"medium\", \"low\"], dtype=pd.CategoricalDtype([\"low\", \"medium\", \"high\"], ordered=True))\n\n# write the result the task asks for and print it\n",
+    "requires": "tolist()"
    }
   ],
   "debug": [

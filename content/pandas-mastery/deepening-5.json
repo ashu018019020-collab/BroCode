@@ -5,25 +5,41 @@
     "title": "Build a labeled Series",
     "statement": "Create a Series from the dict and print its values as a list.",
     "solution": "import pandas as pd\n\ns = pd.Series({\"a\": 1, \"b\": 2})\nprint(s.tolist())",
-    "expected": "[1, 2]"
+    "expected": "[1, 2]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series({\"a\": 1, \"b\": 2})",
+    "starter": "import pandas as pd\ns = pd.Series({\"a\": 1, \"b\": 2})\n\n# write the result the task asks for and print it\n",
+    "requires": "tolist()"
    },
    {
     "title": "Label alignment leaves a gap",
     "statement": "Add the two Series and print how many values ended up missing.",
     "solution": "import pandas as pd\n\na = pd.Series([1, 2], index=[\"x\", \"y\"])\nb = pd.Series([10, 20], index=[\"y\", \"z\"])\nprint(int((a + b).isna().sum()))",
-    "expected": "2"
+    "expected": "2",
+    "setup": "import pandas as pd",
+    "fixture": "a = pd.Series([1, 2], index=[\"x\", \"y\"])\nb = pd.Series([10, 20], index=[\"y\", \"z\"])",
+    "starter": "import pandas as pd\na = pd.Series([1, 2], index=[\"x\", \"y\"])\nb = pd.Series([10, 20], index=[\"y\", \"z\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    },
    {
     "title": "Read by label",
     "statement": "Print the value stored under the label \"y\".",
     "solution": "import pandas as pd\n\ns = pd.Series([5, 6], index=[\"x\", \"y\"])\nprint(s[\"y\"])",
-    "expected": "6"
+    "expected": "6",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([5, 6], index=[\"x\", \"y\"])",
+    "starter": "import pandas as pd\ns = pd.Series([5, 6], index=[\"x\", \"y\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Count above the mean",
     "statement": "Print how many values are strictly above the mean.",
     "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 3, 4])\nprint(int((s > s.mean()).sum()))",
-    "expected": "2"
+    "expected": "2",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([1, 2, 3, 4])",
+    "starter": "import pandas as pd\ns = pd.Series([1, 2, 3, 4])\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    }
   ],
   "debug": [
@@ -64,25 +80,41 @@
     "title": "Frame from records",
     "statement": "Build the frame from the list of dicts and print its shape.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame([{\"a\": 1, \"b\": 2}, {\"a\": 3, \"b\": 4}])\nprint(df.shape)",
-    "expected": "(2, 2)"
+    "expected": "(2, 2)",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame([{\"a\": 1, \"b\": 2}, {\"a\": 3, \"b\": 4}])",
+    "starter": "import pandas as pd\ndf = pd.DataFrame([{\"a\": 1, \"b\": 2}, {\"a\": 3, \"b\": 4}])\n\n# write the result the task asks for and print it\n",
+    "requires": "shape"
    },
    {
     "title": "Custom index at construction",
     "statement": "Create the frame with the given index and print the index labels.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1, 2]}, index=[\"r1\", \"r2\"])\nprint(df.index.tolist())",
-    "expected": "['r1', 'r2']"
+    "expected": "['r1', 'r2']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"v\": [1, 2]}, index=[\"r1\", \"r2\"])",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"v\": [1, 2]}, index=[\"r1\", \"r2\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "tolist()"
    },
    {
     "title": "A derived column",
     "statement": "Add a column that is the sum of the two existing columns and print it.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"total\"] = df[\"a\"] + df[\"b\"]\nprint(df[\"total\"].tolist())",
-    "expected": "[4, 6]"
+    "expected": "[4, 6]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Column types after construction",
     "statement": "Print the column names and the number of numeric columns.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [\"x\"], \"c\": [1.5]})\nprint(df.columns.tolist(), len(df.select_dtypes(\"number\").columns))",
-    "expected": "['a', 'b', 'c'] 2"
+    "expected": "['a', 'b', 'c'] 2",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1], \"b\": [\"x\"], \"c\": [1.5]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1], \"b\": [\"x\"], \"c\": [1.5]})\n\n# write the result the task asks for and print it\n",
+    "requires": "select_dtypes()"
    }
   ],
   "debug": [
@@ -123,25 +155,41 @@
     "title": "Shape and columns",
     "statement": "Print the shape and the column list of the frame.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\nprint(df.shape, df.columns.tolist())",
-    "expected": "(1, 2) ['a', 'b']"
+    "expected": "(1, 2) ['a', 'b']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1], \"b\": [2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "tolist()"
    },
    {
     "title": "Select two columns",
     "statement": "Select the two numeric columns and print the resulting shape.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2], \"c\": [\"x\"]})\nprint(df[[\"a\", \"b\"]].shape)",
-    "expected": "(1, 2)"
+    "expected": "(1, 2)",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1], \"b\": [2], \"c\": [\"x\"]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1], \"b\": [2], \"c\": [\"x\"]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Label slice versus position slice",
     "statement": "Print the row count from a label slice of 0:1 and from a position slice of 0:1.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [10, 20, 30]})\nprint(len(df.loc[0:1]), len(df.iloc[0:1]))",
-    "expected": "2 1"
+    "expected": "2 1",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [10, 20, 30]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [10, 20, 30]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Types as text",
     "statement": "Print each column's dtype as a string.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})\nprint(df.dtypes.astype(str).tolist())",
-    "expected": "['int64', 'float64', 'str']"
+    "expected": "['int64', 'float64', 'str']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})\n\n# write the result the task asks for and print it\n",
+    "requires": "astype()"
    }
   ],
   "debug": [
@@ -182,25 +230,41 @@
     "title": "Filter and count",
     "statement": "Print how many rows have a value above 2.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1, 3, 5]})\nprint(int((df[\"v\"] > 2).sum()))",
-    "expected": "2"
+    "expected": "2",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"v\": [1, 3, 5]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"v\": [1, 3, 5]})\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    },
    {
     "title": "Targeted assignment",
     "statement": "Set b to 0 where a is above 1, then print b.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [9, 9]})\ndf.loc[df[\"a\"] > 1, \"b\"] = 0\nprint(df[\"b\"].tolist())",
-    "expected": "[9, 0]"
+    "expected": "[9, 0]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 2], \"b\": [9, 9]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [9, 9]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Two conditions in query",
     "statement": "Use query to keep 1 < a < 4 and print the kept values.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3, 4]})\nprint(df.query(\"1 < a < 4\")[\"a\"].tolist())",
-    "expected": "[2, 3]"
+    "expected": "[2, 3]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 2, 3, 4]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3, 4]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Filter with isin",
     "statement": "Keep only the listed cities and print them in order.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\", \"Goa\"]})\nprint(df[df[\"city\"].isin([\"Pune\", \"Goa\"])][\"city\"].tolist())",
-    "expected": "['Pune', 'Goa']"
+    "expected": "['Pune', 'Goa']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\", \"Goa\"]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\", \"Goa\"]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    }
   ],
   "debug": [
@@ -241,25 +305,41 @@
     "title": "Parse with an explicit format",
     "statement": "Parse the date string and print its year.",
     "solution": "import pandas as pd\n\ns = pd.to_datetime(\"31/01/2026\", format=\"%d/%m/%Y\")\nprint(s.year)",
-    "expected": "2026"
+    "expected": "2026",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.to_datetime(\"31/01/2026\", format=\"%d/%m/%Y\")",
+    "starter": "import pandas as pd\ns = pd.to_datetime(\"31/01/2026\", format=\"%d/%m/%Y\")\n\n# write the result the task asks for and print it\n",
+    "requires": "year"
    },
    {
     "title": "Weekday of a date",
     "statement": "Print the weekday number for 2026-01-05.",
     "solution": "import pandas as pd\n\ns = pd.to_datetime(\"2026-01-05\")\nprint(s.dayofweek)",
-    "expected": "0"
+    "expected": "0",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.to_datetime(\"2026-01-05\")",
+    "starter": "import pandas as pd\ns = pd.to_datetime(\"2026-01-05\")\n\n# write the result the task asks for and print it\n",
+    "requires": "dayofweek"
    },
    {
     "title": "Three daily timestamps",
     "statement": "Build a three-period daily range and print its first and last date.",
     "solution": "import pandas as pd\n\nr = pd.date_range(\"2026-01-01\", periods=3, freq=\"D\")\nprint(r[0].strftime(\"%Y-%m-%d\"), r[-1].strftime(\"%Y-%m-%d\"))",
-    "expected": "2026-01-01 2026-01-03"
+    "expected": "2026-01-01 2026-01-03",
+    "setup": "import pandas as pd",
+    "fixture": "r = pd.date_range(\"2026-01-01\", periods=3, freq=\"D\")",
+    "starter": "import pandas as pd\nr = pd.date_range(\"2026-01-01\", periods=3, freq=\"D\")\n\n# write the result the task asks for and print it\n",
+    "requires": "strftime()"
    },
    {
     "title": "Month extraction",
     "statement": "Print the month number of every timestamp in the series.",
     "solution": "import pandas as pd\n\ns = pd.to_datetime(pd.Series([\"2026-01-15\", \"2026-03-01\"]))\nprint(s.dt.month.tolist())",
-    "expected": "[1, 3]"
+    "expected": "[1, 3]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.to_datetime(pd.Series([\"2026-01-15\", \"2026-03-01\"]))",
+    "starter": "import pandas as pd\ns = pd.to_datetime(pd.Series([\"2026-01-15\", \"2026-03-01\"]))\n\n# write the result the task asks for and print it\n",
+    "requires": "tolist()"
    }
   ],
   "debug": [
@@ -267,7 +347,7 @@
     "title": "A day that February does not have",
     "broken": "import pandas as pd\n\nprint(pd.to_datetime(\"2026-02-30\"))",
     "fix": "import pandas as pd\n\nprint(pd.to_datetime(\"2026-02-28\"))",
-    "error": "pandas._libs.tslibs.parsing.DateParseError: day is out of range for month: 2026-02-30",
+    "error": "pandas._libs.tslibs.parsing.DateParseError: day 30 must be in range 1..28 for month 2 in year 2026: 2026-02-30",
     "fixedOutput": "2026-02-28 00:00:00"
    },
    {

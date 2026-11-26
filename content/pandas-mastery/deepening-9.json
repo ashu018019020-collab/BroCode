@@ -4,26 +4,42 @@
    {
     "title": "Count distinct values",
     "statement": "Print the number of distinct values in the series.",
-    "solution": "import pandas as pd\n\nprint(pd.Series([\"a\", \"a\", \"b\"]).nunique())",
-    "expected": "2"
+    "solution": "import pandas as pd\ns = pd.Series([\"a\", \"a\", \"b\"])\nprint(s.nunique())",
+    "expected": "2",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\"a\", \"a\", \"b\"])",
+    "starter": "import pandas as pd\ns = pd.Series([\"a\", \"a\", \"b\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "nunique()"
    },
    {
     "title": "Filter with a mask",
     "statement": "Print the values above 2.",
     "solution": "import pandas as pd\n\ns = pd.Series([1, 3, 5])\nprint(s[s > 2].tolist())",
-    "expected": "[3, 5]"
+    "expected": "[3, 5]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([1, 3, 5])",
+    "starter": "import pandas as pd\ns = pd.Series([1, 3, 5])\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Series with a step",
     "statement": "Build a Series from 0 to 6 in steps of 2 and print it.",
-    "solution": "import pandas as pd\n\nprint(pd.Series(range(0, 6, 2)).tolist())",
-    "expected": "[0, 2, 4]"
+    "solution": "import pandas as pd\ns = pd.Series(range(0, 6, 2))\nprint(s.tolist())",
+    "expected": "[0, 2, 4]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series(range(0, 6, 2))",
+    "starter": "import pandas as pd\ns = pd.Series(range(0, 6, 2))\n\n# write the result the task asks for and print it\n",
+    "requires": "tolist()"
    },
    {
     "title": "Last value by position",
     "statement": "Print the last value using a position, not a label.",
     "solution": "import pandas as pd\n\ns = pd.Series([5, 6], index=[\"x\", \"y\"])\nprint(s.iloc[-1])",
-    "expected": "6"
+    "expected": "6",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([5, 6], index=[\"x\", \"y\"])",
+    "starter": "import pandas as pd\ns = pd.Series([5, 6], index=[\"x\", \"y\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    }
   ],
   "debug": [
@@ -64,25 +80,41 @@
     "title": "A constant column",
     "statement": "Add a flag column set to 1 and print it.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\ndf[\"flag\"] = 1\nprint(df[\"flag\"].tolist())",
-    "expected": "[1, 1]"
+    "expected": "[1, 1]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Transpose shape",
     "statement": "Print the shape of the transposed frame.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.T.shape)",
-    "expected": "(2, 2)"
+    "expected": "(2, 2)",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\n\n# write the result the task asks for and print it\n",
+    "requires": "shape"
    },
    {
     "title": "Rename then select",
     "statement": "Rename a to x and print the renamed column's values.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.rename(columns={\"a\": \"x\"})[\"x\"].tolist())",
-    "expected": "[1, 2]"
+    "expected": "[1, 2]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Insert a column first",
     "statement": "Insert an id column at position 0 and print the column order.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\ndf.insert(0, \"id\", [1, 2])\nprint(df.columns.tolist())",
-    "expected": "['id', 'a']"
+    "expected": "['id', 'a']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "insert()"
    }
   ],
   "debug": [
@@ -123,25 +155,41 @@
     "title": "First and last row",
     "statement": "Select the first and last row by position and print the shape.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3]})\nprint(df.iloc[[0, -1]].shape)",
-    "expected": "(2, 1)"
+    "expected": "(2, 1)",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 2, 3]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Count of integer columns",
     "statement": "Print how many columns are int64.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [2]})\nprint(int((df.dtypes == \"int64\").sum()))",
-    "expected": "2"
+    "expected": "2",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    },
    {
     "title": "Slice a run of columns",
     "statement": "Slice from column a to column b and print the shape.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2], \"c\": [3]})\nprint(df.loc[:, \"a\":\"b\"].shape)",
-    "expected": "(1, 2)"
+    "expected": "(1, 2)",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1], \"b\": [2], \"c\": [3]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1], \"b\": [2], \"c\": [3]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "An empty filter",
     "statement": "Print the row count after keeping only values above 100.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[df[\"a\"] > 100].shape[0])",
-    "expected": "0"
+    "expected": "0",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    }
   ],
   "debug": [
@@ -182,25 +230,41 @@
     "title": "Negate a membership test",
     "statement": "Keep values that are not 1 and print them.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3]})\nprint(df[~df[\"a\"].isin([1])][\"a\"].tolist())",
-    "expected": "[2, 3]"
+    "expected": "[2, 3]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 2, 3]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    },
    {
     "title": "Rows inside a range",
     "statement": "Count the rows with v between 2 and 4 inclusive.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1, 2, 4, 5]})\nprint(int(df[\"v\"].between(2, 4).sum()))",
-    "expected": "2"
+    "expected": "2",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"v\": [1, 2, 4, 5]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"v\": [1, 2, 4, 5]})\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    },
    {
     "title": "Replace values failing a test",
     "statement": "Keep values above 1 and replace the rest with 0.",
     "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 3])\nprint(s.where(s > 1, 0).tolist())",
-    "expected": "[0, 2, 3]"
+    "expected": "[0, 2, 3]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([1, 2, 3])",
+    "starter": "import pandas as pd\ns = pd.Series([1, 2, 3])\n\n# write the result the task asks for and print it\n",
+    "requires": "where()"
    },
    {
     "title": "Set one cell by label",
     "statement": "Set a at label 1 to 9 and print the column.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\ndf.loc[1, \"a\"] = 9\nprint(df[\"a\"].tolist())",
-    "expected": "[1, 9]"
+    "expected": "[1, 9]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1, 2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    }
   ],
   "debug": [
@@ -240,26 +304,42 @@
    {
     "title": "Quarter of a date",
     "statement": "Print the quarter number of the date.",
-    "solution": "import pandas as pd\n\nprint(pd.Timestamp(\"2026-05-01\").quarter)",
-    "expected": "2"
+    "solution": "import pandas as pd\nd = pd.Timestamp(\"2026-05-01\")\nprint(d.quarter)",
+    "expected": "2",
+    "setup": "import pandas as pd",
+    "fixture": "d = pd.Timestamp(\"2026-05-01\")",
+    "starter": "import pandas as pd\nd = pd.Timestamp(\"2026-05-01\")\n\n# write the result the task asks for and print it\n",
+    "requires": "quarter"
    },
    {
     "title": "Days between two dates",
     "statement": "Print the number of days between the two dates.",
     "solution": "import pandas as pd\n\na = pd.Timestamp(\"2026-01-01\")\nb = pd.Timestamp(\"2026-01-31\")\nprint((b - a).days)",
-    "expected": "30"
+    "expected": "30",
+    "setup": "import pandas as pd",
+    "fixture": "a = pd.Timestamp(\"2026-01-01\")\nb = pd.Timestamp(\"2026-01-31\")",
+    "starter": "import pandas as pd\na = pd.Timestamp(\"2026-01-01\")\nb = pd.Timestamp(\"2026-01-31\")\n\n# write the result the task asks for and print it\n",
+    "requires": "days"
    },
    {
     "title": "Floor to the month",
     "statement": "Convert the date to its month period and print it as text.",
     "solution": "import pandas as pd\n\ns = pd.to_datetime(pd.Series([\"2026-01-15\"]))\nprint(s.dt.to_period(\"M\").astype(str).tolist())",
-    "expected": "['2026-01']"
+    "expected": "['2026-01']",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.to_datetime(pd.Series([\"2026-01-15\"]))",
+    "starter": "import pandas as pd\ns = pd.to_datetime(pd.Series([\"2026-01-15\"]))\n\n# write the result the task asks for and print it\n",
+    "requires": "astype()"
    },
    {
     "title": "Business days in a range",
     "statement": "Build five business days from 2026-01-01 and print the length.",
-    "solution": "import pandas as pd\n\nprint(len(pd.bdate_range(\"2026-01-01\", periods=5)))",
-    "expected": "5"
+    "solution": "import pandas as pd\ndays = pd.bdate_range(\"2026-01-01\", periods=5)\nprint(len(days))",
+    "expected": "5",
+    "setup": "import pandas as pd",
+    "fixture": "days = pd.bdate_range(\"2026-01-01\", periods=5)",
+    "starter": "import pandas as pd\ndays = pd.bdate_range(\"2026-01-01\", periods=5)\n\n# write the result the task asks for and print it\n",
+    "requires": "bdate_range()"
    }
   ],
   "debug": [

@@ -59,7 +59,11 @@
     "title": "Average marks per course",
     "statement": "Given the table of students with course and marks, print the mean marks rounded to one decimal place.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"course\": [\"Python\", \"Python\", \"SQL\"], \"marks\": [80, 90, 70]})\nprint(round(df[\"marks\"].mean(), 1))",
-    "expected": "80.0"
+    "expected": "80.0",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"course\": [\"Python\", \"Python\", \"SQL\"], \"marks\": [80, 90, 70]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"course\": [\"Python\", \"Python\", \"SQL\"], \"marks\": [80, 90, 70]})\n\n# write the result the task asks for and print it\n",
+    "requires": "mean()"
    }
   ],
   "interviewBank": [
@@ -171,7 +175,11 @@
     "title": "Add two aligned Series",
     "statement": "Add the two Series by label so that missing labels count as zero, then print the total as a plain list.",
     "solution": "import pandas as pd\n\na = pd.Series([5, 6], index=[\"p\", \"q\"])\nb = pd.Series([7], index=[\"q\"])\nprint(a.add(b, fill_value=0).tolist())",
-    "expected": "[5.0, 13.0]"
+    "expected": "[5.0, 13.0]",
+    "setup": "import pandas as pd",
+    "fixture": "a = pd.Series([5, 6], index=[\"p\", \"q\"])\nb = pd.Series([7], index=[\"q\"])",
+    "starter": "import pandas as pd\na = pd.Series([5, 6], index=[\"p\", \"q\"])\nb = pd.Series([7], index=[\"q\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "add()"
    }
   ],
   "interviewBank": [
@@ -283,7 +291,11 @@
     "title": "Profile one column",
     "statement": "Print how many values a column has, how many are distinct, and which value is most common.",
     "solution": "import pandas as pd\n\ns = pd.Series([\"a\", \"b\", \"a\", \"c\", \"a\"])\nprint(s.count(), s.nunique(), s.value_counts().idxmax())",
-    "expected": "5 3 a"
+    "expected": "5 3 a",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([\"a\", \"b\", \"a\", \"c\", \"a\"])",
+    "starter": "import pandas as pd\ns = pd.Series([\"a\", \"b\", \"a\", \"c\", \"a\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "count()"
    }
   ],
   "interviewBank": [
@@ -396,7 +408,11 @@
     "title": "Filter with two conditions",
     "statement": "Keep rows where the city is Pune and marks are at least 80, then print the names as a list.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"name\": [\"Aman\", \"Riya\", \"Rahul\"], \"city\": [\"Pune\", \"Delhi\", \"Pune\"], \"marks\": [85, 92, 70]})\nprint(df[(df[\"city\"] == \"Pune\") & (df[\"marks\"] >= 80)][\"name\"].tolist())",
-    "expected": "['Aman']"
+    "expected": "['Aman']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"name\": [\"Aman\", \"Riya\", \"Rahul\"], \"city\": [\"Pune\", \"Delhi\", \"Pune\"], \"marks\": [85, 92, 70]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"name\": [\"Aman\", \"Riya\", \"Rahul\"], \"city\": [\"Pune\", \"Delhi\", \"Pune\"], \"marks\": [85, 92, 70]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    }
   ],
   "interviewBank": [
@@ -508,7 +524,11 @@
     "title": "Clean a mixed price column",
     "statement": "Convert a text price column to numbers, treat unparseable values as missing, then print the total of the valid prices.",
     "solution": "import pandas as pd\n\nprices = pd.Series([\"99.5\", \"n/a\", \"20\"])\nprint(pd.to_numeric(prices, errors=\"coerce\").sum())",
-    "expected": "119.5"
+    "expected": "119.5",
+    "setup": "import pandas as pd",
+    "fixture": "prices = pd.Series([\"99.5\", \"n/a\", \"20\"])",
+    "starter": "import pandas as pd\nprices = pd.Series([\"99.5\", \"n/a\", \"20\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    }
   ],
   "interviewBank": [

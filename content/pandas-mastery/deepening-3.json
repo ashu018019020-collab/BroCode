@@ -93,13 +93,21 @@
     "title": "Read with a sentinel",
     "statement": "Treat \"NA\" as missing and print how many values are missing.",
     "solution": "import pandas as pd\nfrom io import StringIO\n\ntext = \"v\\n10\\nNA\"\ndf = pd.read_csv(StringIO(text), na_values=[\"NA\"])\nprint(int(df[\"v\"].isna().sum()))",
-    "expected": "1"
+    "expected": "1",
+    "setup": "import pandas as pd\nfrom io import StringIO",
+    "fixture": "text = \"v\\n10\\nNA\"\ndf = pd.read_csv(StringIO(text), na_values=[\"NA\"])",
+    "starter": "import pandas as pd\nfrom io import StringIO\ntext = \"v\\n10\\nNA\"\ndf = pd.read_csv(StringIO(text), na_values=[\"NA\"])\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    },
    {
     "title": "Records JSON",
     "statement": "Serialise the frame as records and print the string.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\nprint(df.to_json(orient=\"records\"))",
-    "expected": "[{\"a\":1,\"b\":2}]"
+    "expected": "[{\"a\":1,\"b\":2}]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"a\": [1], \"b\": [2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "to_json()"
    }
   ],
   "debug": [
@@ -223,13 +231,21 @@
     "title": "Name the collision",
     "statement": "Merge on id with suffixes _l and _r and print the column names.",
     "solution": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1], \"v\": [10]})\nb = pd.DataFrame({\"id\": [1], \"v\": [20]})\nprint(a.merge(b, on=\"id\", suffixes=(\"_l\", \"_r\")).columns.tolist())",
-    "expected": "['id', 'v_l', 'v_r']"
+    "expected": "['id', 'v_l', 'v_r']",
+    "setup": "import pandas as pd",
+    "fixture": "a = pd.DataFrame({\"id\": [1], \"v\": [10]})\nb = pd.DataFrame({\"id\": [1], \"v\": [20]})",
+    "starter": "import pandas as pd\na = pd.DataFrame({\"id\": [1], \"v\": [10]})\nb = pd.DataFrame({\"id\": [1], \"v\": [20]})\n\n# write the result the task asks for and print it\n",
+    "requires": "merge()"
    },
    {
     "title": "Who never matched",
     "statement": "Left-join with an indicator and print the rows that came only from the left side.",
     "solution": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1, 2]})\nb = pd.DataFrame({\"id\": [2]})\nout = a.merge(b, on=\"id\", how=\"left\", indicator=True)\nprint(out[out[\"_merge\"] == \"left_only\"][\"id\"].tolist())",
-    "expected": "[1]"
+    "expected": "[1]",
+    "setup": "import pandas as pd",
+    "fixture": "a = pd.DataFrame({\"id\": [1, 2]})\nb = pd.DataFrame({\"id\": [2]})",
+    "starter": "import pandas as pd\na = pd.DataFrame({\"id\": [1, 2]})\nb = pd.DataFrame({\"id\": [2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "merge()"
    }
   ],
   "debug": [
@@ -353,13 +369,21 @@
     "title": "Key as a column",
     "statement": "Group by city with as_index=False, sum the values, and print the column names.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\"], \"v\": [1, 2]})\nprint(df.groupby(\"city\", as_index=False)[\"v\"].sum().columns.tolist())",
-    "expected": "['city', 'v']"
+    "expected": "['city', 'v']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"city\": [\"Pune\", \"Pune\"], \"v\": [1, 2]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\"], \"v\": [1, 2]})\n\n# write the result the task asks for and print it\n",
+    "requires": "sum()"
    },
    {
     "title": "Group numbers",
     "statement": "Print one group number per row for the city column.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"b\", \"a\", \"b\"]})\nprint(df.groupby(\"city\").ngroup().tolist())",
-    "expected": "[1, 0, 1]"
+    "expected": "[1, 0, 1]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"city\": [\"b\", \"a\", \"b\"]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"city\": [\"b\", \"a\", \"b\"]})\n\n# write the result the task asks for and print it\n",
+    "requires": "ngroup()"
    }
   ],
   "debug": [
@@ -483,13 +507,21 @@
     "title": "Pivot with totals",
     "statement": "Build a city × year table with margins and print its row labels.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"year\": [2025, 2026, 2026], \"v\": [1, 2, 3]})\nt = df.pivot_table(index=\"city\", columns=\"year\", values=\"v\", aggfunc=\"sum\", margins=True, fill_value=0)\nprint(t.index.tolist())",
-    "expected": "['Delhi', 'Pune', 'All']"
+    "expected": "['Delhi', 'Pune', 'All']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"year\": [2025, 2026, 2026], \"v\": [1, 2, 3]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"year\": [2025, 2026, 2026], \"v\": [1, 2, 3]})\n\n# write the result the task asks for and print it\n",
+    "requires": "pivot_table()"
    },
    {
     "title": "Long from wide",
     "statement": "Use wide_to_long to collect the two sale columns and print the values.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1], \"sale_2025\": [10], \"sale_2026\": [20]})\nprint(pd.wide_to_long(df, stubnames=\"sale\", i=\"id\", j=\"year\", sep=\"_\")[\"sale\"].tolist())",
-    "expected": "[10, 20]"
+    "expected": "[10, 20]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"id\": [1], \"sale_2025\": [10], \"sale_2026\": [20]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"id\": [1], \"sale_2025\": [10], \"sale_2026\": [20]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    }
   ],
   "debug": [
@@ -613,13 +645,21 @@
     "title": "Month label",
     "statement": "Format the date as \"Jan 2026\" and print it.",
     "solution": "import pandas as pd\n\ns = pd.to_datetime(pd.Series([\"2026-01-05\"]))\nprint(s.dt.strftime(\"%b %Y\").tolist())",
-    "expected": "['Jan 2026']"
+    "expected": "['Jan 2026']",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.to_datetime(pd.Series([\"2026-01-05\"]))",
+    "starter": "import pandas as pd\ns = pd.to_datetime(pd.Series([\"2026-01-05\"]))\n\n# write the result the task asks for and print it\n",
+    "requires": "strftime()"
    },
    {
     "title": "One month later",
     "statement": "Add one calendar month to 31 January and print the date.",
-    "solution": "import pandas as pd\n\nprint((pd.Timestamp(\"2026-01-31\") + pd.DateOffset(months=1)).strftime(\"%Y-%m-%d\"))",
-    "expected": "2026-02-28"
+    "solution": "import pandas as pd\nd = pd.Timestamp(\"2026-01-31\")\nprint((d + pd.DateOffset(months=1)).strftime(\"%Y-%m-%d\"))",
+    "expected": "2026-02-28",
+    "setup": "import pandas as pd",
+    "fixture": "d = pd.Timestamp(\"2026-01-31\")",
+    "starter": "import pandas as pd\nd = pd.Timestamp(\"2026-01-31\")\n\n# write the result the task asks for and print it\n",
+    "requires": "strftime()"
    }
   ],
   "debug": [
@@ -634,7 +674,7 @@
     "title": "A date that does not exist",
     "broken": "import pandas as pd\n\nprint(pd.to_datetime([\"2026-13-01\"]).tolist())",
     "fix": "import pandas as pd\n\nprint(pd.to_datetime([\"2026-12-01\"]).tolist())",
-    "error": "pandas._libs.tslibs.parsing.DateParseError: month must be in 1..12: 2026-13-01",
+    "error": "pandas._libs.tslibs.parsing.DateParseError: month must be in 1..12, not 13: 2026-13-01",
     "fixedOutput": "[Timestamp('2026-12-01 00:00:00')]"
    }
   ],

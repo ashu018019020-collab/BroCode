@@ -26,11 +26,12 @@ const files = fs.readdirSync(SRC).filter((f) => /^(modules-|deepening).*\.json$/
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pandas-fill-'));
 const script = path.join(tmp, 'sample.py');
+const PYTHON = process.env.PYTHON || 'python3';
 
 function run(code) {
   fs.writeFileSync(script, `${String(code).replace(/\t/g, '    ')}\n`, 'utf8');
   try {
-    const out = execFileSync('python3', [script], { encoding: 'utf8', timeout: 60000, stdio: ['ignore', 'pipe', 'pipe'] });
+    const out = execFileSync(PYTHON, [script], { encoding: 'utf8', timeout: 60000, stdio: ['ignore', 'pipe', 'pipe'] });
     return { out: out.replace(/\s+$/, ''), error: null };
   } catch (e) {
     const stderr = String(e.stderr || '');

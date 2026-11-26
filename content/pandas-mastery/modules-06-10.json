@@ -60,7 +60,11 @@
     "title": "Discount column",
     "statement": "Add a `final` column equal to price minus ten percent, rounded to two decimals, and print it as a list.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"price\": [100, 250]})\ndf[\"final\"] = (df[\"price\"] * 0.9).round(2)\nprint(df[\"final\"].tolist())",
-    "expected": "[90.0, 225.0]"
+    "expected": "[90.0, 225.0]",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"price\": [100, 250]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"price\": [100, 250]})\n\n# write the result the task asks for and print it\n",
+    "requires": "round()"
    }
   ],
   "interviewBank": [
@@ -172,7 +176,11 @@
     "title": "Top three by revenue",
     "statement": "Print the product names of the three highest revenue rows, highest first.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"product\": [\"a\", \"b\", \"c\", \"d\"], \"revenue\": [10, 50, 30, 40]})\nprint(df.nlargest(3, \"revenue\")[\"product\"].tolist())",
-    "expected": "['b', 'd', 'c']"
+    "expected": "['b', 'd', 'c']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"product\": [\"a\", \"b\", \"c\", \"d\"], \"revenue\": [10, 50, 30, 40]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"product\": [\"a\", \"b\", \"c\", \"d\"], \"revenue\": [10, 50, 30, 40]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    }
   ],
   "interviewBank": [
@@ -285,7 +293,11 @@
     "title": "Median fill, then count",
     "statement": "Fill the missing marks with the column median and print the filled values as a list.",
     "solution": "import pandas as pd\n\ns = pd.Series([10.0, None, 30.0, 20.0])\nprint(s.fillna(s.median()).tolist())",
-    "expected": "[10.0, 20.0, 30.0, 20.0]"
+    "expected": "[10.0, 20.0, 30.0, 20.0]",
+    "setup": "import pandas as pd",
+    "fixture": "s = pd.Series([10.0, None, 30.0, 20.0])",
+    "starter": "import pandas as pd\ns = pd.Series([10.0, None, 30.0, 20.0])\n\n# write the result the task asks for and print it\n",
+    "requires": "fillna()"
    }
   ],
   "interviewBank": [
@@ -399,7 +411,11 @@
     "title": "Normalise a category column",
     "statement": "Strip whitespace, lowercase, then map `in` and `ind` to `india`; print the resulting list.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"country\": [\"IN \", \"ind\", \"India\"]})\ndf[\"country\"] = df[\"country\"].str.strip().str.lower().replace({\"in\": \"india\", \"ind\": \"india\", \"india\": \"india\"})\nprint(df[\"country\"].tolist())",
-    "expected": "['india', 'india', 'india']"
+    "expected": "['india', 'india', 'india']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"country\": [\"IN \", \"ind\", \"India\"]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"country\": [\"IN \", \"ind\", \"India\"]})\n\n# write the result the task asks for and print it\n",
+    "requires": "replace()"
    }
   ],
   "interviewBank": [
@@ -512,7 +528,11 @@
     "title": "Extract the year from a code",
     "statement": "From codes like \"BR-2026-07\", extract the four-digit year and print it as a list.",
     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [\"BR-2026-07\", \"BR-2025-11\"]})\nprint(df[\"code\"].str.extract(r\"-(\\d{4})-\")[0].tolist())",
-    "expected": "['2026', '2025']"
+    "expected": "['2026', '2025']",
+    "setup": "import pandas as pd",
+    "fixture": "df = pd.DataFrame({\"code\": [\"BR-2026-07\", \"BR-2025-11\"]})",
+    "starter": "import pandas as pd\ndf = pd.DataFrame({\"code\": [\"BR-2026-07\", \"BR-2025-11\"]})\n\n# write the result the task asks for and print it\n",
+    "requires": "__getitem__()"
    }
   ],
   "interviewBank": [

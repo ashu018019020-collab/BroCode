@@ -12,18 +12,25 @@
  * `scripts/pandas-fill-outputs.cjs`. Duplicate ids, duplicate question text, an empty section or a
  * debug entry whose fix does not change the result fail the run instead of shipping.
  *
- * Dry run validates only; `--write` publishes.
+ * Dry run validates only; `--write` publishes; `check` also verifies the published artifact is current.
  */
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { validateTaskDiversity } = require('./lib/pandas-diversity.cjs');
+const { validateTaskDiversity, validateCrossModuleDiversity } = require('./lib/pandas-diversity.cjs');
+const { validateDebugChallenges } = require('./lib/pandas-debug.cjs');
+const { validateTaskFixtures } = require('./lib/pandas-fixture.cjs');
+const { validateTaskAnswers } = require('./lib/pandas-answer.cjs');
+const { validateOperationCoverage } = require('./lib/pandas-coverage.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const SRC = path.join(ROOT, 'content', 'pandas-mastery');
 const OUT = path.join(ROOT, 'public', 'generated', 'pandas-course');
 const WRITE = process.argv.includes('--write');
+const CHECK = process.argv.includes('check');
 const readJSON = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
+/** Git may materialise the artifact with CRLF on Windows; compare content, not line endings. */
+const normalizeEol = (text) => String(text).replace(/\r\n?/g, '\n');
 
 const course = readJSON(path.join(SRC, 'course.json')).course;
 const moduleFiles = fs.readdirSync(SRC).filter((f) => /^modules-.*\.json$/.test(f)).sort();
@@ -94,7 +101,24 @@ modules.forEach((m, index) => {
   if (!Array.isArray(m.tasks) || m.tasks.length < 1) fail(`${m.id}: needs 1+ independent coding task`);
   for (const t of m.tasks || []) {
     if (!t.title || !t.statement || !t.solution) fail(`${m.id}: task needs title/statement/solution`);
+    if (!t.setup) fail(`${m.id}: task "${t.title}" has no setup — add the imports the task needs`);
+    if (!t.fixture) fail(`${m.id}: task "${t.title}" has no fixture — construct the DataFrame the task works on`);
+    if (!t.starter) fail(`${m.id}: task "${t.title}" has no starter — combine setup + fixture so it runs without reconstruction`);
     if (!t.expected) fail(`${m.id}: task "${t.title}" has no executed output — run node scripts/pandas-fill-outputs.cjs`);
+    // The explicit fixture owns the data; every column the solution reads must exist there.
+    const fixtureColumns = new Set();
+    const fixtureMatch = `${t.setup || ''}\n${t.fixture || ''}`.match(/pd\.DataFrame\(\{([\s\S]*?)\}\)/);
+    if (fixtureMatch) {
+      for (const key of fixtureMatch[1].matchAll(/["']([^"']+)["']\s*:/g)) fixtureColumns.add(key[1]);
+    }
+    if (fixtureColumns.size) {
+      const createdColumns = new Set([...String(t.solution).matchAll(/df\[['"]([^'"]+)['"]\]\s*=/g)].map((m) => m[1]));
+      for (const ref of String(t.solution).matchAll(/df\[['"]([^'"]+)['"]\]/g)) {
+        if (!fixtureColumns.has(ref[1]) && !createdColumns.has(ref[1])) {
+          fail(`${m.id}: task "${t.title}" references missing column ${ref[1]}`);
+        }
+      }
+    }
   }
   for (const p of validateTaskDiversity(m.tasks || [], m.id)) fail(p);
   for (const [bank, min] of [['interviewBank', 2], ['defenseBank', 2]]) {
@@ -105,6 +129,12 @@ modules.forEach((m, index) => {
   if (!m.mini?.title || !m.mini?.brief || !m.mini.steps?.length) fail(`${m.id}: mini project incomplete`);
   if (!m.lab?.title || !m.lab?.brief || !m.lab.milestones?.length) fail(`${m.id}: project lab incomplete`);
 });
+
+for (const problem of validateCrossModuleDiversity(modules)) fail(problem);
+for (const problem of validateDebugChallenges(modules)) fail(problem);
+for (const problem of validateTaskFixtures(modules)) fail(problem);
+for (const problem of validateTaskAnswers(modules)) fail(problem);
+for (const problem of validateOperationCoverage(modules)) fail(problem);
 
 if (modules.length !== 20) fail(`expected 20 modules, found ${modules.length}`);
 
@@ -221,7 +251,7 @@ function buildSections(m) {
     ],
     coding: (m.tasks || []).map((t, i) => ({
       id: id('coding', 't' + i), title: t.title, statement: t.statement, kind: 'task',
-      starter: 'import pandas as pd\n\n# read the task, then print the result it asks for\n',
+      setup: t.setup, fixture: t.fixture, starter: t.starter,
       solution: t.solution, expected: t.expected, difficulty: difficultyAt(i),
     })),
     logic: topics.map((t, i) => ({
@@ -346,7 +376,15 @@ if (problems.length) {
 }
 
 const artifact = { course, stats, modules: published };
-if (WRITE) {
+if (CHECK) {
+  const target = path.join(OUT, 'index.json');
+  const expected = normalizeEol(`${JSON.stringify(artifact, null, 1)}\n`);
+  if (!fs.existsSync(target) || normalizeEol(fs.readFileSync(target, 'utf8')) !== expected) {
+    console.error('pandas-course: stale artifact — public/generated/pandas-course/index.json does not match the source; run npm run pandas-course:write');
+    process.exit(1);
+  }
+  console.log(`pandas-course: artifact is current — ${stats.modules} modules, ${stats.entries} entries`);
+} else if (WRITE) {
   fs.mkdirSync(OUT, { recursive: true });
   fs.writeFileSync(path.join(OUT, 'index.json'), `${JSON.stringify(artifact, null, 1)}\n`);
   console.log(`pandas-course: published ${stats.modules} modules, ${stats.entries} entries → public/generated/pandas-course/index.json`);
